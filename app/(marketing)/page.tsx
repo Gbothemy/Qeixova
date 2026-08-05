@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
 
 const campaignTypes = [
   { icon: "/icon-social-media.svg", title: "WhatsApp Status Campaign", desc: "Share flyers and content to WhatsApp status for 24 hours." },
@@ -40,9 +41,9 @@ const steps = [
 const faqs = [
   { q: "What is Qeixova Tasks?",                  a: "Qeixova Tasks is a community-powered growth platform where businesses gain visibility and contributors earn through meaningful digital participation — not bots or fake traffic." },
   { q: "Who can use Qeixova?",                    a: "Any business, creator, musician, startup, event organizer, or community that wants to grow visibility through real human participation. Contributors earn by completing campaigns." },
-  { q: "How do contributors earn?",               a: "Contributors complete participation tasks — sharing flyers, reposting content, testing apps, joining campaigns — and earn QLT rewards. 100 QLT = ₦1. Withdraw to any Nigerian bank." },
+  { q: "How do contributors earn?",               a: "Contributors complete participation tasks — sharing flyers, reposting content, testing apps, joining campaigns — and earn QLT rewards. 10 QLT = ₦1. Withdraw to any Nigerian bank." },
   { q: "Is this real engagement or fake?",        a: "Real. Every contributor is verified. No bots, no fake accounts, no spam. Campaigns are completed by real people with quality checks and fraud prevention." },
-  { q: "How do withdrawals work?",                a: "Contributors earn QLT by completing tasks. Once you reach 500,000 QLT lifetime earnings, withdrawals unlock. Minimum withdrawal is processed within 24 hours to your bank." },
+  { q: "How do withdrawals work?",                a: `Contributors earn QLT by completing tasks. Once you reach ${WITHDRAWAL_UNLOCK_QLT.toLocaleString()} QLT lifetime earnings, withdrawals unlock. Minimum withdrawal is processed within 24 hours to your bank.` },
   { q: "How much does a campaign cost?",          a: "You set the reward per completion and the total budget. You only pay for verified completions — no wasted spend on impressions or clicks that don't convert." },
 ];
 

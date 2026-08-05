@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
@@ -45,7 +45,7 @@ export async function GET() {
         FROM transactions
         WHERE user_id = ${session.userId}
           AND type = 'credit'
-          AND label LIKE 'Task:%'
+          AND (label LIKE 'Task:%' OR label LIKE 'Mission Approved:%')
           AND DATE(created_at) = CURRENT_DATE
       `,
 
@@ -70,6 +70,7 @@ export async function GET() {
         FROM transactions
         WHERE user_id = ${session.userId}
           AND type = 'debit'
+          AND status IN ('pending', 'processing', 'completed')
       `,
 
       // Pending QLT (submitted but not yet approved)

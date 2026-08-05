@@ -19,11 +19,11 @@ export default function BottomNav() {
       position: "fixed",
       bottom: 0, left: 0, right: 0,
       width: "100%",
-      background: "#111111",
-      borderTop: "1px solid #222222",
+      background: "var(--card-bg)",
+      borderTop: "1px solid var(--border)",
       display: "flex",
       zIndex: 50,
-      boxShadow: "0 -4px 20px rgba(0,0,0,0.5)",
+      boxShadow: "0 -4px 20px rgba(0,0,0,0.35)",
     }}>
       {nav.map((item) => {
         const active = path === item.href;
@@ -35,7 +35,7 @@ export default function BottomNav() {
             alignItems: "center",
             padding: "10px 0 12px",
             textDecoration: "none",
-            color: active ? "#1AEF22" : "#bbbbbb",
+            color: active ? "var(--accent)" : "var(--muted)",
             fontSize: 10,
             fontWeight: active ? 700 : 500,
             gap: 3,
@@ -48,7 +48,7 @@ export default function BottomNav() {
                 top: 0, left: "50%",
                 transform: "translateX(-50%)",
                 width: 32, height: 3,
-                background: "linear-gradient(90deg, #1AEF22, #F5A623)",
+                background: "linear-gradient(90deg, var(--accent), var(--accent-2))",
                 borderRadius: "0 0 4px 4px",
               }} />
             )}
@@ -57,12 +57,8 @@ export default function BottomNav() {
               alt={item.label}
               width={24}
               height={24}
-              style={{
-                objectFit: "contain",
-                filter: active
-                  ? "invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)"
-                  : "invert(40%) sepia(0%) saturate(0%) brightness(60%)",
-              }}
+              className={active ? "theme-icon active" : "theme-icon"}
+              style={{ objectFit: "contain" }}
             />
             {item.label}
           </Link>

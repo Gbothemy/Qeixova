@@ -2,9 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
+async function ensureBankAccountsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS bank_accounts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      bank_name TEXT NOT NULL,
+      account_number TEXT NOT NULL,
+      account_name TEXT NOT NULL,
+      is_default BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(user_id, account_number)
+    )
+  `;
+}
+
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureBankAccountsTable();
 
   const accounts = await sql`
     SELECT id, bank_name, account_number, account_name, is_default, created_at
@@ -18,6 +34,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureBankAccountsTable();
 
   const { bankName, accountNumber, accountName } = await req.json();
 
@@ -52,6 +69,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureBankAccountsTable();
 
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
@@ -74,6 +92,7 @@ export async function DELETE(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureBankAccountsTable();
 
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { displayLevel } from "@/lib/levels";
+import { WITHDRAWAL_UNLOCK_LEVEL, WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
 
 export async function GET() {
   const session = await getSession();
@@ -21,7 +23,7 @@ export async function GET() {
 
   const user = rows[0];
   const totalEarned = Number(user.total_earned_qlt ?? 0);
-  const levelNumber = Number(user.level_number ?? 0);
+  const levelNumber = displayLevel(user.level_number);
 
   // Next level info
   const nextLevelRows = await sql`
@@ -41,7 +43,7 @@ export async function GET() {
   const qltToNextLevel = nextMin ? Math.max(0, nextMin - totalEarned) : 0;
 
   // Withdrawal eligibility
-  const canWithdraw = levelNumber >= 1 && totalEarned >= 500001;
+  const canWithdraw = levelNumber >= WITHDRAWAL_UNLOCK_LEVEL && totalEarned >= WITHDRAWAL_UNLOCK_QLT;
 
   // Milestones claimed
   const milestoneRows = await sql`SELECT COUNT(*)::int AS claimed FROM user_milestones WHERE user_id = ${session.userId}`;

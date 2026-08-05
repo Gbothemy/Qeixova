@@ -3,13 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const nav = [
   { href: "/business/dashboard", label: "Overview", icon: "/icon-home.svg", desc: "Account health" },
   { href: "/business/tasks", label: "Campaigns", icon: "/icon-task.svg", desc: "Campaign manager" },
   { href: "/business/tasks/new", label: "Create", icon: "/icon-content.svg", desc: "Guided campaign setup" },
   { href: "/business/wallet", label: "Billing", icon: "/icon-wallet.svg", desc: "Credits and spend" },
-  { href: "/business/growth", label: "Growth Hub", icon: "/icon-analytics.svg", desc: "Strategy map" },
+  { href: "/business/growth", label: "Alerts", icon: "/icon-notifications.svg", desc: "Notifications" },
+  { href: "/business/profile", label: "Profile", icon: "/icon-profile.svg", desc: "Account settings" },
 ];
 
 function isActivePath(path: string, href: string) {
@@ -20,11 +22,37 @@ function isActivePath(path: string, href: string) {
 export default function BusinessSidebar({ name }: { name: string }) {
   const path = usePathname();
   const router = useRouter();
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
+  const unreadAlertLabel = unreadAlerts > 99 ? "99+" : String(unreadAlerts);
 
-  const logout = async () => {
-    await fetch("/api/business/logout", { method: "POST" });
-    router.push("/business/login");
-  };
+  useEffect(() => {
+    let mounted = true;
+    const loadUnreadAlerts = async () => {
+      const res = await fetch("/api/business/notifications", { cache: "no-store" }).catch(() => null);
+      if (!res?.ok) return;
+      const data = await res.json().catch(() => ({}));
+      if (mounted) setUnreadAlerts(Number(data.unread ?? 0));
+    };
+    const handleAlertUpdate = (event: Event) => {
+      const unread = (event as CustomEvent<{ unread?: number }>).detail?.unread;
+      if (typeof unread === "number") setUnreadAlerts(Math.max(0, unread));
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") void loadUnreadAlerts();
+    };
+    loadUnreadAlerts();
+    window.addEventListener("businessAlertsUpdated", handleAlertUpdate);
+    window.addEventListener("focus", loadUnreadAlerts);
+    document.addEventListener("visibilitychange", handleVisibility);
+    const timer = window.setInterval(loadUnreadAlerts, 10000);
+    return () => {
+      mounted = false;
+      window.removeEventListener("businessAlertsUpdated", handleAlertUpdate);
+      window.removeEventListener("focus", loadUnreadAlerts);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.clearInterval(timer);
+    };
+  }, []);
 
   return (
     <aside className="businessAdsSidebar">
@@ -63,6 +91,9 @@ export default function BusinessSidebar({ name }: { name: string }) {
                 <strong>{item.label}</strong>
                 <small>{item.desc}</small>
               </span>
+              {item.href === "/business/growth" && unreadAlerts > 0 && (
+                <span className="businessAlertBadge" aria-label={`${unreadAlertLabel} unread alerts`}>{unreadAlertLabel}</span>
+              )}
             </Link>
           );
         })}
@@ -73,7 +104,7 @@ export default function BusinessSidebar({ name }: { name: string }) {
           <span>Status</span>
           <strong>Ready to launch</strong>
         </div>
-        <button type="button" onClick={logout}>Logout</button>
+        <button type="button" onClick={() => router.push("/business/profile")}>Profile</button>
       </div>
     </aside>
   );

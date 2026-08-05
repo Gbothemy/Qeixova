@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { ensureEmailVerificationSchema } from "@/lib/emailVerification";
+import { ensurePasswordResetSchema } from "@/lib/passwordReset";
+import { ensureUniversalCampaignTables } from "@/lib/universalCampaignEngine";
+import { ensureContributorNotificationsTable } from "@/lib/contributorNotifications";
+import { ensureMissionExpiryColumns } from "@/lib/missionExpiry";
+import { ensureMilestoneIntegrity } from "@/lib/missionEngine";
 
 function setupAllowed(req: Request) {
   if (process.env.NODE_ENV !== "production") return true;
@@ -25,6 +31,8 @@ export async function GET(req: Request) {
         streak        INTEGER NOT NULL DEFAULT 0,
         last_active   DATE,
         level         INTEGER NOT NULL DEFAULT 1,
+        email_verified BOOLEAN NOT NULL DEFAULT TRUE,
+        email_verified_at TIMESTAMPTZ,
         created_at    TIMESTAMPTZ DEFAULT NOW()
       )
     `;
@@ -89,10 +97,21 @@ export async function GET(req: Request) {
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_type TEXT NOT NULL DEFAULT 'screenshot'`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_label TEXT NOT NULL DEFAULT 'Upload screenshot as proof'`;
     await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS proof_value TEXT`;
+    await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS reward_released_at TIMESTAMPTZ`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS max_screenshots INT NOT NULL DEFAULT 1`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS total_budget INT NOT NULL DEFAULT 0`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS budget_used INT NOT NULL DEFAULT 0`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_link TEXT NOT NULL DEFAULT ''`;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_status TEXT NOT NULL DEFAULT 'pending_review'`;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_goal TEXT NOT NULL DEFAULT ''`;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_pricing JSONB NOT NULL DEFAULT '{}'::jsonb`;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_metadata JSONB NOT NULL DEFAULT '{}'::jsonb`;
+    await ensureMissionExpiryColumns();
+    await ensureUniversalCampaignTables();
+    await ensureMilestoneIntegrity();
+    await ensureEmailVerificationSchema();
+    await ensurePasswordResetSchema();
+    await ensureContributorNotificationsTable();
 
     await sql`
       CREATE TABLE IF NOT EXISTS bank_accounts (

@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { canonicalizeInterests } from "@/lib/interestTaxonomy";
+
+async function ensureBankAccountsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS bank_accounts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      bank_name TEXT NOT NULL,
+      account_number TEXT NOT NULL,
+      account_name TEXT NOT NULL,
+      is_default BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(user_id, account_number)
+    )
+  `;
+}
 
 export async function GET() {
   const session = await getSession();
@@ -16,11 +32,14 @@ export async function POST(req: NextRequest) {
 
   const {
     bank_name, account_number, account_name, referralCode,
-    profession, interests, platforms, age_range, gender, state,
+    profession, interests, age_range, gender, state,
   } = await req.json();
+
+  const normalizedInterests = canonicalizeInterests(interests, 5);
 
   // Save bank account if provided
   if (bank_name && account_number && account_name) {
+    await ensureBankAccountsTable();
     await sql`
       INSERT INTO bank_accounts (user_id, bank_name, account_number, account_name, is_default)
       VALUES (${session.userId}, ${bank_name}, ${account_number}, ${account_name}, TRUE)
@@ -32,8 +51,8 @@ export async function POST(req: NextRequest) {
   await sql`
     UPDATE users SET
       profession   = ${profession || null},
-      interests    = ${interests?.length ? interests : []},
-      platforms    = ${platforms?.length ? platforms : []},
+      interests    = ${normalizedInterests},
+      platforms    = ${[]},
       age_range    = ${age_range || null},
       gender       = ${gender || null},
       state        = ${state || null}

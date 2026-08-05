@@ -102,19 +102,19 @@ export default function BankAccountsModal({ onClose }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#111111", borderRadius: "24px 24px 0 0",
+          background: "var(--card-bg)", borderRadius: "24px 24px 0 0",
           width: "100%", maxWidth: 480, maxHeight: "88vh",
           overflowY: "auto",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.5)",
           animation: "slideUp 0.25s ease",
-          border: "1px solid #222222",
+          border: "1px solid var(--border)",
         }}
       >
         <style>{`@keyframes slideUp { from { transform:translateY(100%); opacity:0 } to { transform:translateY(0); opacity:1 } }`}</style>
 
         {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: "#999999" }} />
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: "var(--muted)" }} />
         </div>
 
         {/* Header */}
@@ -122,20 +122,20 @@ export default function BankAccountsModal({ onClose }: Props) {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {view === "add" && (
               <button onClick={() => { setView("list"); setError(""); }}
-                style={{ background: "#F5F5F5", border: "none", borderRadius: 10, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                style={{ background: "var(--card-bg)", border: "none", borderRadius: 10, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text)" }}>
                 ←
               </button>
             )}
             <div>
-              <h2 style={{ fontWeight: 800, fontSize: 18, color: "#F5F5F5" }}>
+              <h2 style={{ fontWeight: 800, fontSize: 18, color: "var(--text)" }}>
                 {view === "list" ? "Bank Accounts" : "Add Bank Account"}
               </h2>
-              <p style={{ fontSize: 12, color: "#bbbbbb", marginTop: 2 }}>
+              <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                 {view === "list" ? "Manage your withdrawal accounts" : "Enter your account details"}
               </p>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "#222222", border: "none", borderRadius: 10, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", color: "#F5F5F5" }}>
+          <button onClick={onClose} style={{ background: "var(--card-bg)", border: "none", borderRadius: 10, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text)" }}>
             ✕
           </button>
         </div>
@@ -146,48 +146,48 @@ export default function BankAccountsModal({ onClose }: Props) {
             {loading ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
                 <p style={{ fontSize: 28, marginBottom: 8 }}>🏦</p>
-                <p style={{ color: "#bbbbbb", fontSize: 13 }}>Loading accounts...</p>
+                <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading accounts...</p>
               </div>
             ) : accounts.length === 0 ? (
               <div style={{
-                background: "#1a1a1a", border: "2px dashed #333333",
+                background: "var(--card-bg)", border: "2px dashed rgba(0,0,0,0.12)",
                 borderRadius: 16, padding: "36px 24px", textAlign: "center", marginBottom: 20,
               }}>
                 <p style={{ fontSize: 36, marginBottom: 10 }}>🏦</p>
-                <p style={{ fontWeight: 700, fontSize: 15, color: "#F5F5F5", marginBottom: 6 }}>No accounts yet</p>
-                <p style={{ fontSize: 13, color: "#bbbbbb" }}>Add a bank account to enable withdrawals</p>
+                <p style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 6 }}>No accounts yet</p>
+                <p style={{ fontSize: 13, color: "var(--muted)" }}>Add a bank account to enable withdrawals</p>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
                 {accounts.map((acc) => (
                   <div key={acc.id} style={{
-                    background: acc.is_default ? "rgba(26,239,34,0.08)" : "#1a1a1a",
-                    border: `1.5px solid ${acc.is_default ? "rgba(26,239,34,0.3)" : "#999999"}`,
+                    background: acc.is_default ? "rgba(26,239,34,0.08)" : "var(--card-bg)",
+                    border: `1.5px solid ${acc.is_default ? "rgba(26,239,34,0.3)" : "var(--muted)"}`,
                     borderRadius: 16, padding: "16px 18px",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                         <div style={{
                           width: 44, height: 44, borderRadius: 12,
-                          background: acc.is_default ? "linear-gradient(135deg, #1AEF22, #06B517)" : "#999999",
+                    background: acc.is_default ? "linear-gradient(135deg, var(--accent), var(--accent))" : "var(--muted)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 20, flexShrink: 0,
                         }}>
                           🏦
                         </div>
                         <div>
-                          <p style={{ fontWeight: 700, fontSize: 14, color: "#F5F5F5" }}>{acc.bank_name}</p>
-                          <p style={{ fontSize: 13, color: "#cccccc", marginTop: 2, letterSpacing: 1 }}>
+                          <p style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{acc.bank_name}</p>
+                          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 2, letterSpacing: 1 }}>
                             {acc.account_number.replace(/(\d{3})(\d{4})(\d{3})/, "$1 $2 $3")}
                           </p>
-                          <p style={{ fontSize: 12, color: "#bbbbbb", marginTop: 1 }}>{acc.account_name}</p>
+                          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{acc.account_name}</p>
                         </div>
                       </div>
                       {acc.is_default && (
                         <span style={{
-                          fontSize: 10, fontWeight: 700, color: "#1AEF22",
-                          background: "#fff", borderRadius: 6, padding: "3px 8px",
-                          border: "1px solid #b3f5b6",
+                          fontSize: 10, fontWeight: 700, color: "var(--accent)",
+                          background: "var(--card-bg)", borderRadius: 6, padding: "3px 8px",
+                          border: "1px solid rgba(179,245,182,0.24)",
                         }}>
                           DEFAULT
                         </span>
@@ -198,10 +198,10 @@ export default function BankAccountsModal({ onClose }: Props) {
                       {!acc.is_default && (
                         <button
                           onClick={() => handleSetDefault(acc.id)}
-                          style={{
+                        style={{
                             flex: 1, padding: "8px", borderRadius: 10,
-                            background: "#222222", border: "1.5px solid #333333",
-                            fontSize: 12, fontWeight: 600, color: "#1AEF22", cursor: "pointer",
+                            background: "var(--card-bg)", border: "1.5px solid var(--border)",
+                            fontSize: 12, fontWeight: 600, color: "var(--accent)", cursor: "pointer",
                           }}
                         >
                           Set as Default
@@ -211,8 +211,8 @@ export default function BankAccountsModal({ onClose }: Props) {
                         onClick={() => handleDelete(acc.id)}
                         style={{
                           padding: "8px 16px", borderRadius: 10,
-                          background: "rgba(229,62,62,0.1)", border: "1.5px solid rgba(229,62,62,0.2)",
-                          fontSize: 12, fontWeight: 600, color: "#e53e3e", cursor: "pointer",
+                          background: "rgba(229,62,62,0.06)", border: "1.5px solid rgba(229,62,62,0.12)",
+                          fontSize: 12, fontWeight: 600, color: "var(--danger)", cursor: "pointer",
                         }}
                       >
                         Remove
@@ -227,10 +227,10 @@ export default function BankAccountsModal({ onClose }: Props) {
               onClick={() => { setView("add"); setError(""); setSuccess(""); }}
               style={{
                 width: "100%",
-                background: "linear-gradient(135deg, #1AEF22, #06B517)",
-                color: "#fff", border: "none", borderRadius: 14, padding: "15px",
+                background: "linear-gradient(135deg, var(--accent), var(--accent))",
+                color: "var(--button-text, #fff)", border: "none", borderRadius: 14, padding: "15px",
                 fontWeight: 800, fontSize: 15, cursor: "pointer",
-                boxShadow: "0 6px 20px rgba(26,239,34,0.3)",
+                boxShadow: "0 6px 20px rgba(26,239,34,0.18)",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               }}
             >

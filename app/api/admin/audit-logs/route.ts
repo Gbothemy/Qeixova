@@ -2,8 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "@/lib/adminAuth";
 import { sql } from "@/lib/db";
 
+async function ensureAuditLogsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER,
+      event_type TEXT NOT NULL,
+      entity_type TEXT,
+      entity_id INTEGER,
+      data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+}
+
 export async function GET(req: NextRequest) {
   if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureAuditLogsTable();
 
   const { searchParams } = new URL(req.url);
   const page      = Math.max(1, Number(searchParams.get("page") ?? 1));

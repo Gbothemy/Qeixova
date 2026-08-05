@@ -42,7 +42,7 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
   const homeHref = mode === "business" ? "/business/dashboard" : "/dashboard";
 
   return (
-    <main className="page-body ecosystemHub">
+    <main className={`page-body ecosystemHub ${mode === "business" ? "business-page-pro" : ""}`}>
       <header className="ecosystemHeader">
         <div>
           <p className="eyebrow">Qeixova Ecosystem</p>
@@ -112,6 +112,7 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
           margin-bottom: 8px;
         }
         h1 {
+          color: #fff;
           font-size: clamp(28px, 5vw, 44px);
           line-height: 1.05;
           letter-spacing: 0;

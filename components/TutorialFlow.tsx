@@ -43,8 +43,8 @@ const STEPS = [
     icon: "/icon-wallet.svg",
     tag: "Step 5 of 5",
     title: "Convert & Withdraw",
-    body: "When you're ready, go to your Wallet and convert your QLT to Naira. Minimum withdrawal is 100,000 QLT (₦1,000). Processed within 24 hours.",
-    tip: "100 QLT = ₦1. The rate is fixed and transparent.",
+    body: "When you're ready, go to your Wallet and convert your QLT to Naira. Minimum withdrawal is 100,000 QLT (₦10,000). Processed within 24 hours.",
+    tip: "10 QLT = ₦1. The rate is fixed and transparent.",
     screen: "withdraw",
   },
 ];
@@ -60,7 +60,7 @@ export default function TutorialFlow({ onComplete }: Props) {
     return (
       <div style={{
         position: "fixed", inset: 0, zIndex: 9999,
-        background: "#000000",
+        background: "var(--bg)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 24,
       }}>
@@ -68,41 +68,41 @@ export default function TutorialFlow({ onComplete }: Props) {
           {/* Success icon */}
           <div style={{
             width: 88, height: 88, borderRadius: "50%",
-            background: "linear-gradient(135deg, #1AEF22, #06B517)",
+            background: "linear-gradient(135deg, var(--accent), var(--accent))",
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 24px",
-            boxShadow: "0 8px 28px rgba(26,239,34,0.35)",
+            boxShadow: "0 8px 28px rgba(26,239,34,0.18)",
             fontSize: 40,
           }}>
             🎯
           </div>
 
-          <h2 style={{ fontSize: 26, fontWeight: 900, color: "#F5F5F5", letterSpacing: -1, marginBottom: 12 }}>
+          <h2 style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", letterSpacing: -1, marginBottom: 12 }}>
             You&apos;re ready to earn!
           </h2>
-          <p style={{ fontSize: 15, color: "#b0b0b0", lineHeight: 1.7, marginBottom: 32 }}>
+          <p style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.7, marginBottom: 32 }}>
             You know how it works. Now complete your first task and earn your first QLT.
           </p>
 
           {/* Trust line */}
-          <div style={{ background: "#111111", borderRadius: 14, padding: "14px 18px", marginBottom: 28, border: "1px solid #222222" }}>
+          <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "14px 18px", marginBottom: 28, border: "1px solid var(--border)" }}>
             {[
               "All tasks are verified before listing",
               "Your earnings are tracked transparently",
-              "100 QLT = ₦1 — fixed rate, always",
+              "10 QLT = ₦1 — fixed rate, always",
             ].map((t, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < 2 ? 10 : 0 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#1AEF22", flexShrink: 0 }} />
-                <p style={{ fontSize: 13, color: "#b0b0b0" }}>{t}</p>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />
+                <p style={{ fontSize: 13, color: "var(--muted)" }}>{t}</p>
               </div>
             ))}
           </div>
 
           <button onClick={onComplete} style={{
-            width: "100%", background: "linear-gradient(135deg, #F5A623, #d89420)",
+          width: "100%", background: "linear-gradient(135deg, var(--accent-2), var(--accent-2))",
             color: "#000", border: "none", borderRadius: 14, padding: "17px",
             fontWeight: 800, fontSize: 16, cursor: "pointer",
-            boxShadow: "0 6px 20px rgba(245,166,35,0.4)",
+            boxShadow: "0 6px 20px rgba(245,166,35,0.18)",
             marginBottom: 12,
           }}>
             Complete My First Task →
@@ -110,7 +110,7 @@ export default function TutorialFlow({ onComplete }: Props) {
 
           <button onClick={onComplete} style={{
             width: "100%", background: "transparent", border: "none",
-            color: "#bbbbbb", fontSize: 13, cursor: "pointer", padding: "8px",
+            color: "var(--muted)", fontSize: 13, cursor: "pointer", padding: "8px",
           }}>
             Go to dashboard instead
           </button>
@@ -122,7 +122,7 @@ export default function TutorialFlow({ onComplete }: Props) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
-      background: "#000000",
+      background: "var(--bg)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: 24,
     }}>
@@ -133,7 +133,7 @@ export default function TutorialFlow({ onComplete }: Props) {
           {STEPS.map((_, i) => (
             <div key={i} style={{
               flex: 1, height: 4, borderRadius: 4,
-              background: i <= step ? "#1AEF22" : "#222222",
+              background: i <= step ? "var(--accent)" : "var(--border)",
               transition: "background 0.3s",
             }} />
           ))}
@@ -141,32 +141,32 @@ export default function TutorialFlow({ onComplete }: Props) {
 
         {/* Intro notice — only on first step */}
         {step === 0 && (
-          <div style={{ background: "rgba(26,239,34,0.06)", border: "1px solid rgba(26,239,34,0.15)", borderRadius: 12, padding: "10px 14px", marginBottom: 20, display: "flex", gap: 10, alignItems: "center" }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#1AEF22", flexShrink: 0 }} />
-            <p style={{ fontSize: 12, color: "#1AEF22", fontWeight: 600 }}>Quick tutorial — 5 steps, takes under a minute</p>
+          <div style={{ background: "rgba(26,239,34,0.06)", border: "1px solid rgba(26,239,34,0.12)", borderRadius: 12, padding: "10px 14px", marginBottom: 20, display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />
+            <p style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>Quick tutorial — 5 steps, takes under a minute</p>
           </div>
         )}
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 20 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 20 }}>
           {current.tag}
         </p>
 
         {/* Card */}
-        <div style={{ background: "#111111", borderRadius: 24, padding: "32px 28px", border: "1px solid #222222", marginBottom: 20 }}>
-          <div style={{ width: 60, height: 60, borderRadius: 16, background: "rgba(26,239,34,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 22 }}>
-            <Image src={current.icon} alt="" width={34} height={34} style={{ objectFit: "contain" }} />
+        <div style={{ background: "var(--card-bg)", borderRadius: 24, padding: "32px 28px", border: "1px solid var(--border)", marginBottom: 20 }}>
+          <div style={{ width: 60, height: 60, borderRadius: 16, background: "rgba(26,239,34,0.06)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 22 }}>
+            <Image src={current.icon} alt="" width={34} height={34} className="theme-icon" style={{ objectFit: "contain" }} />
           </div>
 
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#F5F5F5", marginBottom: 12, letterSpacing: -0.5 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", marginBottom: 12, letterSpacing: -0.5 }}>
             {current.title}
           </h2>
-          <p style={{ fontSize: 15, color: "#b0b0b0", lineHeight: 1.75, marginBottom: 20 }}>
+          <p style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.75, marginBottom: 20 }}>
             {current.body}
           </p>
 
           {/* Tip */}
-          <div style={{ background: "rgba(245,166,35,0.06)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: 10, padding: "10px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <div style={{ background: "rgba(245,166,35,0.06)", border: "1px solid rgba(245,166,35,0.12)", borderRadius: 10, padding: "10px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
             <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>💡</span>
-            <p style={{ fontSize: 12, color: "#F5A623", lineHeight: 1.6 }}>{current.tip}</p>
+            <p style={{ fontSize: 12, color: "var(--accent-2)", lineHeight: 1.6 }}>{current.tip}</p>
           </div>
         </div>
 
@@ -175,8 +175,8 @@ export default function TutorialFlow({ onComplete }: Props) {
           {step > 0 && (
             <button onClick={() => setStep(s => s - 1)} style={{
               flex: 1, padding: "14px", borderRadius: 12,
-              border: "1.5px solid #333333", background: "transparent",
-              color: "#cccccc", fontWeight: 600, fontSize: 15, cursor: "pointer",
+            border: "1.5px solid var(--border)", background: "transparent",
+              color: "var(--muted)", fontWeight: 600, fontSize: 15, cursor: "pointer",
             }}>
               ← Back
             </button>
@@ -186,9 +186,9 @@ export default function TutorialFlow({ onComplete }: Props) {
             else setStep(s => s + 1);
           }} style={{
             flex: 2, padding: "14px", borderRadius: 12, border: "none",
-            background: isLast ? "linear-gradient(135deg, #F5A623, #d89420)" : "linear-gradient(135deg, #1AEF22, #06B517)",
-            color: "#000", fontWeight: 800, fontSize: 15, cursor: "pointer",
-            boxShadow: isLast ? "0 6px 20px rgba(245,166,35,0.35)" : "0 6px 20px rgba(26,239,34,0.25)",
+            background: isLast ? "linear-gradient(135deg, var(--accent-2), var(--accent-2))" : "linear-gradient(135deg, var(--accent), var(--accent))",
+            color: "var(--button-text, #000)", fontWeight: 800, fontSize: 15, cursor: "pointer",
+            boxShadow: isLast ? "0 6px 20px rgba(245,166,35,0.18)" : "0 6px 20px rgba(26,239,34,0.18)",
           }}>
             {isLast ? "I'm ready →" : "Next →"}
           </button>
@@ -197,7 +197,7 @@ export default function TutorialFlow({ onComplete }: Props) {
         {/* Skip */}
         <button onClick={() => setShowPrompt(true)} style={{
           width: "100%", marginTop: 14, background: "transparent",
-          border: "none", color: "#aaaaaa", fontSize: 12, cursor: "pointer", padding: "6px",
+          border: "none", color: "var(--muted)", fontSize: 12, cursor: "pointer", padding: "6px",
         }}>
           Skip tutorial
         </button>
@@ -205,3 +205,4 @@ export default function TutorialFlow({ onComplete }: Props) {
     </div>
   );
 }
+

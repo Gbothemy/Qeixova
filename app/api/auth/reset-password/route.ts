@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-
-function getResetSecret() {
-  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  if (process.env.NODE_ENV !== "production") return "dev-jwt-secret";
-  throw new Error("JWT_SECRET environment variable is required in production");
-}
+import { ensurePasswordResetSchema } from "@/lib/passwordReset";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,30 +9,25 @@ export async function POST(req: NextRequest) {
     if (!token || !password) return NextResponse.json({ error: "Token and password required" }, { status: 400 });
     if (password.length < 6) return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
 
-    // Verify JWT
-    let payload: { userId: number; purpose: string };
-    try {
-      payload = jwt.verify(token, getResetSecret()) as { userId: number; purpose: string };
-    } catch {
-      return NextResponse.json({ error: "Reset link has expired. Please request a new one." }, { status: 400 });
-    }
-
-    if (payload.purpose !== "reset") {
-      return NextResponse.json({ error: "Invalid reset token" }, { status: 400 });
-    }
-
-    // Check token exists in DB and not expired
+    await ensurePasswordResetSchema();
     const rows = await sql`
-      SELECT id FROM password_resets
-      WHERE user_id = ${payload.userId} AND token = ${token} AND expires_at > NOW()
+      SELECT account_type, account_id
+      FROM account_password_resets
+      WHERE token = ${token} AND expires_at > NOW()
+      LIMIT 1
     `;
     if (rows.length === 0) {
       return NextResponse.json({ error: "Reset link has expired or already been used." }, { status: 400 });
     }
 
+    const reset = rows[0];
     const hashed = await bcrypt.hash(password, 10);
-    await sql`UPDATE users SET password = ${hashed} WHERE id = ${payload.userId}`;
-    await sql`DELETE FROM password_resets WHERE user_id = ${payload.userId}`;
+    if (reset.account_type === "business") {
+      await sql`UPDATE businesses SET password = ${hashed} WHERE id = ${reset.account_id}`;
+    } else {
+      await sql`UPDATE users SET password = ${hashed} WHERE id = ${reset.account_id}`;
+    }
+    await sql`DELETE FROM account_password_resets WHERE token = ${token}`;
 
     return NextResponse.json({ ok: true });
   } catch (err) {

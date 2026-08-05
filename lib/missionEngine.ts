@@ -1,9 +1,10 @@
 /**
  * Mission Engine — QLT-based level progression
  * Levels are determined by total_earned_qlt (lifetime), not wallet balance.
- * Withdrawals unlock at Bronze (level 1, 100,001+ QLT lifetime).
+ * Withdrawals unlock at Bronze (level 1, 50,001+ QLT lifetime).
  */
 import { sql } from "@/lib/db";
+import { WITHDRAWAL_UNLOCK_LEVEL, WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
 
 export const QLT_PROGRESS_REWARDS: Record<string, number> = {
   engagement: 0, participation: 0, premium: 0,
@@ -24,7 +25,7 @@ export async function getLevelForQLT(totalEarnedQLT: number): Promise<{
   `;
   return (rows[0] as typeof rows[0] & { id: number; level_number: number; name: string; daily_cap_qlt: number; badge_color: string; badge_emoji: string; min_qlt: number; max_qlt: number | null }) ?? {
     id: 1, level_number: 0, name: "Starter", daily_cap_qlt: 10000,
-    badge_color: "#1AEF22", badge_emoji: "🟢", min_qlt: 0, max_qlt: 100000,
+    badge_color: "#1AEF22", badge_emoji: "🟢", min_qlt: 0, max_qlt: 50000,
   };
 }
 
@@ -80,9 +81,6 @@ export async function canWithdraw(userId: number): Promise<{
   const user = rows[0];
   const totalEarned = Number(user?.total_earned_qlt ?? 0);
   const levelNumber = Number(user?.level_number ?? 0);
-  const WITHDRAWAL_UNLOCK_LEVEL = 1; // Bronze
-  const WITHDRAWAL_UNLOCK_QLT = 500001;
-
   const allowed = levelNumber >= WITHDRAWAL_UNLOCK_LEVEL && totalEarned >= WITHDRAWAL_UNLOCK_QLT;
   const needed = Math.max(0, WITHDRAWAL_UNLOCK_QLT - totalEarned);
 
@@ -128,12 +126,102 @@ export async function updateStreak(userId: number): Promise<{ newStreak: number 
   return { newStreak };
 }
 
+// ── Milestone schema/integrity ────────────────────────────────────────────────
+export async function ensureMilestoneIntegrity(): Promise<void> {
+  await sql`
+    CREATE TABLE IF NOT EXISTS milestones (
+      id              SERIAL PRIMARY KEY,
+      name            TEXT NOT NULL,
+      description     TEXT,
+      trigger_type    TEXT NOT NULL,
+      trigger_value   INT NOT NULL,
+      bonus_qlt       INT NOT NULL DEFAULT 0,
+      bonus_xp        INT NOT NULL DEFAULT 0,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_milestones (
+      id           SERIAL PRIMARY KEY,
+      user_id      INT NOT NULL REFERENCES users(id),
+      milestone_id INT NOT NULL REFERENCES milestones(id),
+      claimed_at   TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(user_id, milestone_id)
+    )
+  `;
+
+  await sql`
+    DELETE FROM user_milestones um
+    USING user_milestones keep
+    WHERE um.user_id = keep.user_id
+      AND um.milestone_id = keep.milestone_id
+      AND um.id > keep.id
+  `;
+
+  await sql`
+    WITH duplicate_milestones AS (
+      SELECT
+        id,
+        MIN(id) OVER (
+          PARTITION BY name, trigger_type, trigger_value, bonus_qlt, bonus_xp
+        ) AS canonical_id
+      FROM milestones
+    ),
+    moved_claims AS (
+      INSERT INTO user_milestones (user_id, milestone_id, claimed_at)
+      SELECT um.user_id, dm.canonical_id, MIN(um.claimed_at)
+      FROM user_milestones um
+      JOIN duplicate_milestones dm ON dm.id = um.milestone_id
+      WHERE dm.id <> dm.canonical_id
+        AND NOT EXISTS (
+          SELECT 1 FROM user_milestones existing
+          WHERE existing.user_id = um.user_id
+            AND existing.milestone_id = dm.canonical_id
+        )
+      GROUP BY um.user_id, dm.canonical_id
+      RETURNING id
+    ),
+    deleted_claims AS (
+      DELETE FROM user_milestones um
+      USING duplicate_milestones dm
+      WHERE um.milestone_id = dm.id
+        AND dm.id <> dm.canonical_id
+      RETURNING um.id
+    )
+    DELETE FROM milestones m
+    USING duplicate_milestones dm
+    WHERE m.id = dm.id
+      AND dm.id <> dm.canonical_id
+  `;
+
+  await sql`
+    DELETE FROM user_milestones um
+    USING user_milestones keep
+    WHERE um.user_id = keep.user_id
+      AND um.milestone_id = keep.milestone_id
+      AND um.id > keep.id
+  `;
+
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS milestones_unique_definition_idx
+    ON milestones (name, trigger_type, trigger_value, bonus_qlt, bonus_xp)
+  `;
+
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS user_milestones_user_milestone_idx
+    ON user_milestones (user_id, milestone_id)
+  `;
+}
+
 // ── Check and award milestones ────────────────────────────────────────────────
 export async function checkMilestones(userId: number): Promise<{ awarded: Array<{ name: string; bonus_qlt: number }> }> {
   const awarded: Array<{ name: string; bonus_qlt: number }> = [];
+  await ensureMilestoneIntegrity();
 
   const userRows = await sql`SELECT total_earned_qlt, streak FROM users WHERE id = ${userId}`;
   const user = userRows[0];
+  if (!user) return { awarded };
 
   const totalCompletions = await sql`
     SELECT COUNT(*)::int AS total FROM completions WHERE user_id = ${userId} AND status = 'approved'
@@ -154,7 +242,13 @@ export async function checkMilestones(userId: number): Promise<{ awarded: Array<
     if (m.trigger_type === 'total_xp' && user.total_earned_qlt >= m.trigger_value) triggered = true;
 
     if (triggered) {
-      await sql`INSERT INTO user_milestones (user_id, milestone_id) VALUES (${userId}, ${m.id}) ON CONFLICT DO NOTHING`;
+      const claimed = await sql`
+        INSERT INTO user_milestones (user_id, milestone_id)
+        VALUES (${userId}, ${m.id})
+        ON CONFLICT (user_id, milestone_id) DO NOTHING
+        RETURNING id
+      `;
+      if (claimed.length === 0) continue;
 
       if (m.bonus_qlt > 0) {
         await sql`UPDATE users SET balance = balance + ${m.bonus_qlt}, total_earned_qlt = total_earned_qlt + ${m.bonus_qlt} WHERE id = ${userId}`;
@@ -189,3 +283,4 @@ export async function awardXP(userId: number): Promise<{ newXP: number; newLevel
   const levelRows = await sql`SELECT level_number FROM levels WHERE id = ${rows[0]?.level_id ?? 1} LIMIT 1`;
   return { newXP: 0, newLevel: levelRows[0]?.level_number ?? 0, leveledUp: false };
 }
+

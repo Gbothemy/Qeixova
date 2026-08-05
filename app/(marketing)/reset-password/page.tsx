@@ -3,12 +3,32 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+function PasswordVisibilityButton({ visible, onClick, label }: { visible: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", width: 34, height: 34, display: "grid", placeItems: "center", border: "1px solid rgba(26, 239, 34, .22)", borderRadius: 10, background: "rgba(26, 239, 34, .08)", color: "#1aef22", cursor: "pointer", padding: 0 }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+        {!visible && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />}
+      </svg>
+    </button>
+  );
+}
+
 function ResetForm() {
   const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token") ?? "";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
@@ -47,15 +67,17 @@ function ResetForm() {
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, pointerEvents: "none" }}>🔒</span>
-              <input type="password" placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)}
-                style={{ width: "100%", padding: "13px 14px 13px 42px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 14, outline: "none", color: "#F5F5F5", background: "#1a1a1a" }}
+              <input type={showPassword ? "text" : "password"} placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)}
+                style={{ width: "100%", padding: "13px 54px 13px 42px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 14, outline: "none", color: "#F5F5F5", background: "#1a1a1a" }}
                 onFocus={(e) => (e.target.style.borderColor = "#1AEF22")} onBlur={(e) => (e.target.style.borderColor = "#999999")} />
+              <PasswordVisibilityButton visible={showPassword} onClick={() => setShowPassword((v) => !v)} label={showPassword ? "Hide new password" : "Show new password"} />
             </div>
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, pointerEvents: "none" }}>🔐</span>
-              <input type="password" placeholder="Confirm new password" value={confirm} onChange={(e) => setConfirm(e.target.value)}
-                style={{ width: "100%", padding: "13px 14px 13px 42px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 14, outline: "none", color: "#F5F5F5", background: "#1a1a1a" }}
+              <input type={showConfirm ? "text" : "password"} placeholder="Confirm new password" value={confirm} onChange={(e) => setConfirm(e.target.value)}
+                style={{ width: "100%", padding: "13px 54px 13px 42px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 14, outline: "none", color: "#F5F5F5", background: "#1a1a1a" }}
                 onFocus={(e) => (e.target.style.borderColor = "#1AEF22")} onBlur={(e) => (e.target.style.borderColor = "#999999")} />
+              <PasswordVisibilityButton visible={showConfirm} onClick={() => setShowConfirm((v) => !v)} label={showConfirm ? "Hide confirm password" : "Show confirm password"} />
             </div>
             <button type="submit" disabled={loading || !token} style={{ background: loading ? "#a0a0a0" : "linear-gradient(135deg, #1AEF22, #06B517)", color: "#fff", border: "none", borderRadius: 14, padding: "15px", fontWeight: 800, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", boxShadow: loading ? "none" : "0 6px 20px rgba(26,239,34,0.35)" }}>
               {loading ? "Resetting..." : "Reset Password →"}

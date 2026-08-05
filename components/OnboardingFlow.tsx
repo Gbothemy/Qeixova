@@ -1,16 +1,11 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { INTEREST_OPTIONS } from "@/lib/interestTaxonomy";
+import { WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
 
 interface Props { userName: string; onComplete: () => void; }
 
-const INTERESTS = [
-  "Music", "Fashion", "Sports", "Technology", "Gaming", "Business",
-  "Church & Community", "Lifestyle", "Education", "Entertainment",
-  "Food & Restaurants", "Local Events",
-];
-
-const PLATFORMS = ["Facebook", "TikTok", "Instagram", "WhatsApp", "X (Twitter)", "Telegram", "YouTube"];
 
 const AGE_RANGES = ["18–24", "25–34", "35–44", "45+"];
 
@@ -28,19 +23,30 @@ const inp = {
   color: "#F5F5F5", background: "#111",
 };
 
-function Chips({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void }) {
-  const toggle = (v: string) => onChange(selected.includes(v) ? selected.filter(s => s !== v) : [...selected, v]);
+function Chips({ options, selected, onChange, max }: { options: string[]; selected: string[]; onChange: (v: string[]) => void; max?: number }) {
+  const toggle = (v: string) => {
+    if (selected.includes(v)) {
+      onChange(selected.filter(s => s !== v));
+      return;
+    }
+    if (max && selected.length >= max) return;
+    onChange([...selected, v]);
+  };
+
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+      {max && <p style={{ width: "100%", fontSize: 11, color: "#bbb", marginBottom: 2 }}>Select up to {max} - {selected.length}/{max} chosen</p>}
       {options.map(o => {
         const on = selected.includes(o);
+        const atLimit = !on && max !== undefined && selected.length >= max;
         return (
-          <button key={o} type="button" onClick={() => toggle(o)} style={{
-            padding: "7px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+          <button key={o} type="button" onClick={() => toggle(o)} disabled={atLimit} style={{
+            padding: "7px 14px", borderRadius: 20, fontSize: 12, cursor: atLimit ? "not-allowed" : "pointer",
             fontWeight: on ? 700 : 400,
-            border: `1.5px solid ${on ? "#1AEF22" : "#222"}`,
+            border: `1.5px solid ${on ? "#1AEF22" : atLimit ? "#111" : "#222"}`,
             background: on ? "rgba(26,239,34,0.1)" : "transparent",
-            color: on ? "#1AEF22" : "#ccc",
+            color: on ? "#1AEF22" : atLimit ? "#444" : "#ccc",
+            opacity: atLimit ? 0.4 : 1,
           }}>{o}</button>
         );
       })}
@@ -70,9 +76,8 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
   const [ageRange, setAgeRange] = useState("");
   const [gender, setGender] = useState("");
 
-  // Step 2 — interests & platforms
+  // Step 2 — interests
   const [interests, setInterests] = useState<string[]>([]);
-  const [platforms, setPlatforms] = useState<string[]>([]);
 
   // Step 3 — bank
   const [bank, setBank] = useState({ bank_name: "", account_number: "", account_name: "" });
@@ -89,7 +94,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...bank, referralCode,
-        interests, platforms, age_range: ageRange, gender, state,
+        interests: interests.slice(0, 5), platforms: [], age_range: ageRange, gender, state,
       }),
     });
     setSaving(false);
@@ -102,7 +107,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
       {/* ── STEP 0: Welcome ── */}
       {step === 0 && (
         <div style={{ textAlign: "center", maxWidth: 400, width: "100%" }}>
-          <Image src="/qeixova-icon.png" alt="Qeixova" width={72} height={72} style={{ borderRadius: 20, objectFit: "contain", boxShadow: "0 8px 28px rgba(26,239,34,0.35)", marginBottom: 24 }} />
+          <Image src="/qeixova-icon.png" alt="Qeixova" width={72} height={72} className="theme-icon" style={{ borderRadius: 20, objectFit: "contain", boxShadow: "0 8px 28px rgba(26,239,34,0.35)", marginBottom: 24 }} />
           <h1 style={{ fontSize: 26, fontWeight: 900, color: "#F5F5F5", letterSpacing: -0.5, marginBottom: 10 }}>
             Welcome, {firstName}!
           </h1>
@@ -187,14 +192,8 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
             <p style={{ fontSize: 13, color: "#bbb", marginBottom: 20 }}>We use this to recommend campaigns you&apos;ll actually enjoy completing.</p>
 
             <div style={{ marginBottom: 22 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: 0.5 }}>INTERESTS (select all that apply)</label>
-              <Chips options={INTERESTS} selected={interests} onChange={setInterests} />
-            </div>
-
-            <div style={{ marginBottom: 22 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: 0.5 }}>PLATFORMS YOU USE</label>
-              <p style={{ fontSize: 12, color: "#aaa", marginTop: 4, marginBottom: 0 }}>Campaigns are matched to platforms you&apos;re active on.</p>
-              <Chips options={PLATFORMS} selected={platforms} onChange={setPlatforms} />
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: 0.5 }}>INTERESTS</label>
+              <Chips options={[...INTEREST_OPTIONS]} selected={interests} onChange={setInterests} max={5} />
             </div>
 
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
@@ -213,7 +212,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#F5F5F5", marginBottom: 4 }}>Set Up Withdrawals</h2>
           <p style={{ fontSize: 13, color: "#bbb", marginBottom: 6 }}>Add your bank account so you can withdraw your earnings.</p>
           <div style={{ background: "rgba(26,239,34,0.06)", border: "1px solid rgba(26,239,34,0.12)", borderRadius: 10, padding: "10px 14px", marginBottom: 20 }}>
-            <p style={{ fontSize: 12, color: "#1AEF22", fontWeight: 600 }}>🔒 Withdrawals unlock at 500,000 QLT lifetime earnings (Bronze level)</p>
+            <p style={{ fontSize: 12, color: "#1AEF22", fontWeight: 600 }}>🔒 Withdrawals unlock at {WITHDRAWAL_UNLOCK_QLT.toLocaleString()} QLT lifetime earnings (Bronze level)</p>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

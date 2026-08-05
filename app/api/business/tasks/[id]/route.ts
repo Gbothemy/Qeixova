@@ -5,6 +5,45 @@ import { checkMilestones, creditQLTAndUpdateLevel, updateTrustScore } from "@/li
 import { log } from "@/lib/auditLog";
 import { sendMissionApprovedEmail, sendMissionRejectedEmail } from "@/lib/email";
 import { ensureBusinessWalletTables } from "@/lib/businessWallet";
+import { refundUnusedCampaignBudget, reviewCampaignSubmission, transitionCampaignStatus } from "@/lib/universalCampaignEngine";
+
+type ProofPlatform = { id: string; label: string; platform: string; rewardQlt: number };
+
+function summarizeProofForBusiness(value: unknown) {
+  if (typeof value !== "string" || !value) {
+    return { hasProof: false, hasScreenshots: false, selectedPlatforms: [] as ProofPlatform[] };
+  }
+
+  if (value.startsWith("data:image/")) {
+    return { hasProof: true, hasScreenshots: true, selectedPlatforms: [] as ProofPlatform[] };
+  }
+
+  try {
+    const parsed = JSON.parse(value) as {
+      type?: string;
+      screenshots?: unknown[];
+      selectedPlatforms?: Partial<ProofPlatform>[];
+    };
+    const selectedPlatforms = Array.isArray(parsed.selectedPlatforms)
+      ? parsed.selectedPlatforms
+        .filter((platform) => typeof platform?.platform === "string")
+        .map((platform) => ({
+          id: String(platform.id || platform.platform),
+          label: String(platform.label || platform.platform),
+          platform: String(platform.platform),
+          rewardQlt: Number(platform.rewardQlt) || 0,
+        }))
+      : [];
+
+    return {
+      hasProof: true,
+      hasScreenshots: parsed.type === "screenshots" || (Array.isArray(parsed.screenshots) && parsed.screenshots.length > 0),
+      selectedPlatforms,
+    };
+  } catch {
+    return { hasProof: true, hasScreenshots: false, selectedPlatforms: [] as ProofPlatform[] };
+  }
+}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getBusinessSession();
@@ -28,7 +67,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (taskRows.length === 0) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
   const completions = await sql`
-    SELECT c.id, c.status, c.completed_at, c.rejection_reason, c.proof_value,
+    SELECT c.id, c.status, c.completed_at, c.rejection_reason, c.proof_value, c.qlt_awarded,
       u.full_name, u.email
     FROM completions c
     JOIN users u ON u.id = c.user_id
@@ -37,7 +76,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     LIMIT 50
   `;
 
-  return NextResponse.json({ task: taskRows[0], completions });
+  const safeCompletions = completions.map((completion) => {
+    const { proof_value: proofValue, ...safeCompletion } = completion;
+    return {
+      ...safeCompletion,
+      proof_summary: summarizeProofForBusiness(proofValue),
+    };
+  });
+
+  return NextResponse.json({ task: taskRows[0], completions: safeCompletions });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -73,8 +120,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (action === "approve") {
       await sql`UPDATE completions SET status = 'approved', rejection_reason = NULL WHERE id = ${Number(completionId)}`;
+      await reviewCampaignSubmission({ completionId: Number(completionId), action: "approve" });
 
-      const reward = Number(completion.reward);
+      const reward = Number(completion.qlt_awarded ?? completion.reward);
       await sql`
         UPDATE users
         SET balance = balance + ${reward},
@@ -110,10 +158,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const reason = rejectionReason?.trim() || "Mission proof did not meet the campaign requirements";
     await sql`UPDATE completions SET status = 'rejected', rejection_reason = ${reason} WHERE id = ${Number(completionId)}`;
+    await reviewCampaignSubmission({ completionId: Number(completionId), action: "reject", reviewNote: reason });
     await sql`UPDATE users SET rejected_count = rejected_count + 1 WHERE id = ${completion.user_id}`;
     await sql`
       UPDATE tasks
-      SET budget_used = GREATEST(0, budget_used - ${Number(completion.reward)}),
+      SET budget_used = GREATEST(0, budget_used - ${Number(completion.qlt_awarded ?? completion.reward)}),
           is_active = CASE WHEN COALESCE(task_status, 'active') = 'active' THEN true ELSE is_active END
       WHERE id = ${Number(id)} AND total_budget > 0
     `;
@@ -131,11 +180,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (action === "pause") {
     await sql`UPDATE tasks SET is_active = false, task_status = 'paused' WHERE id = ${Number(id)}`;
+    const campaignRows = await sql`SELECT id FROM campaigns WHERE task_id = ${Number(id)} LIMIT 1`;
+    if (campaignRows.length) await transitionCampaignStatus({ campaignId: Number(campaignRows[0].id), nextStatus: "paused" });
   } else if (action === "resume") {
     if (rows[0].task_status === "pending_review" || rows[0].task_status === "deleted") {
       return NextResponse.json({ error: "This campaign cannot be resumed yet" }, { status: 409 });
     }
     await sql`UPDATE tasks SET is_active = true, task_status = 'active' WHERE id = ${Number(id)}`;
+    const campaignRows = await sql`SELECT id FROM campaigns WHERE task_id = ${Number(id)} LIMIT 1`;
+    if (campaignRows.length) await transitionCampaignStatus({ campaignId: Number(campaignRows[0].id), nextStatus: "live" });
   } else if (action === "delete") {
     await ensureBusinessWalletTables();
     const refund = Math.max(0, Number(rows[0].total_budget ?? 0) - Number(rows[0].budget_used ?? 0));
@@ -150,6 +203,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         )
         ON CONFLICT (reference) DO NOTHING
       `;
+    }
+    const campaignRows = await sql`SELECT id FROM campaigns WHERE task_id = ${Number(id)} LIMIT 1`;
+    if (campaignRows.length) {
+      await refundUnusedCampaignBudget({ campaignId: Number(campaignRows[0].id), businessId: session.businessId, reason: "campaign_deleted" });
+      await sql`UPDATE campaigns SET status = 'closed', updated_at = NOW() WHERE id = ${Number(campaignRows[0].id)}`;
     }
     await sql`UPDATE tasks SET is_active = false, task_status = 'deleted' WHERE id = ${Number(id)}`;
   } else {

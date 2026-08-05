@@ -1,11 +1,90 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { canonicalizeInterests, interestMatches } from "@/lib/interestTaxonomy";
+import { ensureUniversalCampaignTables } from "@/lib/universalCampaignEngine";
+import { displayLevel } from "@/lib/levels";
+import { expireElapsedMissions } from "@/lib/missionExpiry";
+
+type TargetLocationMetadata = {
+  targetLocation?: {
+    mode?: string;
+    locations?: Array<{
+      name?: string | null;
+      region?: string | null;
+      state?: string | null;
+      country?: string | null;
+    }>;
+  };
+};
+
+function normalizeValue(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeState(value: unknown) {
+  const normalized = normalizeValue(value)
+    .replace(/\bfederal capital territory\b/g, "fct")
+    .replace(/\bstate\b/g, "")
+    .replace(/\bnigeria\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (normalized === "abuja" || normalized === "fct" || normalized === "fct abuja") return "fct abuja";
+  return normalized;
+}
+
+function normalizeList(values: unknown) {
+  return Array.isArray(values) ? values.filter((value): value is string => typeof value === "string" && value.trim().length > 0) : [];
+}
+
+function deriveStateTargets(task: Record<string, unknown>) {
+  const directTargets = normalizeList(task.target_states);
+  const metadata = task.campaign_metadata as TargetLocationMetadata | null;
+  const locationTargets = metadata?.targetLocation?.locations?.flatMap((location) => [
+    location.state,
+    location.region,
+    location.name,
+  ]) ?? [];
+
+  return [...new Set([...directTargets, ...locationTargets].map(normalizeState).filter((value) => value && value !== "nigeria"))];
+}
+
+function singleValueMatches(targets: string[], userValue: unknown) {
+  if (targets.length === 0) return true;
+  const normalizedUserValue = normalizeValue(userValue);
+  if (!normalizedUserValue) return false;
+  return targets.map(normalizeValue).includes(normalizedUserValue);
+}
+
+function getAllowedMissionTypes(features: unknown) {
+  const unlocks = Array.isArray(features) ? features.filter((item): item is string => typeof item === "string") : [];
+  const allowed = new Set<string>();
+
+  if (unlocks.length === 0 || unlocks.includes("open_missions") || unlocks.includes("all_missions")) {
+    allowed.add("engagement");
+    allowed.add("participation");
+    allowed.add("premium");
+  }
+  if (unlocks.includes("engagement_missions")) allowed.add("engagement");
+  if (unlocks.includes("participation_missions")) allowed.add("participation");
+  if (unlocks.includes("premium_missions")) allowed.add("premium");
+
+  return allowed;
+}
 
 export async function GET() {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    await ensureUniversalCampaignTables();
+    await expireElapsedMissions();
 
     // Get user profile + level info for targeting and cap enforcement
     const userRows = await sql`
@@ -26,14 +105,8 @@ export async function GET() {
       user.daily_earned = 0;
     }
 
-    const userLevelNum = Number(user.level_number ?? 1);
-    const unlockedTypes: string[] = (user.unlock_features as string[]) ?? ["engagement_missions"];
-
-    // Build allowed mission types based on level unlocks
-    const allowedMissionTypes: string[] = [];
-    if (unlockedTypes.includes("engagement_missions"))    allowedMissionTypes.push("engagement");
-    if (unlockedTypes.includes("participation_missions")) allowedMissionTypes.push("participation");
-    if (unlockedTypes.includes("premium_missions"))       allowedMissionTypes.push("premium");
+    const userLevelNum = displayLevel(user.level_number);
+    const allowedMissionTypes = getAllowedMissionTypes(user.unlock_features);
 
     // Fetch active missions with completion status
     const tasks = await sql`
@@ -54,18 +127,38 @@ export async function GET() {
         COALESCE(t.difficulty, 'easy') AS difficulty,
         COALESCE(t.min_level, 1) AS min_level,
         COALESCE(t.estimated_time, t.duration, '5 min') AS estimated_time,
+        COALESCE(t.campaign_goal, '') AS campaign_goal,
+        COALESCE(t.campaign_status, '') AS campaign_status,
+        t.approved_at,
+        t.expires_at,
+        COALESCE(t.campaign_pricing, '{}'::jsonb) AS campaign_pricing,
+        COALESCE(t.campaign_metadata, '{}'::jsonb) AS campaign_metadata,
+        COALESCE(t.target_completion_count, 0) AS target_completion_count,
+        COALESCE(b.name, '') AS business_name,
         COALESCE(t.target_professions, '{}') AS target_professions,
         COALESCE(t.target_interests, '{}') AS target_interests,
         COALESCE(t.target_platforms, '{}') AS target_platforms,
         COALESCE(t.target_age_ranges, '{}') AS target_age_ranges,
         COALESCE(t.target_genders, '{}') AS target_genders,
         COALESCE(t.target_states, '{}') AS target_states,
+        cpg.id AS campaign_id,
+        COALESCE(cpg.status, '') AS universal_campaign_status,
         CASE WHEN c.id IS NOT NULL THEN true ELSE false END AS completed,
         c.status AS completion_status
       FROM tasks t
+      LEFT JOIN businesses b ON b.id = t.business_id
+      LEFT JOIN campaigns cpg ON cpg.task_id = t.id
       LEFT JOIN completions c ON c.task_id = t.id AND c.user_id = ${session.userId}
-      WHERE t.is_active = true
-        AND COALESCE(t.task_status, 'active') = 'active'
+      WHERE (
+          (t.is_active = true AND COALESCE(t.task_status, 'active') = 'active')
+          OR COALESCE(cpg.status, '') = 'live'
+          OR COALESCE(t.campaign_status, '') = 'live'
+        )
+        AND COALESCE(t.task_status, '') NOT IN ('rejected', 'closed', 'deleted')
+        AND COALESCE(t.campaign_status, '') NOT IN ('rejected', 'closed')
+        AND COALESCE(cpg.status, '') NOT IN ('rejected', 'closed')
+        AND (t.expires_at IS NULL OR t.expires_at > NOW())
+        AND (cpg.end_date IS NULL OR cpg.end_date > NOW())
         AND (t.total_budget = 0 OR t.budget_used < t.total_budget)
       ORDER BY t.reward DESC
     `;
@@ -73,6 +166,8 @@ export async function GET() {
     const dailyEarned = Number(user.daily_earned ?? 0);
     const dailyCap = Number(user.daily_cap_qlt ?? 5000);
     const dailyRemaining = Math.max(0, dailyCap - dailyEarned);
+    const userState = normalizeState(user.state);
+    const normalizedInterests = canonicalizeInterests(user.interests);
 
     // Score + filter tasks
     const scored = tasks.map((task: Record<string, unknown>) => {
@@ -82,31 +177,47 @@ export async function GET() {
 
       // Mission type gate
       const mType = task.mission_type as string;
-      const lockedByType = !allowedMissionTypes.includes(mType);
+      const lockedByType = allowedMissionTypes.size > 0 ? !allowedMissionTypes.has(mType) : false;
 
       // Targeting score
+      const stateTargets = deriveStateTargets(task);
+      const targetInterests = canonicalizeInterests(task.target_interests);
+      const hasUserState = Boolean(userState);
+      const hasUserInterests = normalizedInterests.length > 0;
+      const stateMatched = stateTargets.length === 0 || (hasUserState && stateTargets.includes(userState));
+      const interestsMatched = targetInterests.length === 0 || (hasUserInterests && interestMatches(targetInterests, normalizedInterests));
+      const stateScoreMatched = stateTargets.length === 0 || (hasUserState && stateTargets.includes(userState));
+      const interestsScoreMatched = targetInterests.length === 0 || (hasUserInterests && interestMatches(targetInterests, normalizedInterests));
       const criteria = [
-        { targets: task.target_professions as string[], userVal: user.profession },
-        { targets: task.target_age_ranges as string[],  userVal: user.age_range },
-        { targets: task.target_genders as string[],     userVal: user.gender },
-        { targets: task.target_states as string[],      userVal: user.state },
+        { targets: normalizeList(task.target_professions), userVal: user.profession },
+        { targets: normalizeList(task.target_age_ranges),  userVal: user.age_range },
+        { targets: normalizeList(task.target_genders),     userVal: user.gender },
       ];
       const arrayMatches = [
-        { targets: task.target_interests as string[], userVals: (user.interests as string[]) ?? [] },
-        { targets: task.target_platforms as string[], userVals: (user.platforms as string[]) ?? [] },
+        { targets: targetInterests, matched: interestsScoreMatched },
+        { targets: stateTargets, matched: stateScoreMatched },
       ];
 
       let totalCriteria = 0;
       let matchedCriteria = 0;
       for (const { targets, userVal } of criteria) {
-        if (targets?.length > 0) { totalCriteria++; if (userVal && targets.includes(userVal)) matchedCriteria++; }
+        if (targets.length > 0) {
+          totalCriteria++;
+          if (singleValueMatches(targets, userVal)) matchedCriteria++;
+        }
       }
-      for (const { targets, userVals } of arrayMatches) {
-        if (targets?.length > 0) { totalCriteria++; if (userVals.some((v: string) => targets.includes(v))) matchedCriteria++; }
+      for (const { targets, matched } of arrayMatches) {
+        if (targets.length > 0) {
+          totalCriteria++;
+          if (matched) matchedCriteria++;
+        }
       }
 
       const matchScore = totalCriteria === 0 ? 100 : Math.round((matchedCriteria / totalCriteria) * 100);
-      const hidden = totalCriteria > 0 && matchedCriteria === 0;
+      const blockedByLocation = stateTargets.length > 0 && !stateMatched;
+      const blockedByInterests = targetInterests.length > 0 && !interestsMatched;
+      const blockedByKnownProfileMismatch = criteria.some(({ targets, userVal }) => targets.length > 0 && Boolean(userVal) && !singleValueMatches(targets, userVal));
+      const hidden = blockedByLocation || blockedByInterests || blockedByKnownProfileMismatch;
 
       return { ...task, matchScore, hidden, lockedByLevel, lockedByType, minLevel };
     });
@@ -141,6 +252,8 @@ export async function GET() {
         dailyCap,
         dailyRemaining,
         trustScore: user.trust_score ?? 100,
+        state: user.state ?? "",
+        interests: normalizedInterests,
       },
     });
   } catch (err) {

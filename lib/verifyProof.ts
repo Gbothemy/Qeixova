@@ -1,12 +1,12 @@
 /**
  * Automatic proof verification
- *
+- 
  * - url tasks:        validates URL format + domain matches expected
  * - text tasks:       validates non-empty, minimum length
  * - screenshot tasks: basic checks (is it a data URL / real URL), 
  *                     optionally calls OpenAI Vision if key is set
  * - none tasks:       always passes
- *
+- 
  * Returns { valid: boolean; reason: string }
  */
 
@@ -77,6 +77,23 @@ async function verifyScreenshot(proofValue: string): Promise<VerifyResult> {
     // If OpenAI Vision key is available, we could verify here
     // For now: accept and flag for spot-check
     return { valid: true, reason: "Screenshot received - accepted" };
+  }
+
+  if (proofValue.startsWith("data:image/")) {
+    return { valid: true, reason: "Screenshot received - accepted" };
+  }
+
+  try {
+    const parsed = JSON.parse(proofValue) as { type?: string; screenshots?: { dataUrl?: string }[] };
+    if (
+      parsed.type === "screenshots" &&
+      Array.isArray(parsed.screenshots) &&
+      parsed.screenshots.some((shot) => shot.dataUrl?.startsWith("data:image/"))
+    ) {
+      return { valid: true, reason: "Screenshot received - accepted" };
+    }
+  } catch {
+    // Not JSON; continue with URL validation.
   }
 
   // If it's a URL to an image

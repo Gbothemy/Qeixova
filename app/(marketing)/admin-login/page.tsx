@@ -6,6 +6,7 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -53,7 +54,7 @@ export default function AdminLoginPage() {
         }}
       >
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>🛡️</div>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>Admin</div>
           <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "#1A1A1A" }}>
             Admin Portal
           </h1>
@@ -86,11 +87,28 @@ export default function AdminLoginPage() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#aaa", marginBottom: 6 }}>
-              Password
-            </label>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#aaa" }}>
+                Password
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPass((value) => !value)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#1A1A1A",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: 0,
+                }}
+              >
+                {showPass ? "Hide" : "Show"}
+              </button>
+            </div>
             <input
-              type="password"
+              type={showPass ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -103,7 +121,7 @@ export default function AdminLoginPage() {
                 outline: "none",
                 boxSizing: "border-box",
               }}
-              placeholder="••••••••"
+              placeholder="Enter admin password"
             />
           </div>
 
@@ -138,7 +156,7 @@ export default function AdminLoginPage() {
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Signing in…" : "Sign In"}
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
       </div>

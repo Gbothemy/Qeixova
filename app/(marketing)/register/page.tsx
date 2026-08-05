@@ -1,15 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { INTEREST_OPTIONS } from "@/lib/interestTaxonomy";
 
 // ── Constants ────────────────────────────────────────────────────────────────
-const BUSINESS_CATEGORIES = ["Local Business","Music & Entertainment","Creator Brand","Startup / App","Church / Community","Event Promotion","E-commerce","Personal Brand","Other"];
-const BUSINESS_GOALS = ["Increase awareness","Promote content","Get reposts","Gain community visibility","Grow social pages","Get app testers","Generate referrals","Gather feedback","Promote events","Build audience engagement"];
-const CONTRIBUTOR_INTERESTS = ["Music","Fashion","Sports","Technology","Gaming","Business","Church & Community","Lifestyle","Education","Entertainment","Food & Restaurants","Local Events"];
-const PLATFORMS = ["Facebook","TikTok","Instagram","WhatsApp","X (Twitter)","Telegram","YouTube"];
-const NIGERIAN_STATES = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT (Abuja)","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
+const BUSINESS_CATEGORIES = ["Content Distribution","Music Promotion","Community Growth","App Testing & Reviews","Surveys & Feedback","Local Business","Creator Brand","Event Promotion","E-commerce","Other"];
+const BUSINESS_GOALS = ["Brand awareness","Event awareness","Product promotion","Creator content promotion","Local visibility","New song awareness","Increase members","Signup/onboarding test","Bug discovery","Product feedback","Market research"];
+const BUSINESS_CAMPAIGN_TYPES = ["Story & Status Awareness","Short-Form Video Boost","Community Distribution","Streaming Awareness","User Feedback","App Growth","Community Expansion"];
+const BUSINESS_ALERTS = ["Admin verification","Contributor proof submitted","Wallet and funding updates","Campaign approval or rejection","Unread alert details"];
+const CONTRIBUTOR_INTERESTS = [...INTEREST_OPTIONS];
+const TARGET_INTERESTS = [...INTEREST_OPTIONS];
+const PLATFORMS = ["WhatsApp Status","Facebook Story","Instagram Story","TikTok","Instagram Reels","Facebook Groups","Telegram Communities","Streaming Platform","Feedback Form","Android","iOS","Web App"];
+const NIGERIAN_STATES = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT - Abuja","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const inp: React.CSSProperties = { width:"100%", marginTop:7, padding:"13px 14px", borderRadius:11, border:"1.5px solid #1e1e1e", fontSize:14, outline:"none", color:"#F5F5F5", background:"#0d0d0d" };
@@ -46,15 +50,49 @@ function StepBar({ current, total, color="#1AEF22" }: { current:number; total:nu
   );
 }
 
+function StateSearch({ value, onChange, color="#F5A623" }: { value:string; onChange:(v:string)=>void; color?:string }) {
+  const [focused, setFocused] = useState(false);
+  const query = value.trim().toLowerCase();
+  const suggestions = query ? NIGERIAN_STATES.filter((state) => state.toLowerCase().startsWith(query)).slice(0, 8) : [];
+
+  return (
+    <div style={{ position:"relative" }}>
+      <input
+        value={value}
+        onChange={(event)=>onChange(event.target.value)}
+        onFocus={(event)=>{ setFocused(true); event.target.style.borderColor=color; }}
+        onBlur={(event)=>{ window.setTimeout(()=>setFocused(false), 120); event.target.style.borderColor="#333333"; }}
+        placeholder="Type state"
+        autoComplete="off"
+        aria-autocomplete="list"
+        style={{ width:"100%", marginTop:8, padding:"13px 14px", borderRadius:12, border:"1.5px solid #333333", fontSize:14, outline:"none", color:"#F5F5F5", background:"#1a1a1a" }}
+      />
+      {focused && suggestions.length > 0 && (
+        <div role="listbox" style={{ position:"absolute", zIndex:20, top:"calc(100% + 6px)", left:0, right:0, display:"grid", gap:4, maxHeight:220, overflowY:"auto", padding:8, border:"1px solid #272727", borderRadius:10, background:"#0d0d0d", boxShadow:"0 18px 44px rgba(0,0,0,.36)" }}>
+          {suggestions.map((state)=>(
+            <button key={state} type="button" role="option" aria-selected={value === state} onMouseDown={(event)=>{ event.preventDefault(); onChange(state); setFocused(false); }} style={{ border:0, borderRadius:8, padding:"10px 11px", background:value === state ? `${color}18` : "transparent", color:value === state ? color : "#ededed", textAlign:"left", fontWeight:800, cursor:"pointer" }}>
+              {state}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function RegisterPage() {
   const router = useRouter();
-  const [screen, setScreen] = useState<"welcome"|"type"|"signup"|"onboard"|"done">("welcome");
+  const [screen, setScreen] = useState<"welcome"|"type"|"signup"|"verify"|"onboard"|"done">("welcome");
   const [accountType, setAccountType] = useState<"business"|"contributor"|null>(null);
   const [onboardStep, setOnboardStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [verifyNotice, setVerifyNotice] = useState("");
+  const [resendingVerification, setResendingVerification] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Signup fields
   const [form, setForm] = useState({ fullName:"", email:"", password:"", confirmPassword:"", country:"Nigeria", state:"" });
@@ -62,11 +100,16 @@ export default function RegisterPage() {
   // Business onboarding
   const [bizCategory, setBizCategory] = useState("");
   const [bizDescription, setBizDescription] = useState("");
+  const [bizWebsite, setBizWebsite] = useState("");
   const [bizGoals, setBizGoals] = useState<string[]>([]);
+  const [bizCampaignTypes, setBizCampaignTypes] = useState<string[]>([]);
+  const [bizPlatforms, setBizPlatforms] = useState<string[]>([]);
+  const [bizTargetInterests, setBizTargetInterests] = useState<string[]>([]);
+  const [bizCity, setBizCity] = useState("");
+  const [bizAlerts] = useState<string[]>(BUSINESS_ALERTS);
 
   // Contributor onboarding
   const [interests, setInterests] = useState<string[]>([]);
-  const [platforms, setPlatforms] = useState<string[]>([]);
 
   const accentColor = accountType === "business" ? "#F5A623" : "#1AEF22";
 
@@ -82,7 +125,8 @@ export default function RegisterPage() {
         body: JSON.stringify({ name:form.fullName, email:form.email, password:form.password, industry:bizCategory }),
       });
       const data = await res.json();
-      if (res.ok) { setScreen("onboard"); setOnboardStep(1); }
+      if (res.ok) { setScreen(data.requiresVerification ? "verify" : "onboard"); setOnboardStep(1); }
+      else if (data.requiresVerification) { setError(data.error || "Verification email could not be sent."); setScreen("verify"); }
       else setError(data.error || "Registration failed");
     } else {
       const res = await fetch("/api/auth/register", {
@@ -90,18 +134,55 @@ export default function RegisterPage() {
         body: JSON.stringify({ fullName:form.fullName, email:form.email, password:form.password }),
       });
       const data = await res.json();
-      if (res.ok) { setScreen("onboard"); setOnboardStep(1); }
+      if (res.ok) { setScreen(data.requiresVerification ? "verify" : "onboard"); setOnboardStep(1); }
+      else if (data.requiresVerification) { setError(data.error || "Verification email could not be sent."); setScreen("verify"); }
       else setError(data.error || "Registration failed");
     }
     setLoading(false);
   };
 
+  const handleResendVerification = async () => {
+    if (!form.email || !accountType) return;
+    setResendingVerification(true);
+    setVerifyNotice("");
+    setError("");
+    const res = await fetch("/api/auth/resend-verification", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ email: form.email, accountType }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setResendingVerification(false);
+    if (res.ok) {
+      setVerifyNotice(data.verified ? "This email is already verified. You can sign in now." : "Verification email sent again. Please check your inbox and spam folder.");
+    } else {
+      setError(data.error || "Verification email could not be sent. Please try again.");
+    }
+  };
+
   const handleFinishOnboarding = async () => {
     setLoading(true);
-    if (accountType === "contributor") {
+    if (accountType === "business") {
+      await fetch("/api/business/onboarding", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          industry: bizCategory,
+          description: bizDescription,
+          website: bizWebsite,
+          campaignGoals: bizGoals,
+          campaignCategories: bizCampaignTypes,
+          preferredPlatforms: bizPlatforms,
+          targetInterests: bizTargetInterests,
+          country: form.country,
+          state: form.state,
+          city: bizCity,
+          alertPreferences: bizAlerts,
+        }),
+      });
+    } else if (accountType === "contributor") {
       await fetch("/api/onboarding", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ interests, platforms, state:form.state }),
+        body: JSON.stringify({ interests: interests.slice(0, 5), platforms: [], state:form.state }),
       });
     }
     setLoading(false);
@@ -109,19 +190,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:"#000", display:"flex", flexDirection:"column" }}>
+    <main className={`registerPage ${accountType === "business" ? "businessAccent" : "contributorAccent"}`}>
       {/* Nav — only show on non-welcome screens */}
       {screen !== "welcome" && (
-        <nav style={{ padding:"0 24px", height:60, display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:"1px solid #111" }}>
-          <Link href="/" style={{ display:"flex", alignItems:"center", gap:10, textDecoration:"none" }}>
+        <nav className="registerNav">
+          <Link href="/" className="brandLink">
             <Image src="/qeixova-icon.png" alt="Qeixova" width={30} height={30} style={{ borderRadius:8, objectFit:"contain" }} />
-            <span style={{ fontWeight:800, fontSize:15, color:"#F5F5F5" }}>Qeixova</span>
+            <span>Qeixova</span>
           </Link>
         </nav>
       )}
 
-      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"32px 20px" }}>
-        <div style={{ width:"100%", maxWidth:480 }}>
+      <div className="registerStage">
+        <div className="registerShell">
 
           {/* ── WELCOME ── */}
           {screen === "welcome" && (
@@ -481,6 +562,6 @@ export default function RegisterPage() {
 
         </div>
       </div>
-    </div>
+    </main>
   );
 }

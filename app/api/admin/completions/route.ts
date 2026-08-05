@@ -4,6 +4,13 @@ import { sql } from "@/lib/db";
 import { checkMilestones, updateTrustScore, creditQLTAndUpdateLevel } from "@/lib/missionEngine";
 import { log } from "@/lib/auditLog";
 import { sendMissionApprovedEmail, sendMissionRejectedEmail } from "@/lib/email";
+import { reviewCampaignSubmission } from "@/lib/universalCampaignEngine";
+import { createBusinessNotification } from "@/lib/businessNotifications";
+import { createContributorNotification } from "@/lib/contributorNotifications";
+
+async function ensureCompletionRewardReleaseSchema() {
+  await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS reward_released_at TIMESTAMPTZ`;
+}
 
 export async function GET(req: NextRequest) {
   if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +27,8 @@ export async function GET(req: NextRequest) {
       SELECT c.id, c.proof_value, c.completed_at, c.status, c.rejection_reason,
         c.xp_awarded, c.qlt_awarded,
         u.id AS user_id, u.full_name AS user_name, u.email, u.trust_score,
-        t.title AS task_title, t.proof_type, t.category, t.reward,
+        t.title AS task_title, t.proof_type, t.category, COALESCE(c.qlt_awarded, t.reward) AS reward,
+        t.reward AS task_reward,
         t.mission_type, t.xp_reward
       FROM completions c
       JOIN users u ON u.id = c.user_id
@@ -44,13 +52,15 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  await ensureCompletionRewardReleaseSchema();
+
   const { completionId, action, rejectionReason } = await req.json();
   if (!completionId || !["approve", "reject"].includes(action)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
   const rows = await sql`
-    SELECT c.*, t.reward, t.mission_type, t.xp_reward, t.title AS task_title,
+    SELECT c.*, t.reward, t.mission_type, t.xp_reward, t.title AS task_title, t.business_id,
            u.referred_by, u.balance AS current_balance
     FROM completions c
     JOIN tasks t ON t.id = c.task_id
@@ -63,16 +73,27 @@ export async function PATCH(req: NextRequest) {
 
   // ── APPROVE ───────────────────────────────────────────────────────────────
   if (action === "approve") {
-    if (completion.status === "approved") {
-      return NextResponse.json({ error: "Already approved" }, { status: 409 });
-    }
-    if (completion.status !== "pending") {
+    const claimed = await sql`
+      UPDATE completions
+      SET status = 'approved',
+          rejection_reason = NULL,
+          reward_released_at = NOW()
+      WHERE id = ${completionId}
+        AND status = 'pending'
+        AND reward_released_at IS NULL
+      RETURNING id
+    `;
+    if (claimed.length === 0) {
+      const latest = await sql`SELECT status, reward_released_at FROM completions WHERE id = ${completionId}`;
+      if (latest[0]?.status === "approved" || latest[0]?.reward_released_at) {
+        return NextResponse.json({ error: "Already approved and reward released" }, { status: 409 });
+      }
       return NextResponse.json({ error: "Only pending submissions can be approved" }, { status: 409 });
     }
 
-    await sql`UPDATE completions SET status = 'approved', rejection_reason = NULL WHERE id = ${completionId}`;
+    await reviewCampaignSubmission({ completionId: Number(completionId), action: "approve" });
 
-    const reward = Number(completion.reward);
+    const reward = Number(completion.qlt_awarded ?? completion.reward);
       // 1. Credit QLT balance + daily_earned
       await sql`
         UPDATE users
@@ -120,8 +141,41 @@ export async function PATCH(req: NextRequest) {
         amount: reward, label: "Mission Approved: " + completion.task_title,
       }, "completion", completionId);
 
+      await createContributorNotification({
+        userId: Number(completion.user_id),
+        type: "submission_approved",
+        title: "Submission approved",
+        message: `Your submission for ${completion.task_title} was approved.`,
+        href: "/wallet",
+        dedupeKey: `submission:${completionId}:approved`,
+        metadata: { completionId, taskId: completion.task_id, reward },
+      });
+
+      await createContributorNotification({
+        userId: Number(completion.user_id),
+        type: "reward_credited",
+        title: "QLT credited",
+        message: `${reward.toLocaleString()} QLT has been added to your contributor wallet.`,
+        href: "/wallet",
+        dedupeKey: `reward:${completionId}`,
+        metadata: { completionId, taskId: completion.task_id, reward },
+      });
+
       if (leveledUp) {
         await log(completion.user_id, "level_up", { newLevel, levelName, badgeEmoji }, "user", completion.user_id);
+      }
+
+      if (completion.business_id) {
+        await createBusinessNotification({
+          businessId: Number(completion.business_id),
+          type: "participation",
+          tone: "green",
+          title: "Contributor proof approved",
+          body: `A proof submission for ${completion.task_title} was approved and ${reward.toLocaleString()} QLT was released.`,
+          status: "Approved",
+          href: `/business/tasks/${completion.task_id}`,
+          metadata: { completionId, taskId: completion.task_id, contributorId: completion.user_id, reward },
+        });
       }
 
       // 8. Email notification (non-blocking)
@@ -143,18 +197,26 @@ export async function PATCH(req: NextRequest) {
 
   // ── REJECT ────────────────────────────────────────────────────────────────
   if (action === "reject") {
-    if (completion.status !== "pending") {
+    const reason = rejectionReason?.trim() || "Mission not completed correctly";
+    const claimed = await sql`
+      UPDATE completions
+      SET status = 'rejected', rejection_reason = ${reason}
+      WHERE id = ${completionId}
+        AND status = 'pending'
+        AND reward_released_at IS NULL
+      RETURNING id
+    `;
+    if (claimed.length === 0) {
       return NextResponse.json({ error: "Only pending submissions can be rejected" }, { status: 409 });
     }
 
-    const reason = rejectionReason?.trim() || "Mission not completed correctly";
-    await sql`UPDATE completions SET status = 'rejected', rejection_reason = ${reason} WHERE id = ${completionId}`;
+    await reviewCampaignSubmission({ completionId: Number(completionId), action: "reject", reviewNote: reason });
     await sql`UPDATE users SET rejected_count = rejected_count + 1 WHERE id = ${completion.user_id}`;
     await sql`
       UPDATE tasks
-      SET budget_used = GREATEST(0, budget_used - ${Number(completion.reward)}),
+      SET budget_used = GREATEST(0, budget_used - ${Number(completion.qlt_awarded ?? completion.reward)}),
           is_active = CASE
-            WHEN COALESCE(status, 'active') = 'active' THEN true
+            WHEN COALESCE(task_status, 'active') = 'active' THEN true
             ELSE is_active
           END
       WHERE id = ${completion.task_id}
@@ -172,6 +234,29 @@ export async function PATCH(req: NextRequest) {
     await log(completion.user_id, "mission_rejected", {
       completionId, reason, trustScore,
     }, "completion", completionId);
+
+    await createContributorNotification({
+      userId: Number(completion.user_id),
+      type: "submission_rejected",
+      title: "Submission rejected",
+      message: `Your submission for ${completion.task_title} was rejected. Reason: ${reason}`,
+      href: "/tasks",
+      dedupeKey: `submission:${completionId}:rejected`,
+      metadata: { completionId, taskId: completion.task_id, reason },
+    });
+
+    if (completion.business_id) {
+      await createBusinessNotification({
+        businessId: Number(completion.business_id),
+        type: "participation",
+        tone: "gold",
+        title: "Contributor proof rejected",
+        body: `A proof submission for ${completion.task_title} was rejected. Reason: ${reason}.`,
+        status: "Rejected",
+        href: `/business/tasks/${completion.task_id}`,
+        metadata: { completionId, taskId: completion.task_id, contributorId: completion.user_id, reason },
+      });
+    }
 
     // Email notification (non-blocking)
     const userEmail = await sql`SELECT email, full_name FROM users WHERE id = ${completion.user_id}`;
