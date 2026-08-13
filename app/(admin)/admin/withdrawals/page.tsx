@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { formatNairaFromQlt } from "@/lib/currency";
 
 interface Withdrawal {
   id: number;
@@ -12,8 +13,8 @@ interface Withdrawal {
 
 type StatusFilter = "all" | "pending" | "processing" | "completed" | "failed";
 
-const TH: React.CSSProperties = { padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#ccc", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid #eee", whiteSpace: "nowrap" };
-const TD: React.CSSProperties = { padding: "14px 16px", fontSize: 14, color: "#999", borderBottom: "1px solid #f5f5f5", verticalAlign: "middle" };
+const TH: React.CSSProperties = { padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" };
+const TD: React.CSSProperties = { padding: "14px 16px", fontSize: 14, color: "#374151", borderBottom: "1px solid #eef0f3", verticalAlign: "middle" };
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   pending:    { bg: "#fff8e1", color: "#e67e22" },
   processing: { bg: "#e3f2fd", color: "#1565c0" },
@@ -22,7 +23,7 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 function QLTToNaira(QLT: number) {
-  return "₦" + (QLT / 100).toLocaleString("en-NG", { minimumFractionDigits: 2 });
+  return "₦" + formatNairaFromQlt(QLT, { minimumFractionDigits: 2 });
 }
 
 export default function WithdrawalsPage() {
@@ -30,6 +31,7 @@ export default function WithdrawalsPage() {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const fetchWithdrawals = useCallback(async () => {
     setLoading(true);
@@ -37,7 +39,11 @@ export default function WithdrawalsPage() {
       const params = new URLSearchParams(filter !== "all" ? { status: filter } : {});
       const res = await fetch(`/api/admin/withdrawals?${params}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unable to load withdrawals");
       setWithdrawals(data.withdrawals ?? []);
+    } catch (error) {
+      setWithdrawals([]);
+      setNotice({ type: "error", message: error instanceof Error ? error.message : "Unable to load withdrawals" });
     } finally {
       setLoading(false);
     }
@@ -47,30 +53,44 @@ export default function WithdrawalsPage() {
 
   async function handleAction(id: number, action: "approve" | "processing" | "reject") {
     setActionLoading(id);
+    setNotice(null);
     try {
-      await fetch("/api/admin/withdrawals", {
+      const res = await fetch("/api/admin/withdrawals", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, action }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Withdrawal action failed");
+      const label = action === "approve" ? "marked paid" : action === "processing" ? "moved to processing" : "rejected";
+      setNotice({ type: "success", message: `Withdrawal ${label} successfully.` });
       fetchWithdrawals();
+    } catch (error) {
+      setNotice({ type: "error", message: error instanceof Error ? error.message : "Withdrawal action failed" });
     } finally {
       setActionLoading(null);
     }
   }
 
   return (
-    <div>
+    <div className="adminPage">
       <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 700, color: "#1A1A1A" }}>Withdrawals</h1>
-      <p style={{ margin: "0 0 24px", color: "#ccc", fontSize: 14 }}>Manage withdrawal requests</p>
+      <p style={{ margin: "0 0 24px", color: "#5f6876", fontSize: 14 }}>Manage withdrawal requests</p>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {(["all", "pending", "processing", "completed", "failed"] as StatusFilter[]).map((f) => (
-          <button key={f} onClick={() => setFilter(f)} style={{ padding: "8px 18px", borderRadius: 20, border: "1.5px solid", borderColor: filter === f ? "#1AEF22" : "#e0e0e0", background: filter === f ? "#1AEF22" : "#fff", color: filter === f ? "#fff" : "#ccc", cursor: "pointer", fontSize: 13, fontWeight: 500, textTransform: "capitalize" }}>
+          <button key={f} onClick={() => setFilter(f)} style={{ padding: "8px 18px", borderRadius: 20, border: "1.5px solid", borderColor: filter === f ? "#1AEF22" : "#d8dde5", background: filter === f ? "#1AEF22" : "#fff", color: filter === f ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 13, fontWeight: 700, textTransform: "capitalize" }}>
             {f}
           </button>
         ))}
       </div>
+
+      {notice && (
+        <div className={`adminResult${notice.type === "error" ? " error" : ""}`}>
+          <span>{notice.message}</span>
+          <button type="button" onClick={() => setNotice(null)}>x</button>
+        </div>
+      )}
 
       <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
@@ -88,11 +108,11 @@ export default function WithdrawalsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} style={{ ...TD, textAlign: "center", color: "#aaa", padding: 40 }}>Loading...</td></tr>
+              <tr><td colSpan={8} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>Loading...</td></tr>
             ) : withdrawals.length === 0 ? (
-              <tr><td colSpan={8} style={{ ...TD, textAlign: "center", color: "#aaa", padding: 40 }}>No withdrawals found</td></tr>
+              <tr><td colSpan={8} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>No withdrawals found</td></tr>
             ) : withdrawals.map((w) => {
-              const sc = STATUS_COLORS[w.status] ?? { bg: "#f5f5f5", color: "#999" };
+              const sc = STATUS_COLORS[w.status] ?? { bg: "#f3f4f6", color: "#4b5563" };
               return (
                 <tr key={w.id}>
                   <td style={TD}>{w.id}</td>
@@ -108,15 +128,15 @@ export default function WithdrawalsPage() {
                         return (
                           <div>
                             <div style={{ fontWeight: 600, fontSize: 13, color: "#1A1A1A" }}>{parts[0]}</div>
-                            <div style={{ fontSize: 12, color: "#bbb", marginTop: 2 }}>{parts[1]}</div>
-                            <div style={{ fontSize: 12, color: "#ccc", marginTop: 1 }}>{parts[2]}</div>
+                            <div style={{ fontSize: 12, color: "#5f6876", marginTop: 2 }}>{parts[1]}</div>
+                            <div style={{ fontSize: 12, color: "#5f6876", marginTop: 1 }}>{parts[2]}</div>
                           </div>
                         );
                       }
-                      return <span style={{ fontSize: 13, color: "#bbb" }}>{info}</span>;
+                      return <span style={{ fontSize: 13, color: "#5f6876" }}>{info}</span>;
                     })()}
                   </td>
-                  <td style={{ ...TD, color: "#ccc" }}>{new Date(w.created_at).toLocaleDateString()}</td>
+                  <td style={{ ...TD, color: "#5f6876" }}>{new Date(w.created_at).toLocaleDateString()}</td>
                   <td style={TD}>
                     <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: sc.bg, color: sc.color, textTransform: "capitalize" }}>
                       {w.status}
@@ -148,7 +168,7 @@ export default function WithdrawalsPage() {
                       </div>
                     )}
                     {(w.status === "completed" || w.status === "failed") && (
-                      <span style={{ color: "#aaa", fontSize: 12 }}>—</span>
+                      <span style={{ color: "#667085", fontSize: 12 }}>—</span>
                     )}
                   </td>
                 </tr>
@@ -160,4 +180,3 @@ export default function WithdrawalsPage() {
     </div>
   );
 }
-

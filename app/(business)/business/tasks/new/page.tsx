@@ -102,6 +102,7 @@ const QLT_PER_NAIRA = 10;
 const MIN_REWARD_NAIRA = 30;
 const COMMISSION_RATE = 0.2;
 const VERIFICATION_RATE = 0.1;
+const VISIBILITY_ACTIONS = ["Keep visible for 12 hours", "Keep visible for 24 hours"] as const;
 const missionCategories: MissionCategory[] = [
   {
     id: "content",
@@ -113,7 +114,7 @@ const missionCategories: MissionCategory[] = [
     contentLabel: "Content or campaign link",
     contentPlaceholder: "Paste a flyer, post, video, or landing page link",
     contentTypes: ["Flyer", "Social post", "Announcement", "Promo video", "Offer"],
-    defaultActions: ["Post the campaign content", "Keep it visible for the required duration", "Submit screenshot proof"],
+    defaultActions: ["Post the campaign content", "Keep visible for 12 hours", "Submit screenshot proof"],
     defaultAudience: ["Local Promoters", "Students", "Community Influencers", "General Contributors"],
   },
   {
@@ -189,7 +190,7 @@ const bundles: CampaignBundle[] = [
     description: "WhatsApp, Instagram, Facebook, Telegram, TikTok, and Snapchat status visibility.",
     bestFor: "flyers, event visibility, local awareness, creator awareness",
     platforms: ["WhatsApp", "Instagram", "Facebook", "Telegram", "TikTok", "Snapchat"],
-    actionHint: ["Post to story/status", "Keep visible for 24 hours", "Submit screenshot proof"],
+    actionHint: ["Keep visible for 12 hours", "Submit screenshot proof"],
   },
   {
     id: "short-video",
@@ -587,7 +588,46 @@ function createEmptyTargetLocation(): TargetLocation {
 }
 
 function buildActionsForPricing(baseActions: string[], options: PricingOption[]) {
-  return [...new Set([...baseActions, ...options.map((option) => option.actionHint)])];
+  if (options.length === 0) return baseActions;
+
+  const platformActions = options.map((option) => option.actionHint);
+  const supportingActions = baseActions.filter((action) => (
+    !/^post (?:the )?campaign content$/i.test(action)
+    && !/keep .*visible/i.test(action)
+    && !/^submit\b/i.test(action)
+  ));
+  const visibilityAction = baseActions.find((action) => /keep .*visible/i.test(action))
+    ?? (options.some((option) => option.bundleId === "story-status") ? "Keep visible for 12 hours" : undefined);
+  const proofAction = baseActions.find((action) => /^submit\b/i.test(action));
+
+  return [...new Set([
+    ...supportingActions,
+    ...platformActions,
+    visibilityAction,
+    proofAction,
+  ].filter((action): action is string => Boolean(action)))];
+}
+
+function normalizeCampaignActions(actions: string[]) {
+  return [...new Set(actions
+    .filter((action) => !/^post to story\/status$/i.test(action.trim()))
+    .map((action) => /keep (?:it )?visible for the required duration/i.test(action)
+      ? "Keep visible for 12 hours"
+      : action))];
+}
+
+function getActionChoices(actions: string[]) {
+  if (!actions.some((action) => /keep .*visible/i.test(action))) return actions;
+
+  const choices: string[] = [];
+  for (const action of actions) {
+    if (/keep .*visible/i.test(action)) {
+      if (!choices.some((choice) => /keep .*visible/i.test(choice))) choices.push(...VISIBILITY_ACTIONS);
+      continue;
+    }
+    choices.push(action);
+  }
+  return choices;
 }
 
 function cleanActionForContributor(action: string) {
@@ -663,7 +703,7 @@ function getBundleDisplay(bundle: CampaignBundle, categoryId: string) {
       name: "Music Status Promotion",
       description: "Contributors post your song link, cover art, or release promo on WhatsApp, Instagram, Facebook, Telegram, TikTok, and Snapchat.",
       platforms: ["WhatsApp", "Instagram", "Facebook", "Telegram", "TikTok", "Snapchat"],
-      actionHint: ["Post the approved music promo asset", "Keep it visible for the required duration", "Submit screenshot proof of the promotion"],
+      actionHint: ["Post the approved music promo asset", "Keep visible for 12 hours", "Submit screenshot proof of the promotion"],
     };
   }
 
@@ -1036,7 +1076,7 @@ export default function NewCampaignPage() {
     setAssetMimeType(draft.assetMimeType || "");
     setBundleId(draft.bundleId || "");
     setSelectedPricingIds(Array.isArray(draft.selectedPricingIds) ? draft.selectedPricingIds : []);
-    setActions(Array.isArray(draft.actions) && draft.actions.length > 0 ? draft.actions : missionCategories[0].defaultActions);
+    setActions(Array.isArray(draft.actions) && draft.actions.length > 0 ? normalizeCampaignActions(draft.actions) : missionCategories[0].defaultActions);
     setAppContributorInstructions(draft.appContributorInstructions || "");
     setAudience(Array.isArray(draft.audience) ? draft.audience : missionCategories[0].defaultAudience.slice(0, 2));
     setSelectedInterests(Array.isArray(draft.selectedInterests) ? draft.selectedInterests : categoryInterestDefaults[missionCategories[0].id]);
@@ -1227,7 +1267,12 @@ export default function NewCampaignPage() {
   };
 
   const toggleAction = (action: string) => {
-    setActions((current) => current.includes(action) ? current.filter((item) => item !== action) : [...current, action]);
+    setActions((current) => {
+      if (VISIBILITY_ACTIONS.includes(action as typeof VISIBILITY_ACTIONS[number])) {
+        return [...current.filter((item) => !VISIBILITY_ACTIONS.includes(item as typeof VISIBILITY_ACTIONS[number])), action];
+      }
+      return current.includes(action) ? current.filter((item) => item !== action) : [...current, action];
+    });
   };
 
   const toggleInterest = (interest: string) => {
@@ -1779,9 +1824,14 @@ export default function NewCampaignPage() {
                   </div>
                 ) : (
                   <div className="checkGrid">
-                    {[...new Set([...category.defaultActions, ...(bundle?.actionHint ?? []), ...selectedPricingOptions.map((option) => option.actionHint)])].map((item) => (
+                    {getActionChoices(actions).map((item) => (
                       <label key={item} className={actions.includes(item) ? "checkItem active" : "checkItem"}>
-                        <input type="checkbox" checked={actions.includes(item)} onChange={() => toggleAction(item)} />
+                        <input
+                          type={VISIBILITY_ACTIONS.includes(item as typeof VISIBILITY_ACTIONS[number]) ? "radio" : "checkbox"}
+                          name={VISIBILITY_ACTIONS.includes(item as typeof VISIBILITY_ACTIONS[number]) ? "visibility-duration" : undefined}
+                          checked={actions.includes(item)}
+                          onChange={() => toggleAction(item)}
+                        />
                         <span>{item}</span>
                       </label>
                     ))}
@@ -2747,6 +2797,39 @@ const pageStyles = `
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+  }
+
+  .checkGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 720px);
+    counter-reset: campaign-action;
+  }
+
+  .checkGrid .checkItem {
+    counter-increment: campaign-action;
+    display: grid;
+    grid-template-columns: 30px 18px minmax(0, 1fr);
+    width: 100%;
+    min-height: 58px;
+    box-sizing: border-box;
+  }
+
+  .checkGrid .checkItem::before {
+    content: counter(campaign-action);
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    background: #191d1b;
+    color: #f5a623;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .checkGrid .checkItem.active::before {
+    background: #f5a623;
+    color: #151006;
   }
 
   .pill {

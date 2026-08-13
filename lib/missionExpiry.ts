@@ -39,24 +39,27 @@ async function tableExists(tableName: string) {
 
 export async function activateMissionExpiryByTask(taskId: number) {
   await ensureMissionExpiryColumns();
-  const rows = await sql`SELECT id, duration FROM tasks WHERE id = ${taskId} LIMIT 1`;
+  const rows = await sql`SELECT id, duration, approved_at, expires_at FROM tasks WHERE id = ${taskId} LIMIT 1`;
   if (rows.length === 0) return null;
 
-  const startedAt = new Date();
-  const expiresAt = calculateMissionExpiry(rows[0].duration, startedAt);
+  const hasExistingExpiry = Boolean(rows[0].expires_at);
+  const startedAt = hasExistingExpiry ? new Date(rows[0].approved_at || Date.now()) : new Date();
+  const expiresAt = hasExistingExpiry ? new Date(rows[0].expires_at) : calculateMissionExpiry(rows[0].duration, startedAt);
 
-  await sql`
-    UPDATE tasks
-    SET approved_at = ${startedAt.toISOString()}::timestamptz,
-        expires_at = ${expiresAt.toISOString()}::timestamptz,
-        campaign_metadata = COALESCE(campaign_metadata, '{}'::jsonb)
-          || ${JSON.stringify({
-            approvedAt: startedAt.toISOString(),
-            expiresAt: expiresAt.toISOString(),
-            durationSource: rows[0].duration,
-          })}::jsonb
-    WHERE id = ${taskId}
-  `;
+  if (!hasExistingExpiry) {
+    await sql`
+      UPDATE tasks
+      SET approved_at = ${startedAt.toISOString()}::timestamptz,
+          expires_at = ${expiresAt.toISOString()}::timestamptz,
+          campaign_metadata = COALESCE(campaign_metadata, '{}'::jsonb)
+            || ${JSON.stringify({
+              approvedAt: startedAt.toISOString(),
+              expiresAt: expiresAt.toISOString(),
+              durationSource: rows[0].duration,
+            })}::jsonb
+      WHERE id = ${taskId}
+    `;
+  }
 
   const hasCampaigns = await tableExists("campaigns");
   const hasCampaignTimers = await tableExists("campaign_timers");

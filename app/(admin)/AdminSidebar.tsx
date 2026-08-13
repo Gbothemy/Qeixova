@@ -5,13 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", icon: "OV" },
-  { href: "/admin/users", label: "Users", icon: "US" },
-  { href: "/admin/tasks", label: "Missions", icon: "MS" },
-  { href: "/admin/withdrawals", label: "Withdrawals", icon: "WD" },
-  { href: "/admin/completions", label: "Submissions", icon: "RV" },
-  { href: "/admin/logs", label: "Audit Logs", icon: "LG" },
-  { href: "/admin/config", label: "Economy", icon: "EC" },
+  { href: "/admin", label: "Dashboard", description: "Operations overview", icon: "OV" },
+  { href: "/admin/users", label: "Users", description: "Contributor accounts", icon: "US" },
+  { href: "/admin/businesses", label: "Businesses", description: "Registered business accounts", icon: "BZ" },
+  { href: "/admin/campaigns", label: "Campaign Review", description: "Approve or reject business campaigns", icon: "AP" },
+  { href: "/admin/tasks", label: "Missions", description: "Campaign inventory", icon: "MS" },
+  { href: "/admin/completions", label: "Mission Proof", description: "Approve completed user missions", icon: "RV" },
+  { href: "/admin/withdrawals", label: "Withdrawals", description: "Payout operations", icon: "WD" },
+  { href: "/admin/logs", label: "Audit Logs", description: "System activity", icon: "LG" },
+  { href: "/admin/config", label: "Economy", description: "Reward controls", icon: "EC" },
 ];
 
 function SidebarContent({
@@ -25,70 +27,36 @@ function SidebarContent({
 }) {
   return (
     <>
-      <div style={{ padding: "28px 24px 22px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ color: "#F8FAFC", fontWeight: 800, fontSize: 20 }}>Qeixova</div>
-            <div style={{ color: "#F5A623", fontSize: 11, marginTop: 2, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase" }}>Admin Portal</div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 22, cursor: "pointer", display: "none" }}
-            className="admin-close-btn"
-            aria-label="Close admin menu"
-          >
-            x
-          </button>
+      <header className="adminBrand">
+        <span className="adminBrandMark" aria-hidden="true">Q</span>
+        <div>
+          <strong>Qeixova</strong>
+          <small>Admin Control</small>
         </div>
-      </div>
+        <button className="admin-close-btn" type="button" onClick={onClose} aria-label="Close admin menu">×</button>
+      </header>
 
-      <nav style={{ flex: 1, padding: "18px 12px" }} aria-label="Admin navigation">
+      <p className="adminNavLabel">Operate</p>
+      <nav className="adminNav" aria-label="Admin navigation">
         {NAV.map((item) => {
           const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "11px 12px",
-                borderRadius: 12,
-                color: active ? "#F8FAFC" : "rgba(255,255,255,0.66)",
-                background: active ? "rgba(245,166,35,0.14)" : "transparent",
-                border: active ? "1px solid rgba(245,166,35,0.2)" : "1px solid transparent",
-                textDecoration: "none", fontSize: 14,
-                fontWeight: active ? 800 : 600,
-                transition: "all 0.15s",
-                marginBottom: 4,
-              }}
-            >
-              <span style={{
-                width: 32, height: 32, borderRadius: 10, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 900, color: active ? "#0f172a" : "rgba(255,255,255,0.52)",
-                background: active ? "#F5A623" : "rgba(255,255,255,0.06)",
-                flexShrink: 0,
-              }}>{item.icon}</span>
-              {item.label}
+            <Link key={item.href} href={item.href} onClick={onClose} className={active ? "active" : ""}>
+              <span className="adminNavIcon" aria-hidden="true">{item.icon}</span>
+              <span>
+                <strong>{item.label}</strong>
+                <small>{item.description}</small>
+              </span>
             </Link>
           );
         })}
       </nav>
 
-      <div style={{ padding: "16px 18px 22px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        <button
-          onClick={onLogout}
-          style={{
-            width: "100%", padding: "11px 14px",
-            background: "rgba(255,255,255,0.07)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 12, color: "rgba(255,255,255,0.72)",
-            cursor: "pointer", fontSize: 13, textAlign: "left", fontWeight: 700,
-          }}
-        >
-          Log out
-        </button>
-      </div>
+      <footer className="adminAccount">
+        <span>Signed in as</span>
+        <strong>Platform admin</strong>
+        <button type="button" onClick={onLogout}>Log out</button>
+      </footer>
     </>
   );
 }
@@ -101,27 +69,18 @@ export default function AdminSidebar() {
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin-login");
+    router.refresh();
   }
 
   return (
     <>
       <div className="admin-topbar">
-        <button
-          onClick={() => setOpen(true)}
-          style={{
-            background: "none", border: "none", color: "#F5A623",
-            fontSize: 24, cursor: "pointer", lineHeight: 1,
-          }}
-          aria-label="Open admin menu"
-        >
-          Menu
-        </button>
-        <span style={{ color: "#F5A623", fontWeight: 700, fontSize: 16 }}>Qeixova Admin</span>
+        <button type="button" onClick={() => setOpen(true)} aria-label="Open admin menu">☰</button>
+        <span className="adminBrandMark" aria-hidden="true">Q</span>
+        <strong>Qeixova Admin</strong>
       </div>
-
-      {open && <div className="admin-overlay" onClick={() => setOpen(false)} />}
-
-      <aside className={`admin-sidebar${open ? " open" : ""}`} style={{ display: "flex", flexDirection: "column" }}>
+      {open && <button className="admin-overlay" type="button" onClick={() => setOpen(false)} aria-label="Close admin menu" />}
+      <aside className={`admin-sidebar${open ? " open" : ""}`}>
         <SidebarContent pathname={pathname} onClose={() => setOpen(false)} onLogout={handleLogout} />
       </aside>
     </>

@@ -1106,7 +1106,7 @@ export async function transitionCampaignStatus(input: { campaignId: number; next
         is_active = ${isLive}
     WHERE id = ${rows[0].task_id}
   `;
-  if (isLive) {
+  if (isLive && current !== "paused") {
     await activateMissionExpiryByTask(Number(rows[0].task_id));
   }
   return { ok: true, status: input.nextStatus };

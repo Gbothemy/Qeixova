@@ -22,8 +22,9 @@ export async function GET(req: NextRequest) {
       COALESCE(c.title, t.title) AS title,
       COALESCE(NULLIF(c.description, ''), t.instructions, '') AS description,
       COALESCE(c.status, t.campaign_status, t.task_status, 'pending_review') AS status,
-      COALESCE(c.start_date, NULL) AS start_date,
-      COALESCE(c.end_date, NULL) AS end_date,
+      COALESCE(c.start_date, t.approved_at, NULL) AS start_date,
+      COALESCE(c.end_date, t.expires_at, NULL) AS end_date,
+      t.duration,
       COALESCE(c.total_slots, t.target_completion_count, 0) AS total_slots,
       COALESCE(c.filled_slots, 0) AS filled_slots,
       COALESCE(c.completed_slots, 0) AS completed_slots,
@@ -86,11 +87,11 @@ export async function PATCH(req: NextRequest) {
   }
 
   if ((!Number.isFinite(campaignId) || campaignId <= 0) && taskId > 0) {
-    const rows = await sql`SELECT business_id, title FROM tasks WHERE id = ${taskId}`;
+    const rows = await sql`SELECT business_id, title, approved_at, expires_at FROM tasks WHERE id = ${taskId}`;
     if (rows.length === 0) return NextResponse.json({ error: "Task not found" }, { status: 404 });
     if (action === "approve" || action === "launch" || action === "resume") {
       await sql`UPDATE tasks SET is_active = TRUE, task_status = 'active', campaign_status = 'live' WHERE id = ${taskId}`;
-      await activateMissionExpiryByTask(taskId);
+      if (action !== "resume" || !rows[0].expires_at) await activateMissionExpiryByTask(taskId);
       if (rows[0]?.business_id) {
         await createBusinessNotification({
           businessId: Number(rows[0].business_id),

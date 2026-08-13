@@ -97,7 +97,14 @@ export default function ContributorNotifications() {
               <strong>Notifications</strong>
               <span>{unread > 0 ? `${unread} unread update${unread === 1 ? "" : "s"}` : "You are all caught up"}</span>
             </div>
-            <Link className="notifViewAll" href="/notifications" onClick={() => setOpen(false)}>View all</Link>
+            <Link
+              className="notifViewAll"
+              href="/notifications"
+              onClick={() => setOpen(false)}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#050505", background: "#1AEF22", borderRadius: 999, padding: "7px 11px", fontSize: 12, fontWeight: 800, lineHeight: 1, textDecoration: "none", whiteSpace: "nowrap" }}
+            >
+              View all
+            </Link>
           </header>
 
           <div className="notifList">
@@ -156,6 +163,7 @@ export default function ContributorNotifications() {
         .notifWrap {
           position: relative;
           flex-shrink: 0;
+          z-index: 200;
         }
         .notifButton {
           width: 44px;
@@ -198,9 +206,10 @@ export default function ContributorNotifications() {
           border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: 20px;
           box-shadow: 0 26px 80px rgba(0, 0, 0, 0.45);
-          z-index: 50;
+          z-index: 210;
           overflow: hidden;
           backdrop-filter: blur(18px);
+          isolation: isolate;
         }
         .notifHead {
           display: flex;
@@ -222,8 +231,11 @@ export default function ContributorNotifications() {
           margin-top: 3px;
         }
         .notifHead .notifViewAll {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           color: #050505;
-          background: #1AEF22;
+          background: #1AEF22 !important;
           font-size: 12px;
           font-weight: 800;
           text-decoration: none;
@@ -234,9 +246,12 @@ export default function ContributorNotifications() {
           box-shadow: 0 8px 20px rgba(26, 239, 34, 0.16);
         }
         .notifList {
-          max-height: 405px;
+          max-height: min(405px, calc(100dvh - 170px));
           overflow-y: auto;
+          overscroll-behavior: contain;
           padding: 8px;
+          scrollbar-width: thin;
+          scrollbar-color: #F5A623 transparent;
         }
         .notifItem {
           width: 100%;
@@ -358,10 +373,31 @@ export default function ContributorNotifications() {
         @media (max-width: 520px) {
           .notifPanel {
             position: fixed;
-            right: 14px;
-            left: 14px;
-            top: 86px;
+            right: max(12px, env(safe-area-inset-right));
+            left: max(12px, env(safe-area-inset-left));
+            top: max(72px, calc(env(safe-area-inset-top) + 58px));
             width: auto;
+            max-height: calc(100dvh - 150px - env(safe-area-inset-bottom));
+            border-radius: 16px;
+          }
+          .notifHead {
+            align-items: center;
+            padding: 14px;
+          }
+          .notifList {
+            max-height: calc(100dvh - 225px - env(safe-area-inset-bottom));
+          }
+        }
+        @media (max-width: 340px) {
+          .notifHead {
+            gap: 8px;
+          }
+          .notifHead .notifViewAll {
+            padding-inline: 9px;
+          }
+          .notifItem {
+            padding-inline: 9px;
+            gap: 8px;
           }
         }
       `}</style>

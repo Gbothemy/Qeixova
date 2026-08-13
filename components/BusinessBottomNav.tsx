@@ -49,11 +49,11 @@ export default function BusinessBottomNav() {
   }, []);
 
   return (
-    <nav className="businessMobileNav bottom-nav" aria-label="Business mobile navigation">
+    <nav className="businessMobileNav bottom-nav" aria-label="Business navigation">
       {nav.map((item) => {
         const active = path === item.href || (item.href === "/business/tasks" && path.startsWith("/business/tasks/") && path !== "/business/tasks/new");
         return (
-          <Link key={item.href} href={item.href} className={active ? "active" : ""}>
+          <Link key={item.href} href={item.href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
             <span className="businessMobileIcon">
               <Image src={item.icon} alt="" width={19} height={19} />
             </span>

@@ -50,7 +50,10 @@ const faqs = [
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [activeStep, setActiveStep] = useState(0);
+  const [isCarouselInteracting, setIsCarouselInteracting] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const carouselScrollTimerRef = useRef<number | null>(null);
 
   // Scroll reveal
   useEffect(() => {
@@ -103,14 +106,37 @@ export default function LandingPage() {
   // Automatically cycle through the process steps unless reduced motion is preferred.
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reducedMotion.matches) return;
+    if (reducedMotion.matches || isCarouselInteracting) return;
 
     const intervalId = window.setInterval(() => {
       setActiveStep(current => (current + 1) % steps.length);
     }, 4000);
 
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [isCarouselInteracting]);
+
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+
+    carousel.scrollTo({
+      left: activeStep * carousel.clientWidth,
+      behavior: "smooth",
+    });
+  }, [activeStep]);
+
+  const syncActiveStep = () => {
+    if (carouselScrollTimerRef.current !== null) {
+      window.clearTimeout(carouselScrollTimerRef.current);
+    }
+
+    carouselScrollTimerRef.current = window.setTimeout(() => {
+      const carousel = carouselRef.current;
+      if (!carousel || carousel.clientWidth === 0) return;
+      const nextStep = Math.round(carousel.scrollLeft / carousel.clientWidth);
+      setActiveStep(Math.max(0, Math.min(steps.length - 1, nextStep)));
+    }, 120);
+  };
 
   return (
     <div style={{ background: "#000000", color: "#F5F5F5", overflowX: "hidden" }}>
@@ -191,12 +217,37 @@ export default function LandingPage() {
           </div>
 
           {/* Carousel — all screen sizes */}
-          <div style={{ position: "relative" }}>
-            {/* Single card display */}
-            <div style={{ overflow: "hidden", borderRadius: 20 }}>
-              <div style={{ display: "flex", transition: "transform 0.4s cubic-bezier(0.4,0,0.2,1)", transform: `translateX(-${activeStep * 100}%)` }}>
+          <div
+            style={{ position: "relative" }}
+            onMouseEnter={() => setIsCarouselInteracting(true)}
+            onMouseLeave={() => setIsCarouselInteracting(false)}
+            onFocusCapture={() => setIsCarouselInteracting(true)}
+            onBlurCapture={event => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setIsCarouselInteracting(false);
+            }}
+            onTouchStart={() => setIsCarouselInteracting(true)}
+            onTouchEnd={() => setIsCarouselInteracting(false)}
+          >
+            {/* Swipe, trackpad, or keyboard-scrollable card display */}
+            <div
+              ref={carouselRef}
+              onScroll={syncActiveStep}
+              aria-label="How Qeixova works"
+              tabIndex={0}
+              style={{
+                display: "flex",
+                overflowX: "auto",
+                overflowY: "hidden",
+                borderRadius: 20,
+                scrollSnapType: "x mandatory",
+                scrollBehavior: "smooth",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "thin",
+                scrollbarColor: "#1AEF22 #111",
+              }}
+            >
                 {steps.map(s => (
-                  <div key={s.num} style={{ minWidth: "100%", textAlign: "center", background: "linear-gradient(135deg, #0a1a0a, #0d1f0d)", borderRadius: 20, padding: "48px 40px", border: "1px solid rgba(26,239,34,0.15)", boxSizing: "border-box", boxShadow: "0 0 40px rgba(26,239,34,0.05)" }}>
+                  <div key={s.num} style={{ minWidth: "100%", scrollSnapAlign: "start", scrollSnapStop: "always", textAlign: "center", background: "linear-gradient(135deg, #0a1a0a, #0d1f0d)", borderRadius: 20, padding: "48px 40px", border: "1px solid rgba(26,239,34,0.15)", boxSizing: "border-box", boxShadow: "0 0 40px rgba(26,239,34,0.05)" }}>
                     <div style={{ width: 88, height: 88, borderRadius: 24, background: "linear-gradient(135deg, #1AEF22, #06B517)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 28px", boxShadow: "0 8px 32px rgba(26,239,34,0.35)" }}>
                       <Image src={s.icon} alt={s.title} width={40} height={40} style={{ objectFit: "contain", filter: "brightness(0)" }} />
                     </div>
@@ -204,7 +255,29 @@ export default function LandingPage() {
                     <p style={{ fontSize: "clamp(14px, 1.5vw, 16px)", color: "#ccc", lineHeight: 1.7, maxWidth: 480, margin: "0 auto" }}>{s.desc}</p>
                   </div>
                 ))}
-              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 18 }}>
+              {steps.map((step, index) => (
+                <button
+                  key={step.num}
+                  type="button"
+                  aria-label={`Show step ${index + 1}: ${step.title}`}
+                  aria-current={activeStep === index ? "step" : undefined}
+                  onClick={() => setActiveStep(index)}
+                  style={{
+                    width: activeStep === index ? 26 : 9,
+                    height: 9,
+                    borderRadius: 999,
+                    border: 0,
+                    padding: 0,
+                    cursor: "pointer",
+                    background: activeStep === index ? "#1AEF22" : "#3a3a3a",
+                    boxShadow: activeStep === index ? "0 0 12px rgba(26,239,34,.45)" : "none",
+                    transition: "width .2s ease, background .2s ease",
+                  }}
+                />
+              ))}
             </div>
 
           </div>

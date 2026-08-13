@@ -49,6 +49,53 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
 }
 
+.contributor-bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: min(100%, 720px);
+  margin-inline: auto;
+  padding: 0 max(2px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(2px, env(safe-area-inset-left));
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 20px rgba(0,0,0,.35);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.contributor-bottom-nav__item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 64px;
+  padding: 9px 2px 8px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: clamp(8px, 2.5vw, 10px);
+  font-weight: 500;
+  letter-spacing: .15px;
+  line-height: 1.15;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.contributor-bottom-nav__item.active { color: var(--accent); font-weight: 700; }
+.contributor-bottom-nav__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
+.contributor-bottom-nav__indicator { position: absolute; top: 0; left: 50%; width: min(32px, 55%); height: 3px; transform: translateX(-50%); border-radius: 0 0 4px 4px; background: linear-gradient(90deg,var(--accent),var(--accent-2)); }
+.contributor-bottom-nav__icon { width: clamp(19px, 6vw, 24px); height: clamp(19px, 6vw, 24px); object-fit: contain; }
+.contributor-bottom-nav__label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 359px) {
+  .contributor-bottom-nav__item { min-height: 58px; padding-inline: 1px; }
+  .contributor-bottom-nav__label { font-size: 8px; letter-spacing: 0; }
+}
+
 /* Cards and surfaces */
 .card, .panel, .modal {
   transition: background-color 220ms ease, color 220ms ease, box-shadow 220ms ease;
@@ -237,17 +284,18 @@ input[type="number"] {
 /* Mobile bottom nav — pill style */
 .businessMobileNav {
   position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
+  inset-inline: 0;
+  bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 80;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: min(calc(100% - 24px), 720px);
+  margin-inline: auto;
   gap: 4px;
   background: rgba(10, 10, 10, 0.96);
   border: 1px solid rgba(245, 166, 35, 0.2);
   border-radius: 18px;
-  padding: 8px;
+  padding: 8px max(8px, env(safe-area-inset-right)) 8px max(8px, env(safe-area-inset-left));
   box-shadow: 0 20px 45px rgba(0,0,0,0.5);
   backdrop-filter: blur(18px);
 }
@@ -260,14 +308,21 @@ input[type="number"] {
   display: grid;
   place-items: center;
   gap: 4px;
-  min-height: 48px;
+  min-height: 52px;
   border-radius: 13px;
-  font-size: 10px;
+  font-size: clamp(8px, 2.5vw, 10px);
   font-weight: 700;
   line-height: 1.1;
   min-width: 0;
   transition: all 0.15s;
   overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.businessMobileNav a:focus-visible,
+.businessMobileNavAction:focus-visible {
+  outline: 2px solid #F5A623;
+  outline-offset: -2px;
 }
 
 .businessMobileNav span,
@@ -285,6 +340,8 @@ input[type="number"] {
 
 .businessMobileNav img,
 .businessMobileNavAction img {
+  width: clamp(18px, 5.5vw, 21px);
+  height: clamp(18px, 5.5vw, 21px);
   object-fit: contain;
   filter: invert(40%) brightness(60%);
 }
@@ -1535,9 +1592,7 @@ input[type="number"] {
 
 @media (max-width: 380px) {
   .businessMobileNav {
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    width: calc(100% - 16px);
     gap: 2px;
     padding: 6px;
   }
@@ -1546,6 +1601,11 @@ input[type="number"] {
   .businessMobileNavAction {
     font-size: 9px;
     min-height: 46px;
+  }
+
+  .businessMobileNav .businessAlertBadge {
+    top: 2px;
+    right: 2px;
   }
 }
 
