@@ -15,6 +15,7 @@ export interface AuthUser {
   xp: number;
   trustScore: number;
   total_earned_qlt: number;
+  bonus_earned_qlt: number;
   progressPct: number;
   qltToNextLevel: number;
   canWithdraw: boolean;
@@ -52,6 +53,7 @@ export function useAuth(redirectIfUnauth = true) {
             xp: data.user.xp ?? 0,
             trustScore: data.user.trust_score ?? 100,
             total_earned_qlt: data.user.total_earned_qlt ?? 0,
+            bonus_earned_qlt: data.user.bonus_earned_qlt ?? 0,
             progressPct: data.user.progressPct ?? 0,
             qltToNextLevel: data.user.qltToNextLevel ?? 0,
             canWithdraw: data.user.canWithdraw ?? false,

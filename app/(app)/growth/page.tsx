@@ -1,10 +1,10 @@
 import BottomNav from "@/components/BottomNav";
-import EcosystemHub from "@/components/EcosystemHub";
+import CommunityFeed from "@/components/CommunityFeed";
 
 export default function GrowthPage() {
   return (
     <>
-      <EcosystemHub mode="contributor" />
+      <CommunityFeed />
       <BottomNav />
     </>
   );

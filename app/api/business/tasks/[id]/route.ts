@@ -140,7 +140,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (completion.referred_by) {
         const bonus = Math.floor(reward * 0.1);
         if (bonus > 0) {
-          await sql`UPDATE users SET balance = balance + ${bonus} WHERE id = ${completion.referred_by}`;
+          await sql`UPDATE users SET balance = balance + ${bonus}, bonus_earned_qlt = bonus_earned_qlt + ${bonus} WHERE id = ${completion.referred_by}`;
           await sql`
             INSERT INTO transactions (user_id, type, amount, label)
             VALUES (${completion.referred_by}, 'credit', ${bonus}, 'Referral Earnings (10%)')

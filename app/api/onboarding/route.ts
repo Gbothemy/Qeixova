@@ -32,8 +32,10 @@ export async function POST(req: NextRequest) {
 
   const {
     bank_name, account_number, account_name, referralCode,
-    profession, interests, age_range, gender, state,
+    profession, interests, age_range, gender, country, state,
   } = await req.json();
+
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT NOT NULL DEFAULT 'Nigeria'`;
 
   const normalizedInterests = canonicalizeInterests(interests, 5);
 
@@ -55,6 +57,7 @@ export async function POST(req: NextRequest) {
       platforms    = ${[]},
       age_range    = ${age_range || null},
       gender       = ${gender || null},
+      country      = ${country || "Nigeria"},
       state        = ${state || null}
     WHERE id = ${session.userId}
   `;
@@ -67,13 +70,13 @@ export async function POST(req: NextRequest) {
       const userRows = await sql`SELECT referred_by FROM users WHERE id = ${session.userId}`;
       if (!userRows[0]?.referred_by) {
         await sql`UPDATE users SET referred_by = ${referrerId} WHERE id = ${session.userId}`;
-        await sql`UPDATE users SET balance = balance + 2500 WHERE id = ${referrerId}`;
+        await sql`UPDATE users SET balance = balance + 2500, bonus_earned_qlt = bonus_earned_qlt + 2500 WHERE id = ${referrerId}`;
         await sql`
           INSERT INTO transactions (user_id, type, amount, label)
           VALUES (${referrerId}, 'credit', 2500, 'Referral Bonus')
         `;
         // New user gets 1000 QLT welcome bonus when referred
-        await sql`UPDATE users SET balance = 1000 WHERE id = ${session.userId}`;
+        await sql`UPDATE users SET balance = balance + 1000, bonus_earned_qlt = bonus_earned_qlt + 1000 WHERE id = ${session.userId}`;
         await sql`
           INSERT INTO transactions (user_id, type, amount, label)
           VALUES (${session.userId}, 'credit', 1000, 'Welcome Bonus')

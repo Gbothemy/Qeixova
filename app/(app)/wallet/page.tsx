@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import BottomNav from "@/components/BottomNav";
+import ContributorLoading from "@/components/ContributorLoading";
 import { useAuth } from "@/lib/useAuth";
+import { WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
 
 interface Tx { type: string; label: string; amount: number; status: string; created_at: string; }
 
@@ -22,8 +24,10 @@ function _txIcon(label: string) {
 }
 
 export default function WalletPage() {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
   const [balance, setBalance] = useState(0);
+  const [missionEarnedQlt, setMissionEarnedQlt] = useState(0);
+  const [bonusEarnedQlt, setBonusEarnedQlt] = useState(0);
   const [pendingQlt, setPendingQlt] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [rejected, setRejected] = useState<{ title: string; rejection_reason: string; completed_at: string }[]>([]);
@@ -39,6 +43,8 @@ export default function WalletPage() {
       const r = await fetch("/api/wallet"); if (!r.ok) return;
       const d = await r.json();
       if (d.balance !== undefined) setBalance(d.balance);
+      if (d.mission_earned_qlt !== undefined) setMissionEarnedQlt(Number(d.mission_earned_qlt));
+      if (d.bonus_earned_qlt !== undefined) setBonusEarnedQlt(Number(d.bonus_earned_qlt));
       if (d.transactions) setTransactions(d.transactions);
       if (d.pending_qlt !== undefined) setPendingQlt(d.pending_qlt);
       if (d.pending_count !== undefined) setPendingCount(d.pending_count);
@@ -54,7 +60,15 @@ export default function WalletPage() {
   }, []);
 
   const handleWithdraw = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); setSubmitting(true); setMsg(null);
+    e.preventDefault();
+    if (!user?.canWithdraw) {
+      setMsg({
+        type: "error",
+        text: `Withdrawals are locked. Earn ${Math.max(0, WITHDRAWAL_UNLOCK_QLT - Number(user?.total_earned_qlt ?? 0)).toLocaleString()} more approved mission QLT. Bonuses do not count.`,
+      });
+      return;
+    }
+    setSubmitting(true); setMsg(null);
     const res = await fetch("/api/wallet/withdraw", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: Number(amount), bank }) });
     const data = await res.json();
     if (res.ok) {
@@ -64,7 +78,10 @@ export default function WalletPage() {
     setSubmitting(false);
   };
 
-  if (loading) return <LoadingScreen />;
+  if (loading) return <ContributorLoading label="Loading wallet" detail="Preparing your balance, earnings, and withdrawals." />;
+
+  const withdrawalUnlocked = Boolean(user?.canWithdraw);
+  const missionQltNeeded = Math.max(0, WITHDRAWAL_UNLOCK_QLT - Number(user?.total_earned_qlt ?? 0));
 
   return (
     <div className="page-body" style={{ background: "#000000", minHeight: "100vh" }}>
@@ -78,6 +95,10 @@ export default function WalletPage() {
           <span style={{ color: "#bbbbbb", fontSize: 14 }}>QLT</span>
         </div>
         <p style={{ color: "#cccccc", fontSize: 14, fontWeight: 600, marginTop: 6 }}>≈ ₦{(balance / 100).toLocaleString()} cash value</p>
+        <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
+          <span style={{ color: "#1AEF22", fontSize: 12, fontWeight: 700 }}>{missionEarnedQlt.toLocaleString()} mission QLT</span>
+          <span style={{ color: "#F5A623", fontSize: 12, fontWeight: 700 }}>{bonusEarnedQlt.toLocaleString()} bonus QLT</span>
+        </div>
         <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
           {[{ label: "Min. Withdrawal", value: "100,000 QLT" }, { label: "Rate", value: "100 QLT = ₦1" }, { label: "Fee", value: "Free" }].map(item => (
             <div key={item.label} style={{ flex: 1, background: "#111111", border: "1px solid #222222", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
@@ -131,7 +152,19 @@ export default function WalletPage() {
               <p style={{ fontWeight: 800, fontSize: 16, color: "#F5F5F5" }}>Withdraw Funds</p>
             </div>
 
-            {msg && (
+            {!withdrawalUnlocked && (
+              <div style={{ background: "rgba(229,62,62,0.1)", border: "1px solid rgba(229,62,62,0.3)", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <span style={{ fontSize: 18 }}>🔒</span>
+                <div>
+                  <p style={{ color: "#e87373", fontSize: 13, fontWeight: 800 }}>Withdrawals are locked</p>
+                  <p style={{ color: "#cccccc", fontSize: 12, lineHeight: 1.5, marginTop: 3 }}>
+                    Earn {missionQltNeeded.toLocaleString()} more approved mission QLT to reach 50,001 QLT. Bonus QLT does not count.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {withdrawalUnlocked && msg && (
               <div style={{ background: msg.type === "success" ? "rgba(26,239,34,0.1)" : "rgba(229,62,62,0.1)", border: `1px solid ${msg.type === "success" ? "rgba(26,239,34,0.3)" : "rgba(229,62,62,0.3)"}`, borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 18 }}>{msg.type === "success" ? "✅" : "⚠️"}</span>
                 <p style={{ color: msg.type === "success" ? "#1AEF22" : "#e53e3e", fontSize: 13, fontWeight: 600 }}>{msg.text}</p>
@@ -142,8 +175,9 @@ export default function WalletPage() {
               <div>
                 <label style={{ fontSize: 12, color: "#bbbbbb", fontWeight: 700, letterSpacing: 0.5 }}>QLT POINTS TO CONVERT</label>
                 <div style={{ position: "relative", marginTop: 8 }}>
-                  <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Min. 100,000 QLT"
-                    style={{ width: "100%", padding: "14px 16px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 16, outline: "none", color: "#F5F5F5", background: "#1a1a1a" }}
+                  <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder={withdrawalUnlocked ? "Min. 100,000 QLT" : "Locked until 50,001 mission QLT"}
+                    disabled={!withdrawalUnlocked}
+                    style={{ width: "100%", padding: "14px 16px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 16, outline: "none", color: "#F5F5F5", background: "#1a1a1a", opacity: withdrawalUnlocked ? 1 : 0.55, cursor: withdrawalUnlocked ? "text" : "not-allowed" }}
                     onFocus={e => (e.target.style.borderColor = "#1AEF22")}
                     onBlur={e => (e.target.style.borderColor = "#999999")}
                   />
@@ -159,8 +193,8 @@ export default function WalletPage() {
               </div>
               <div>
                 <label style={{ fontSize: 12, color: "#bbbbbb", fontWeight: 700, letterSpacing: 0.5 }}>BANK ACCOUNT</label>
-                <select value={bank} onChange={e => setBank(e.target.value)}
-                  style={{ width: "100%", marginTop: 8, padding: "14px 16px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 14, outline: "none", color: "#F5F5F5", background: "#1a1a1a", cursor: "pointer" }}>
+                <select value={bank} onChange={e => setBank(e.target.value)} disabled={!withdrawalUnlocked}
+                  style={{ width: "100%", marginTop: 8, padding: "14px 16px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 14, outline: "none", color: "#F5F5F5", background: "#1a1a1a", cursor: withdrawalUnlocked ? "pointer" : "not-allowed", opacity: withdrawalUnlocked ? 1 : 0.55 }}>
                   <option value="">Select bank account</option>
                   {bankAccounts.length > 0 ? (
                     bankAccounts.map(acc => (
@@ -173,13 +207,13 @@ export default function WalletPage() {
                   )}
                 </select>
               </div>
-              <button type="submit" disabled={submitting} style={{
-                background: submitting ? "#999999" : "linear-gradient(135deg, #F5A623, #d89420)",
+              <button type="submit" disabled={submitting || !withdrawalUnlocked} style={{
+                background: submitting || !withdrawalUnlocked ? "#555555" : "linear-gradient(135deg, #F5A623, #d89420)",
                 color: "#000", border: "none", borderRadius: 14, padding: "16px",
-                fontWeight: 800, fontSize: 15, cursor: submitting ? "not-allowed" : "pointer",
-                boxShadow: submitting ? "none" : "0 6px 20px rgba(245,166,35,0.35)", marginTop: 4,
+                fontWeight: 800, fontSize: 15, cursor: submitting || !withdrawalUnlocked ? "not-allowed" : "pointer",
+                boxShadow: submitting || !withdrawalUnlocked ? "none" : "0 6px 20px rgba(245,166,35,0.35)", marginTop: 4,
               }}>
-                {submitting ? "Processing..." : "Convert & Withdraw →"}
+                {submitting ? "Processing..." : withdrawalUnlocked ? "Convert & Withdraw →" : "Withdrawals Locked"}
               </button>
             </form>
           </div>
@@ -230,7 +264,7 @@ export default function WalletPage() {
   );
 }
 
-function LoadingScreen() {
+function _LoadingScreen() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000000" }}>
       <div style={{ textAlign: "center" }}>

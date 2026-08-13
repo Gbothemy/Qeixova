@@ -20,7 +20,7 @@ export async function GET() {
     ] = await Promise.all([
 
       // Current balance
-      sql`SELECT balance FROM users WHERE id = ${session.userId}`,
+      sql`SELECT balance, total_earned_qlt, bonus_earned_qlt FROM users WHERE id = ${session.userId}`,
 
       // Recent transactions
       sql`
@@ -36,6 +36,7 @@ export async function GET() {
         SELECT COUNT(*)::int AS count
         FROM completions
         WHERE user_id = ${session.userId}
+          AND status = 'approved'
           AND DATE(completed_at) = CURRENT_DATE
       `,
 
@@ -54,6 +55,7 @@ export async function GET() {
         SELECT COUNT(*)::int AS count
         FROM completions
         WHERE user_id = ${session.userId}
+          AND status = 'approved'
       `,
 
       // Total QLT accumulated ALL TIME (all credits)
@@ -96,6 +98,8 @@ export async function GET() {
 
     return NextResponse.json({
       balance:           userRows[0]?.balance ?? 0,
+      mission_earned_qlt: Number(userRows[0]?.total_earned_qlt ?? 0),
+      bonus_earned_qlt: Number(userRows[0]?.bonus_earned_qlt ?? 0),
       transactions:      txRows,
       pending_qlt:       pendingRows[0]?.total ?? 0,
       pending_count:     pendingRows[0]?.count ?? 0,

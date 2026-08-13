@@ -58,12 +58,12 @@ export async function GET(req: NextRequest) {
     if (updated[0]) {
       const user = updated[0];
       if (user.referred_by) {
-        await sql`UPDATE users SET balance = balance + 2500 WHERE id = ${user.referred_by}`;
+        await sql`UPDATE users SET balance = balance + 2500, bonus_earned_qlt = bonus_earned_qlt + 2500 WHERE id = ${user.referred_by}`;
         await sql`
           INSERT INTO transactions (user_id, type, amount, label)
           VALUES (${user.referred_by}, 'credit', 2500, 'Referral Bonus')
         `;
-        await sql`UPDATE users SET balance = balance + 1000 WHERE id = ${user.id}`;
+        await sql`UPDATE users SET balance = balance + 1000, bonus_earned_qlt = bonus_earned_qlt + 1000 WHERE id = ${user.id}`;
         await sql`
           INSERT INTO transactions (user_id, type, amount, label)
           VALUES (${user.id}, 'credit', 1000, 'Welcome Bonus')

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import BottomNav from "@/components/BottomNav";
 import BankAccountsModal from "@/components/BankAccountsModal";
+import ContributorLoading from "@/components/ContributorLoading";
 import { useAuth } from "@/lib/useAuth";
 
 interface Profile {
@@ -15,6 +16,7 @@ interface Profile {
   approved_count: number; rejected_count: number;
   xp?: number; trust_score?: number; level_name?: string;
   badge_color?: string; milestones_claimed?: number;
+  total_earned_qlt: number; bonus_earned_qlt: number;
 }
 
 type ModalType = "edit" | "password" | "notifications" | "support" | "terms" | null;
@@ -285,7 +287,9 @@ export default function ProfilePage() {
 
   const stats = profile ? [
     { label: "Tasks Today",    value: String(profile.tasks_today),    icon: "/icon-task.svg" },
-    { label: "Total Tasks",    value: String(profile.tasks_completed), icon: "/icon-task.svg" },
+    { label: "Approved Tasks", value: String(profile.tasks_completed), icon: "/icon-task.svg" },
+    { label: "Mission QLT",    value: `${Number(profile.total_earned_qlt ?? 0).toLocaleString()} QLT`, icon: "/icon-wallet.svg" },
+    { label: "Bonus QLT",      value: `${Number(profile.bonus_earned_qlt ?? 0).toLocaleString()} QLT`, icon: "/icon-wallet.svg" },
     { label: "Total Earned",   value: profile.total_earned >= 1000 ? `${(profile.total_earned / 1000).toFixed(0)}k QLT` : `${profile.total_earned} QLT`, icon: "/icon-wallet.svg" },
     { label: "Withdrawn",      value: profile.total_withdrawn >= 1000 ? `${(profile.total_withdrawn / 1000).toFixed(0)}k QLT` : `${profile.total_withdrawn} QLT`, icon: "/icon-wallet.svg" },
     { label: "Balance",        value: `${profile.balance.toLocaleString()} QLT`, icon: "/icon-wallet.svg" },
@@ -300,6 +304,8 @@ export default function ProfilePage() {
     { icon: "/icon-support.svg",       label: "Support",         sub: "Get help anytime",                   action: () => setModal("support") },
     { icon: "/icon-terms.svg",         label: "Terms & Privacy", sub: "Legal information",                  action: () => setModal("terms") },
   ];
+
+  if (!profile) return <ContributorLoading label="Loading profile" detail="Preparing your account, progress, and preferences." />;
 
   return (
     <div className="page-body" style={{ background: "#000000", minHeight: "100vh" }}>

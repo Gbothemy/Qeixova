@@ -1,877 +1,1052 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import BusinessLoading from "@/components/BusinessLoading";
 import BusinessSidebar from "@/components/BusinessSidebar";
 import BusinessBottomNav from "@/components/BusinessBottomNav";
+import { INTEREST_OPTIONS } from "@/lib/interestTaxonomy";
 
-type CampaignCategory = {
-  id: string;
-  title: string;
-  description: string;
-  bestFor: string;
-  icon: string;
-  accent: string;
-  category: string;
-  missionType: "engagement" | "participation" | "premium";
-};
-
-type Package = {
+type MissionCategory = {
   id: string;
   name: string;
-  reach: string;
+  apiCategory: string;
+  missionType: "engagement" | "participation" | "premium";
   description: string;
-  reward: number;
-  contributors: number;
-  duration: string;
+  goals: string[];
+  contentLabel: string;
+  contentPlaceholder: string;
+  contentTypes: string[];
+  defaultActions: string[];
+  defaultAudience: string[];
 };
 
 type CampaignBundle = {
   id: string;
   name: string;
-  shortName: string;
   description: string;
-  bestFor: string[];
-  contentTypes: string[];
+  bestFor: string;
   platforms: string[];
-  actions: string[];
-  verification: string[];
-  accent: string;
-  icon: string;
+  actionHint: string[];
 };
 
-type CategoryFlow = {
+type GoalInfo = {
+  detail: string;
+  titlePlaceholder: string;
+  bundleIds: string[];
+};
+
+type PricingOption = {
   id: string;
-  builderIntro: string;
-  contentHeadline: string;
-  contentHelp: string;
-  contentTypes: string[];
-  goalsHeadline: string;
-  goals: string[];
-  uploadRequirements: Record<string, string[]>;
-  linkLabel: string;
-  linkPlaceholder: string;
-  captionLabel: string;
-  captionPlaceholder: string;
-  bundlesHeadline: string;
-  targetHeadline: string;
-  targetHelp: string;
-  interests: string[];
-  levels: string[];
-  packages: Package[];
-  launchHeadline: string;
-  launchSummary: string;
-  launchCta: string;
-  previewLabel: string;
-  defaultContentType: string;
-  defaultGoal: string;
-  defaultTitle: string;
-  defaultInterests: string[];
-  defaultLevels: string[];
-  defaultBundleId: string;
+  categoryId: string;
+  bundleId: string;
+  label: string;
+  platform: string;
+  rewardQlt: number;
+  actionHint: string;
 };
 
-type PlatformMeta = {
-  icon: string;
-  recommendedFor: string;
-  visibility: string;
-  audience: string;
+type ReachPackage = {
+  id: string;
+  name: string;
+  contributors: number;
+  duration: string;
 };
 
-const campaignCategories: CampaignCategory[] = [
-  { id: "content", title: "Content Distribution", description: "Spread flyers, videos, announcements, and promotional content across social channels.", bestFor: "WhatsApp status, Facebook reposts, Instagram stories, Telegram, X, YouTube Shorts, TikTok", icon: "/icon-human-distribution.svg", accent: "#4a9eff", category: "Content Distribution", missionType: "engagement" },
-  { id: "music", title: "Music Promotion", description: "Launch dedicated entertainment campaigns for artists, songs, sounds, and releases.", bestFor: "Music teasers, TikTok sounds, album flyers, song reviews, dance or reaction challenges", icon: "/icon-music.svg", accent: "#F5A623", category: "Music Promotion", missionType: "engagement" },
-  { id: "business", title: "Business Awareness", description: "Build visibility for SMEs, local stores, products, services, and offers.", bestFor: "Product promotion, store awareness, promo campaigns, service awareness, local distribution", icon: "/icon-local-business.svg", accent: "#1AEF22", category: "Business Awareness", missionType: "engagement" },
-  { id: "creator", title: "Creator Campaigns", description: "Amplify influencers, skit makers, streamers, creators, and personal brands.", bestFor: "Creator reposts, engagement support, livestream awareness, page awareness, collaborations", icon: "/icon-creator.svg", accent: "#c084fc", category: "Creator Campaigns", missionType: "engagement" },
-  { id: "apps", title: "App Testing & Reviews", description: "Get real participants to download, test, review, and report app experiences.", bestFor: "App downloads, onboarding tests, bug reports, feature testing, review submissions", icon: "/icon-app-testing.svg", accent: "#14b8a6", category: "App Testing", missionType: "participation" },
-  { id: "referral", title: "Referral Missions", description: "Run performance-based growth campaigns tied to signups, invites, or ambassadors.", bestFor: "Invite campaigns, signup referrals, ambassador programs, user acquisition campaigns", icon: "/icon-target.svg", accent: "#f87171", category: "Referral Missions", missionType: "premium" },
-  { id: "surveys", title: "Surveys & Feedback", description: "Collect market insight, customer opinions, product feedback, and structured responses.", bestFor: "Surveys, polls, feedback forms, customer opinion missions, product experience reviews", icon: "/icon-survey.svg", accent: "#fb7185", category: "Surveys & Feedback", missionType: "participation" },
-  { id: "event", title: "Event Promotion", description: "Drive awareness for events, programs, campus activities, and local gatherings.", bestFor: "Church programs, concerts, conferences, campus events, local gathering awareness", icon: "/icon-events.svg", accent: "#f97316", category: "Event Promotion", missionType: "engagement" },
-  { id: "community", title: "Community Growth", description: "Grow active brand communities and invite relevant people into social spaces.", bestFor: "Telegram joins, WhatsApp community joins, Discord joins, Facebook group participation", icon: "/icon-community.svg", accent: "#22c55e", category: "Community Growth", missionType: "participation" },
-  { id: "video", title: "Video Engagement", description: "Improve visibility for short-form and long-form video content through real participation.", bestFor: "Watch campaigns, save campaigns, repost video campaigns, short-form content engagement", icon: "/icon-content.svg", accent: "#e879f9", category: "Video Engagement", missionType: "engagement" },
-  { id: "ambassador", title: "Brand Ambassador Missions", description: "Create longer-term contributor partnerships for recurring brand representation.", bestFor: "Recurring promotions, monthly campaigns, niche representation, campus ambassador activities", icon: "/icon-verified.svg", accent: "#60a5fa", category: "Brand Ambassador Missions", missionType: "premium" },
-  { id: "digital", title: "AI & Digital Work", description: "Prepare scalable digital work campaigns beyond social growth and awareness.", bestFor: "AI training tasks, image labeling, transcription, moderation, simple online work", icon: "/icon-analytics.svg", accent: "#38bdf8", category: "AI & Digital Work", missionType: "participation" },
-  { id: "local", title: "Local Discovery Missions", description: "Activate geo-targeted participation for physical locations and local discovery.", bestFor: "Store visits, local awareness, QR scan campaigns, neighborhood promotion, physical-to-digital activation", icon: "/icon-grassroots.svg", accent: "#10b981", category: "Local Discovery Missions", missionType: "participation" },
-  { id: "trend", title: "Trend Missions", description: "Launch time-sensitive campaigns around viral sounds, hashtags, memes, and challenges.", bestFor: "Trending sound participation, hashtag waves, viral challenge support, meme participation", icon: "/icon-fire.svg", accent: "#fb7185", category: "Trend Missions", missionType: "engagement" },
-  { id: "premium", title: "Premium Missions", description: "Reserve higher-quality, higher-paying work for verified contributors.", bestFor: "Influencer-level participation, UGC creation, testimonial videos, premium reviews, creator collaborations", icon: "/icon-trophy.svg", accent: "#facc15", category: "Premium Missions", missionType: "premium" },
-];
-
-const goals = [
-  "Increase visibility",
-  "Spread awareness",
-  "Promote a launch",
-  "Grow a community",
-  "Get feedback",
-  "Boost content reach",
-  "Drive app downloads",
-  "Encourage referrals",
-  "Promote an event",
-  "Generate conversations",
-];
-
-const defaultContentTypes = ["Flyer", "Video", "Audio", "Product image", "Link"];
-const actionOptions = [
-  "Post flyer to WhatsApp status",
-  "Post song artwork to WhatsApp status",
-  "Post product flyer to WhatsApp status",
-  "Post to Facebook story",
-  "Post to Instagram story",
-  "Share to WhatsApp groups",
-  "Repost social media post",
-  "Share announcement banner",
-  "Share product/store link",
-  "Share in relevant groups",
-  "Mention business handle",
-  "Encourage page visits",
-  "Add call-to-action text",
-  "Repost TikTok video",
-  "Share Instagram Reel",
-  "Upload or repost Facebook Reel",
-  "Repost video",
-  "Use provided hashtags",
-  "Add provided caption",
-  "Tag campaign account",
-  "Use campaign sound",
-  "Use provided sound",
-  "Upload short-form video",
-  "Add required hashtag",
-  "Tag artist page",
-  "Include streaming link",
-  "Stream song from provided link",
-  "Repost creator video",
-  "Tag creator page",
-  "Encourage comments",
-  "Join creator community",
-  "Stay active for required duration",
-  "Share invite link",
-  "Invite relevant users",
-  "Share livestream reminder",
-  "Repost on X/Twitter",
-  "Share YouTube Short",
-  "Join Telegram community",
-  "Join WhatsApp community",
-  "Invite friends",
-  "Download app",
-  "Test onboarding",
-  "Submit feedback",
-  "Upload testimonial video",
-  "Share flyer in groups",
-  "Use provided caption",
-  "Keep post active for 24 hours",
-];
-const interestOptions = ["Music", "Business", "Entertainment", "Tech", "Students", "Fashion", "Gaming", "Lifestyle", "Local Communities"];
-const platformOptions = ["WhatsApp Status", "Facebook Story", "Instagram Story", "Facebook Groups", "Telegram Channels", "TikTok", "Instagram Reels", "Facebook Reels", "X/Twitter repost", "Facebook repost", "Instagram story share", "Telegram Groups", "X/Twitter", "YouTube Shorts"];
-const levelOptions = ["All Contributors", "Verified Contributors", "Premium Promoters", "Community Influencers"];
-const stateOptions = ["Lagos", "Abuja (FCT)", "Kano", "Rivers", "Oyo", "Kaduna", "Anambra", "Delta", "Edo", "Ogun", "Enugu", "Imo"];
-const cityOptions = ["Lagos Mainland", "Lekki", "Ikeja", "Abuja Central", "Port Harcourt", "Ibadan", "Kano City", "Benin City"];
-const campusOptions = ["University of Lagos", "University of Ibadan", "Covenant University", "Ahmadu Bello University", "University of Nigeria", "Yaba College of Technology"];
-
-const platformMeta: Record<string, PlatformMeta> = {
-  "WhatsApp Status": { icon: "WS", recommendedFor: "Flyers, announcements", visibility: "High local visibility", audience: "Contacts and nearby communities" },
-  "Facebook Story": { icon: "FS", recommendedFor: "Flyers, launches", visibility: "Strong social visibility", audience: "Friends and page followers" },
-  "Instagram Story": { icon: "IS", recommendedFor: "Flyers, creator content", visibility: "Fast visual exposure", audience: "Lifestyle and social audiences" },
-  "Facebook Groups": { icon: "FG", recommendedFor: "Community notices", visibility: "High group reach", audience: "Interest and local groups" },
-  "Telegram Channels": { icon: "TC", recommendedFor: "Announcements", visibility: "Community broadcast", audience: "Group and channel members" },
-  TikTok: { icon: "TT", recommendedFor: "Videos, viral clips", visibility: "High viral potential", audience: "Short-form viewers" },
-  "Instagram Reels": { icon: "IR", recommendedFor: "Promo videos", visibility: "Strong discovery", audience: "Visual and creator audiences" },
-  "Facebook Reels": { icon: "FR", recommendedFor: "Promo videos", visibility: "Broad video reach", audience: "Facebook video viewers" },
-  "X/Twitter repost": { icon: "XR", recommendedFor: "Posts, announcements", visibility: "Fast public spread", audience: "Public conversation" },
-  "Facebook repost": { icon: "FP", recommendedFor: "Social posts", visibility: "Feed exposure", audience: "Friends and followers" },
-  "Instagram story share": { icon: "SS", recommendedFor: "Social posts", visibility: "Quick visual lift", audience: "Story viewers" },
-  "Telegram Groups": { icon: "TG", recommendedFor: "Groups, communities", visibility: "Focused community reach", audience: "Community members" },
-  "X/Twitter": { icon: "X", recommendedFor: "Links, updates", visibility: "Public feed reach", audience: "Public audiences" },
-  "YouTube Shorts": { icon: "YS", recommendedFor: "Short video", visibility: "Video discovery", audience: "Shorts viewers" },
+type Business = {
+  id: number;
+  name: string;
+  balance: number;
 };
 
-const campaignBundles: CampaignBundle[] = [
+type TargetLocation = {
+  id?: string;
+  name?: string;
+  type?: "country" | "region" | "city" | "locality" | "postal_code";
+  country: string;
+  countryCode?: string;
+  region?: string;
+  state: string;
+  city: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  population?: number;
+  contributorCount?: number;
+  boundary?: {
+    type: "bbox" | "polygon";
+    coordinates: number[] | number[][][];
+  };
+  query?: string;
+};
+
+type LocationSearchResult = {
+  id: string;
+  name: string;
+  type: "country" | "region" | "city" | "locality" | "postal_code";
+  country: string;
+  countryCode: string;
+  region?: string;
+  latitude: number;
+  longitude: number;
+  population?: number;
+  contributorCount: number;
+  boundary: {
+    type: "bbox" | "polygon";
+    coordinates: number[] | number[][][];
+  };
+};
+
+const QLT_PER_NAIRA = 10;
+const MIN_REWARD_NAIRA = 30;
+const COMMISSION_RATE = 0.2;
+const VERIFICATION_RATE = 0.1;
+const missionCategories: MissionCategory[] = [
   {
-    id: "content-flyer-status",
-    name: "Flyer Story & Status Distribution",
-    shortName: "Flyer Status Push",
-    description: "Distribute flyers through WhatsApp Status, Facebook Story, Instagram Story, and nearby social circles.",
-    bestFor: ["Business awareness", "Events", "Church programs", "Product promos"],
-    contentTypes: ["Flyer Promotion", "Announcement Campaign"],
-    platforms: ["WhatsApp Status", "Facebook Story", "Instagram Story"],
-    actions: ["Post flyer to WhatsApp status", "Post to Facebook story", "Post to Instagram story", "Use provided caption", "Keep post active for 24 hours"],
-    verification: ["Screenshot proof", "Timestamp check", "24 hour duration"],
-    accent: "#F5A623",
-    icon: "/icon-human-distribution.svg",
+    id: "content",
+    name: "Content Distribution",
+    apiCategory: "Content Distribution",
+    missionType: "engagement",
+    description: "Promote flyers, announcements, videos, and posts through real human distribution.",
+    goals: ["Brand awareness", "Event awareness", "Product promotion", "Creator content promotion", "Local visibility"],
+    contentLabel: "Content or campaign link",
+    contentPlaceholder: "Paste a flyer, post, video, or landing page link",
+    contentTypes: ["Flyer", "Social post", "Announcement", "Promo video", "Offer"],
+    defaultActions: ["Post the campaign content", "Keep it visible for the required duration", "Submit screenshot proof"],
+    defaultAudience: ["Local Promoters", "Students", "Community Influencers", "General Contributors"],
   },
   {
-    id: "content-video-distribution",
-    name: "Video Distribution Bundle",
-    shortName: "Video Distribution",
-    description: "Push promo videos and awareness clips through short-form video platforms and status channels.",
-    bestFor: ["Promo videos", "Short-form content", "Creator clips", "Awareness campaigns"],
-    contentTypes: ["Video Distribution"],
-    platforms: ["TikTok", "Instagram Reels", "Facebook Reels", "WhatsApp Status"],
-    actions: ["Repost video", "Use provided hashtags", "Add provided caption", "Tag campaign account"],
-    verification: ["Repost link", "Caption check", "Hashtag check", "Visibility check"],
-    accent: "#F5A623",
-    icon: "/icon-content.svg",
+    id: "music",
+    name: "Music Promotion",
+    apiCategory: "Music Promotion",
+    missionType: "engagement",
+    description: "Get contributors to promote songs, cover art, artist pages, and release links across social platforms.",
+    goals: ["New song awareness", "Music link promotion", "Cover art promotion", "Release promotion", "Artist visibility"],
+    contentLabel: "Music, artist, or promo link",
+    contentPlaceholder: "Paste the song, artist page, promo post, TikTok, YouTube, Audiomack, or other campaign link",
+    contentTypes: ["Song link", "Cover art"],
+    defaultActions: ["Open the music campaign link", "Share or post the selected music asset on the required platform", "Submit screenshot proof of the promotion"],
+    defaultAudience: ["Music Supporters", "Creators", "Students", "Verified Contributors"],
   },
   {
-    id: "content-social-post",
-    name: "Social Post Distribution Bundle",
-    shortName: "Social Post Push",
-    description: "Amplify existing posts through reposts, story shares, and public social distribution.",
-    bestFor: ["Engagement campaigns", "Creator posts", "Public announcements"],
-    contentTypes: ["Social Media Post"],
-    platforms: ["X/Twitter repost", "Facebook repost", "Instagram story share"],
-    actions: ["Repost social media post", "Use provided caption", "Tag campaign account", "Encourage comments"],
-    verification: ["Repost link", "Story screenshot", "Caption check"],
-    accent: "#F5A623",
-    icon: "/icon-social-media.svg",
+    id: "community",
+    name: "Community Growth",
+    apiCategory: "Community Growth",
+    missionType: "participation",
+    description: "Grow Telegram, WhatsApp, Discord, and online communities with structured participation.",
+    goals: ["New community launch", "Increase members"],
+    contentLabel: "Community invite link",
+    contentPlaceholder: "Paste WhatsApp, Telegram, Discord, or Facebook Group link",
+    contentTypes: ["WhatsApp community", "Telegram group", "Discord server", "Facebook group"],
+    defaultActions: ["Join the community", "Read the community rules", "Submit join proof"],
+    defaultAudience: ["Community Builders", "Verified Contributors", "Local Promoters", "Students"],
   },
   {
-    id: "content-community-announcement",
-    name: "Community Announcement Distribution",
-    shortName: "Community Notice",
-    description: "Spread announcements, launches, updates, and notices through relevant community spaces.",
-    bestFor: ["Launches", "Updates", "Public awareness", "Community notices"],
-    contentTypes: ["Announcement Campaign", "Multi-Content Campaign"],
-    platforms: ["Facebook Groups", "Telegram Channels", "WhatsApp Status"],
-    actions: ["Share announcement banner", "Use provided caption", "Share to WhatsApp groups", "Share in relevant groups"],
-    verification: ["Group screenshot", "Timestamp check", "Community relevance"],
-    accent: "#F5A623",
-    icon: "/icon-community.svg",
+    id: "apps",
+    name: "App Testing & Reviews",
+    apiCategory: "App Testing",
+    missionType: "participation",
+    description: "Run app installs, onboarding tests, bug reports, feature checks, and structured app review missions.",
+    goals: ["Install and open test", "Signup/onboarding test", "Bug discovery", "Feature testing", "App review"],
+    contentLabel: "App or test link",
+    contentPlaceholder: "Paste Play Store, App Store, web app, APK, TestFlight, or test instruction link",
+    contentTypes: ["Android app", "iOS app", "Web app", "APK test", "Onboarding flow", "Feature prototype"],
+    defaultActions: ["Open or install the app", "Complete the assigned test steps", "Submit screenshot proof and useful feedback"],
+    defaultAudience: ["Tech Testers", "Verified Contributors", "Beta Test Participants", "Premium Contributors"],
   },
   {
-    id: "content-traffic-push",
-    name: "Link Traffic Distribution Bundle",
-    shortName: "Traffic Distribution",
-    description: "Distribute content while guiding audiences toward a website, profile, landing page, or streaming platform.",
-    bestFor: ["Website traffic", "Profile visits", "Landing pages", "Streaming platforms"],
-    contentTypes: ["Flyer Promotion", "Social Media Post", "Multi-Content Campaign"],
-    platforms: ["WhatsApp Status", "X/Twitter", "Facebook Groups", "Instagram Story"],
-    actions: ["Share product/store link", "Use provided caption", "Encourage page visits", "Add call-to-action text"],
-    verification: ["Shared link proof", "Screenshot proof", "CTA check"],
-    accent: "#F5A623",
-    icon: "/icon-target.svg",
+    id: "feedback",
+    name: "Surveys & Feedback",
+    apiCategory: "Feedback Campaign",
+    missionType: "participation",
+    description: "Collect product feedback, survey responses, content opinions, market research, and validation insights.",
+    goals: ["Product feedback", "Content feedback", "Survey and opinions", "Feature validation", "Market research"],
+    contentLabel: "Product, content, survey, or context link",
+    contentPlaceholder: "Paste the form, product page, website, video, document, or research brief link",
+    contentTypes: ["Short survey", "Product feedback", "Content feedback", "Feature validation", "Market research", "Detailed review"],
+    defaultActions: ["Review the campaign context carefully", "Answer the feedback questions honestly", "Submit a clear written response"],
+    defaultAudience: ["Verified Contributors", "Experienced Reviewers", "Students", "General Contributors"],
   },
-  {
-    id: "music-story-status",
-    name: "Story & Status Music Push",
-    shortName: "Music Status Push",
-    description: "Push cover art, snippets, and artist announcements through temporary story/status channels.",
-    bestFor: ["Song awareness", "Local buzz", "Artist visibility", "Quick distribution"],
-    contentTypes: ["Song Release", "Artist Awareness Campaign", "Album / EP Launch"],
-    platforms: ["WhatsApp Status", "Facebook Story", "Instagram Story"],
-    actions: ["Post song artwork to WhatsApp status", "Post to Facebook story", "Post to Instagram story", "Use provided caption", "Include streaming link", "Keep post active for 24 hours"],
-    verification: ["Screenshot proof", "Timestamp check", "24 hour duration"],
-    accent: "#F5A623",
-    icon: "/icon-music.svg",
-  },
-  {
-    id: "music-short-video",
-    name: "Short-Form Video Boost",
-    shortName: "Video Boost",
-    description: "Drive viral momentum for sounds, snippets, teasers, and music-video clips.",
-    bestFor: ["Viral momentum", "Trend creation", "Sound promotion", "Teaser campaigns"],
-    contentTypes: ["Song Snippet / Teaser", "TikTok Sound Campaign", "Music Video"],
-    platforms: ["TikTok", "Instagram Reels", "Facebook Reels"],
-    actions: ["Use provided sound", "Upload short-form video", "Add required hashtag", "Tag artist page", "Use provided caption"],
-    verification: ["Video link", "Caption check", "Hashtag check", "Sound usage check"],
-    accent: "#F5A623",
-    icon: "/icon-fire.svg",
-  },
-  {
-    id: "music-streaming",
-    name: "Streaming Awareness Bundle",
-    shortName: "Streaming Push",
-    description: "Route contributors toward streaming links and release discovery.",
-    bestFor: ["Increasing streams", "Listener traffic", "Release promotion"],
-    contentTypes: ["Song Release", "Streaming Campaign", "Album / EP Launch"],
-    platforms: ["Audiomack", "Spotify", "Boomplay", "Apple Music"],
-    actions: ["Stream song from provided link", "Include streaming link", "Use provided caption", "Share flyer in groups"],
-    verification: ["Streaming screenshot", "Link proof", "Platform check"],
-    accent: "#F5A623",
-    icon: "/icon-content.svg",
-  },
-  {
-    id: "music-fan-engagement",
-    name: "Fan Engagement Bundle",
-    shortName: "Fan Activation",
-    description: "Activate music communities, artist mentions, and fanbase interaction.",
-    bestFor: ["Artist fanbase growth", "Community interaction", "Fan activation"],
-    contentTypes: ["Artist Awareness Campaign", "Album / EP Launch"],
-    platforms: ["Telegram Groups", "WhatsApp Communities", "Instagram", "TikTok"],
-    actions: ["Join Telegram community", "Join WhatsApp community", "Tag artist page", "Submit feedback", "Share in relevant groups"],
-    verification: ["Membership validation", "Interaction proof", "Screenshot proof"],
-    accent: "#F5A623",
-    icon: "/icon-community.svg",
-  },
-  {
-    id: "creator-story-status",
-    name: "Story & Status Creator Push",
-    shortName: "Creator Status Push",
-    description: "Quick visibility for creator posts, livestream flyers, and personal brand announcements.",
-    bestFor: ["Creator visibility", "Livestream awareness", "Quick content exposure"],
-    contentTypes: ["Content Awareness Campaign", "Livestream Promotion", "Personal Brand Awareness"],
-    platforms: ["WhatsApp Status", "Instagram Story", "Facebook Story"],
-    actions: ["Post to Instagram story", "Post to Facebook story", "Post flyer to WhatsApp status", "Use provided caption", "Tag creator page"],
-    verification: ["Screenshot proof", "Timestamp check", "Story visibility"],
-    accent: "#F5A623",
-    icon: "/icon-creator.svg",
-  },
-  {
-    id: "creator-short-form",
-    name: "Short-Form Visibility Boost",
-    shortName: "Short-Form Boost",
-    description: "Amplify Reels, TikToks, clips, and creator videos for algorithm momentum.",
-    bestFor: ["Viral content", "Creator clips", "Algorithm momentum"],
-    contentTypes: ["Short-Form Video Promotion"],
-    platforms: ["TikTok", "Instagram Reels", "Facebook Reels"],
-    actions: ["Repost creator video", "Use provided caption", "Add required hashtag", "Tag creator page", "Encourage comments"],
-    verification: ["Repost link", "Caption check", "Hashtag check", "Visibility check"],
-    accent: "#F5A623",
-    icon: "/icon-fire.svg",
-  },
-  {
-    id: "creator-community",
-    name: "Community Growth Bundle",
-    shortName: "Community Growth",
-    description: "Grow fan spaces, broadcast groups, and creator communities with retention checks.",
-    bestFor: ["Fanbase growth", "Audience retention", "Creator community building"],
-    contentTypes: ["Community Growth Campaign"],
-    platforms: ["Telegram", "WhatsApp Communities", "Discord"],
-    actions: ["Join creator community", "Stay active for required duration", "Share invite link", "Invite relevant users"],
-    verification: ["Membership validation", "Retention duration", "Participation check"],
-    accent: "#F5A623",
-    icon: "/icon-community.svg",
-  },
-  {
-    id: "creator-engagement",
-    name: "Creator Engagement Boost",
-    shortName: "Engagement Boost",
-    description: "Support content visibility through real reactions, comments, reposts, and social discovery.",
-    bestFor: ["Engagement activity", "Comment momentum", "Content visibility"],
-    contentTypes: ["Content Awareness Campaign", "Personal Brand Awareness", "Podcast / Long-Form Content Promotion"],
-    platforms: ["TikTok", "Instagram", "X/Twitter", "Facebook"],
-    actions: ["Use provided caption", "Tag creator page", "Encourage comments", "Repost on X/Twitter"],
-    verification: ["Engagement screenshot", "Comment proof", "Repost link"],
-    accent: "#F5A623",
-    icon: "/icon-social-media.svg",
-  },
-  {
-    id: "creator-livestream",
-    name: "Livestream Awareness Bundle",
-    shortName: "Livestream Push",
-    description: "Drive reminders and attendance for live sessions across story and community channels.",
-    bestFor: ["Live session awareness", "Viewer reminders", "Stream attendance"],
-    contentTypes: ["Livestream Promotion"],
-    platforms: ["WhatsApp Status", "Telegram Groups", "Instagram Story", "Facebook Story"],
-    actions: ["Share livestream reminder", "Use provided caption", "Post to Instagram story", "Post to Facebook story", "Join Telegram community"],
-    verification: ["Reminder screenshot", "Timestamp check", "Community proof"],
-    accent: "#F5A623",
-    icon: "/icon-events.svg",
-  },
-  {
-    id: "business-story-status",
-    name: "Story & Status Awareness Bundle",
-    shortName: "Awareness Push",
-    description: "Simple local visibility through WhatsApp Status, Facebook Story, and Instagram Story.",
-    bestFor: ["Local awareness", "Promo visibility", "Event awareness", "Product promotion"],
-    contentTypes: ["Product Promotion", "Service Awareness", "Offer / Discount Campaign", "Event Awareness"],
-    platforms: ["WhatsApp Status", "Facebook Story", "Instagram Story"],
-    actions: ["Post product flyer to WhatsApp status", "Post to Facebook story", "Post to Instagram story", "Use provided caption", "Keep post active for 24 hours"],
-    verification: ["Screenshot proof", "Timestamp check", "24 hour duration"],
-    accent: "#F5A623",
-    icon: "/icon-local-business.svg",
-  },
-  {
-    id: "business-social-feed",
-    name: "Social Feed Distribution Bundle",
-    shortName: "Feed Distribution",
-    description: "Longer-lasting exposure for product posts, announcements, and business updates.",
-    bestFor: ["Product visibility", "Announcements", "Long-term exposure"],
-    contentTypes: ["Product Promotion", "Store / Brand Awareness", "Multi-Promotion Campaign"],
-    platforms: ["Facebook Feed", "X/Twitter", "Instagram Feed"],
-    actions: ["Use provided caption", "Mention business handle", "Share product/store link", "Repost on X/Twitter"],
-    verification: ["Post link", "Caption check", "Screenshot proof"],
-    accent: "#F5A623",
-    icon: "/icon-social-media.svg",
-  },
-  {
-    id: "business-short-form",
-    name: "Short-Form Business Visibility Bundle",
-    shortName: "Business Reels",
-    description: "Showcase promos, restaurants, fashion, products, and visual offers through short video.",
-    bestFor: ["Promo videos", "Restaurant visuals", "Fashion showcases", "Lifestyle branding"],
-    contentTypes: ["Product Promotion", "Offer / Discount Campaign", "Store / Brand Awareness"],
-    platforms: ["TikTok", "Instagram Reels", "Facebook Reels"],
-    actions: ["Repost TikTok video", "Share Instagram Reel", "Upload or repost Facebook Reel", "Use provided caption"],
-    verification: ["Repost link", "Caption check", "Visibility check"],
-    accent: "#F5A623",
-    icon: "/icon-content.svg",
-  },
-  {
-    id: "business-community",
-    name: "Community Distribution Bundle",
-    shortName: "Community Blast",
-    description: "Distribute offers and awareness in relevant local groups and communities.",
-    bestFor: ["Local community reach", "Neighborhood awareness", "Event promotion"],
-    contentTypes: ["Event Awareness", "Offer / Discount Campaign", "Service Awareness"],
-    platforms: ["WhatsApp Groups", "Telegram Communities", "Facebook Groups"],
-    actions: ["Share in relevant groups", "Use provided caption", "Mention business handle", "Share product/store link"],
-    verification: ["Group screenshot", "Timestamp check", "Community relevance"],
-    accent: "#F5A623",
-    icon: "/icon-community.svg",
-  },
-  {
-    id: "business-traffic",
-    name: "Traffic Push Bundle",
-    shortName: "Traffic Push",
-    description: "Send attention toward websites, online stores, booking pages, and catalog links.",
-    bestFor: ["Website visits", "Ecommerce traffic", "Booking pages", "Landing pages"],
-    contentTypes: ["Website / Online Store Traffic", "Product Promotion"],
-    platforms: ["Facebook", "X/Twitter", "WhatsApp Status", "Instagram Bio Traffic"],
-    actions: ["Share product/store link", "Use provided caption", "Encourage page visits", "Add call-to-action text"],
-    verification: ["Shared link proof", "Caption check", "Screenshot proof"],
-    accent: "#F5A623",
-    icon: "/icon-target.svg",
-  },
+];
+
+const interestOptions = [...INTEREST_OPTIONS];
+
+const categoryInterestDefaults: Record<string, string[]> = {
+  content: ["Business & Entrepreneurship", "Events & Social Activities", "Campus & Student Life"],
+  music: ["Music & Entertainment", "Events & Social Activities", "Campus & Student Life"],
+  community: ["Faith & Inspiration", "Public Awareness & Social Impact", "Campus & Student Life"],
+  apps: ["Tech & Apps", "Gaming & Esports", "Business & Entrepreneurship"],
+  feedback: ["Business & Entrepreneurship", "Education & Learning", "Public Awareness & Social Impact"],
+};
+
+const visibleMissionCategories = missionCategories.filter((category) => !["apps", "feedback"].includes(category.id));
+
+const bundles: CampaignBundle[] = [
   {
     id: "story-status",
-    name: "Story & Status Distribution Bundle",
-    shortName: "Story & Status",
-    description: "Temporary awareness posts across WhatsApp Status, Facebook Story, and Instagram Story.",
-    bestFor: ["Flyer", "Product image", "Event announcement"],
-    contentTypes: ["Flyer", "Product image"],
-    platforms: ["WhatsApp Status", "Facebook Story", "Instagram Story"],
-    actions: ["Post flyer to WhatsApp status", "Post to Facebook story", "Post to Instagram story", "Use provided caption", "Keep post active for 24 hours"],
-    verification: ["Screenshot proof", "Timestamp check", "24 hour duration"],
-    accent: "#F5A623",
-    icon: "/icon-human-distribution.svg",
+    name: "Story & Status Awareness",
+    description: "WhatsApp, Instagram, Facebook, Telegram, TikTok, and Snapchat status visibility.",
+    bestFor: "flyers, event visibility, local awareness, creator awareness",
+    platforms: ["WhatsApp", "Instagram", "Facebook", "Telegram", "TikTok", "Snapchat"],
+    actionHint: ["Post to story/status", "Keep visible for 24 hours", "Submit screenshot proof"],
   },
   {
-    id: "video-distribution",
-    name: "Short-Form Video Distribution Bundle",
-    shortName: "Video Boost",
-    description: "Push short videos through TikTok, Instagram Reels, Facebook Reels, and Shorts-style channels.",
-    bestFor: ["Short video", "Music teaser", "Creator clip"],
-    contentTypes: ["Video"],
-    platforms: ["TikTok", "Instagram Reels", "Facebook Reels", "YouTube Shorts"],
-    actions: ["Repost TikTok video", "Share Instagram Reel", "Upload or repost Facebook Reel", "Share YouTube Short", "Use provided caption"],
-    verification: ["Repost link", "Caption check", "Hashtag check", "Visibility check"],
-    accent: "#F5A623",
-    icon: "/icon-content.svg",
+    id: "short-video",
+    name: "Short-Form Video Boost",
+    description: "TikTok, Instagram Reels, and Facebook Reels participation.",
+    bestFor: "viral momentum, music campaigns, creator growth, promo videos",
+    platforms: ["TikTok", "Instagram Reels", "Facebook Reels"],
+    actionHint: ["Watch or repost video", "Use required caption or campaign instruction", "Submit link or screenshot proof"],
   },
   {
-    id: "community-growth",
-    name: "Community Growth Bundle",
-    shortName: "Community Growth",
-    description: "Route contributors into brand communities with proof and retention checks.",
-    bestFor: ["Telegram", "WhatsApp communities", "Groups"],
-    contentTypes: ["Link"],
-    platforms: ["Telegram Groups", "WhatsApp Status"],
-    actions: ["Join Telegram community", "Join WhatsApp community", "Invite friends", "Submit feedback"],
-    verification: ["Membership validation", "Retention duration", "Participation check"],
-    accent: "#F5A623",
-    icon: "/icon-community.svg",
+    id: "community-distribution",
+    name: "Community Distribution",
+    description: "WhatsApp Groups, Telegram Communities, and Facebook Groups.",
+    bestFor: "local visibility, event promotion, community awareness",
+    platforms: ["WhatsApp Groups", "Telegram Communities", "Facebook Groups"],
+    actionHint: ["Share to relevant community", "Respect group rules", "Submit screenshot proof"],
   },
   {
-    id: "guided-engagement",
-    name: "Guided Engagement Bundle",
-    shortName: "Engagement",
-    description: "A flexible campaign pack for links, feedback, app tests, reviews, and broad participation.",
-    bestFor: ["App tests", "Surveys", "Feedback", "Links"],
-    contentTypes: ["Audio", "Link"],
-    platforms: ["X/Twitter", "Telegram Groups", "YouTube Shorts"],
-    actions: ["Submit feedback", "Use provided caption", "Repost on X/Twitter"],
-    verification: ["Text proof", "Screenshot proof", "Manual review"],
-    accent: "#F5A623",
-    icon: "/icon-target.svg",
+    id: "streaming-awareness",
+    name: "Music Link Promotion",
+    description: "Promote song links, artist pages, release pages, and music campaign URLs.",
+    bestFor: "song promotion, release awareness, artist visibility",
+    platforms: ["Music Link", "Artist Page", "Release Page", "Promo Link"],
+    actionHint: ["Open the campaign link", "Share or promote the music link as instructed", "Submit screenshot proof of the promotion"],
+  },
+  {
+    id: "user-feedback",
+    name: "Survey & Feedback Response",
+    description: "Structured surveys, written opinions, product reviews, and validation responses.",
+    bestFor: "customer feedback, audience insights, product validation, research",
+    platforms: ["Survey Form", "Product Page", "Website", "Content Link", "Research Brief"],
+    actionHint: ["Open the feedback context", "Answer every required question", "Submit a clear written response"],
+  },
+  {
+    id: "app-growth",
+    name: "App Testing Mission",
+    description: "App installs, onboarding checks, feature tests, bug discovery, and app review tasks.",
+    bestFor: "app installs, QA testing, onboarding checks, startup growth",
+    platforms: ["Android", "iOS", "Web App", "APK", "TestFlight", "Feature Prototype"],
+    actionHint: ["Install or open the app", "Complete the assigned test path", "Submit screenshots and feedback"],
+  },
+  {
+    id: "community-expansion",
+    name: "Community Expansion",
+    description: "Grow online communities with join proof and retention rules.",
+    bestFor: "Telegram growth, WhatsApp communities, audience expansion",
+    platforms: ["Telegram", "WhatsApp", "Discord"],
+    actionHint: ["Join the community", "Stay for required duration", "Submit join/final proof"],
   },
 ];
 
-const packages: Package[] = [
-  { id: "starter", name: "Starter Reach", reach: "Up to 100 contributors", description: "A clean test launch for local visibility.", reward: 1200, contributors: 100, duration: "3 days" },
-  { id: "growth", name: "Growth Reach", reach: "Up to 500 contributors", description: "Balanced reach for offers, launches, and communities.", reward: 1500, contributors: 500, duration: "7 days" },
-  { id: "viral", name: "Viral Push", reach: "Large-scale awareness", description: "Higher reward and pacing for broad participation.", reward: 2000, contributors: 1200, duration: "14 days" },
+const reachPackages: ReachPackage[] = [
+  { id: "starter", name: "Starter", contributors: 50, duration: "3 days" },
+  { id: "growth", name: "Growth", contributors: 100, duration: "5 days" },
+  { id: "momentum", name: "Momentum", contributors: 250, duration: "7 days" },
 ];
 
-const musicPackages: Package[] = [
-  { id: "starter-buzz", name: "Starter Buzz", reach: "Up to 120 contributors", description: "Good for upcoming artists and first release push.", reward: 1200, contributors: 120, duration: "3 days" },
-  { id: "growth-push", name: "Growth Push", reach: "Up to 500 contributors", description: "Mid-level awareness for songs, videos, and snippets.", reward: 1600, contributors: 500, duration: "5 days" },
-  { id: "viral-momentum", name: "Viral Momentum", reach: "Up to 1,200 contributors", description: "Trend-focused distribution for sound and teaser campaigns.", reward: 2200, contributors: 1200, duration: "7 days" },
-  { id: "release-week-blast", name: "Release Week Blast", reach: "High-intensity release week", description: "Fast campaign pacing for launch windows and project drops.", reward: 2600, contributors: 1800, duration: "5 days" },
-];
-
-const creatorPackages: Package[] = [
-  { id: "starter-visibility", name: "Starter Visibility", reach: "Up to 120 contributors", description: "Good for small creators testing content visibility.", reward: 1200, contributors: 120, duration: "3 days" },
-  { id: "growth-momentum", name: "Growth Momentum", reach: "Up to 550 contributors", description: "Increase creator discovery and engagement quality.", reward: 1600, contributors: 550, duration: "5 days" },
-  { id: "creator-viral-push", name: "Viral Push", reach: "Up to 1,300 contributors", description: "Aggressive visibility for clips and algorithm momentum.", reward: 2200, contributors: 1300, duration: "7 days" },
-  { id: "community-expansion", name: "Community Expansion", reach: "Fanbase growth focus", description: "Built for communities, livestreams, and audience retention.", reward: 1800, contributors: 800, duration: "10 days" },
-];
-
-const businessPackages: Package[] = [
-  { id: "starter-awareness", name: "Starter Awareness", reach: "Up to 100 contributors", description: "Good for small and local businesses.", reward: 1200, contributors: 100, duration: "3 days" },
-  { id: "growth-visibility", name: "Growth Visibility", reach: "Up to 500 contributors", description: "Expand local and online reach.", reward: 1500, contributors: 500, duration: "7 days" },
-  { id: "community-blast", name: "Community Blast", reach: "Up to 1,000 contributors", description: "High-volume local awareness for offers and events.", reward: 1900, contributors: 1000, duration: "7 days" },
-  { id: "premium-visibility", name: "Premium Visibility Push", reach: "Large-scale multi-platform push", description: "Best for broader product, brand, and traffic campaigns.", reward: 2400, contributors: 1600, duration: "14 days" },
-];
-
-const contentPackages: Package[] = [
-  { id: "starter-distribution", name: "Starter Distribution", reach: "Up to 100 contributors", description: "A clean first push for flyers, posts, and announcements.", reward: 1200, contributors: 100, duration: "3 days" },
-  { id: "growth-distribution", name: "Growth Distribution", reach: "Up to 500 contributors", description: "Balanced distribution across selected platforms and interests.", reward: 1500, contributors: 500, duration: "5 days" },
-  { id: "viral-content-push", name: "Viral Push", reach: "High-volume awareness distribution", description: "Built for mass content exposure and repeated visibility.", reward: 2100, contributors: 1200, duration: "7 days" },
-];
-
-const defaultFlow: CategoryFlow = {
-  id: "default",
-  builderIntro: "Launch a guided growth campaign in minutes.",
-  contentHeadline: "What would you like to promote?",
-  contentHelp: "Choose the closest campaign type. Qeixova will use this to guide rewards, proof, and targeting.",
-  contentTypes: defaultContentTypes,
-  goalsHeadline: "What should contributors help you achieve?",
-  goals,
-  uploadRequirements: {
-    Flyer: ["Campaign flyer or banner", "Campaign link", "Suggested caption"],
-    Video: ["Video link or file", "Thumbnail", "Caption", "Hashtags"],
-    Audio: ["Audio file or link", "Cover image", "Caption"],
-    "Product image": ["Product image", "Description", "CTA link"],
-    Link: ["Campaign link", "Short description", "Proof instructions"],
+const steps = ["Category", "Goal", "Content", "Bundle & Platform", "Actions & Reach", "Location", "Preview"];
+const stepHeroCopy = [
+  {
+    eyebrow: "Step 1 / Mission category",
+    title: "Select the campaign mission category",
+    description: "Choose the type of growth participation this campaign needs before setting goals, content, platforms, reach, and location.",
   },
-  linkLabel: "Campaign link",
-  linkPlaceholder: "https://your-campaign-link.com",
-  captionLabel: "Suggested caption",
-  captionPlaceholder: "Optional caption contributors can use...",
-  bundlesHeadline: "Choose the campaign bundle",
-  targetHeadline: "Choose target contributors",
-  targetHelp: "Start broad, then add location or platform focus where it helps.",
-  interests: interestOptions,
-  levels: levelOptions,
-  packages,
-  launchHeadline: "Your campaign is queued for growth.",
-  launchSummary: "Qeixova will distribute it to relevant contributors based on interests, platform activity, contributor level, and location relevance.",
-  launchCta: "Launch campaign",
-  previewLabel: "Campaign Preview",
-  defaultContentType: "Flyer",
-  defaultGoal: "Increase visibility",
-  defaultTitle: "Business Awareness Campaign",
-  defaultInterests: ["Business", "Local Communities"],
-  defaultLevels: ["All Contributors"],
-  defaultBundleId: "story-status",
+  {
+    eyebrow: "Step 2 / Campaign goal",
+    title: "Choose the campaign goal",
+    description: "Pick the goal that should guide reward recommendations, contributor actions, proof style, and the best campaign path.",
+  },
+  {
+    eyebrow: "Step 3 / Campaign content",
+    title: "Attach the content contributors will use",
+    description: "Upload or link the exact flyer, post, video, app, community, survey, or asset contributors need to complete the mission.",
+  },
+  {
+    eyebrow: "Step 4 / Bundle and platform",
+    title: "Select the bundle and platform",
+    description: "Choose where contributors should participate, then select the exact platform actions that match your campaign content.",
+  },
+  {
+    eyebrow: "Step 5 / Actions and reach",
+    title: "Confirm contributor actions and reach",
+    description: "Set what contributors must do, how many people should complete the campaign, and the reward budget for each approval.",
+  },
+  {
+    eyebrow: "Step 6 / Audience and location",
+    title: "Target the right contributors",
+    description: "Choose matching interests and decide whether the campaign should reach contributors nationwide or in specific locations.",
+  },
+  {
+    eyebrow: "Step 7 / Campaign preview",
+    title: "Review the campaign before payment",
+    description: "Check the contributor experience, content, platforms, reward, reach, location, and total campaign cost before submitting.",
+  },
+];
+const MAX_STORED_ASSET_BYTES = 2.5 * 1024 * 1024;
+const DRAFT_VERSION = 1;
+const DRAFT_SAVE_DELAY_MS = 550;
+
+type CampaignBuilderDraft = {
+  version: number;
+  savedAt: string;
+  stepIndex: number;
+  categoryId: string;
+  goal: string;
+  title: string;
+  objective: string;
+  contentType: string;
+  contentCaption: string;
+  contentLink: string;
+  assetName: string;
+  assetDataUrl: string;
+  assetMimeType: string;
+  bundleId: string;
+  selectedPricingIds: string[];
+  actions: string[];
+  appContributorInstructions: string;
+  audience: string[];
+  selectedInterests: string[];
+  reachId: string;
+  customContributors: string;
+  locationMode: "nationwide" | "exact";
+  targetLocations: TargetLocation[];
+  locationSearchDraft: TargetLocation;
 };
 
-const categoryFlows: Record<string, CategoryFlow> = {
-  content: {
-    ...defaultFlow,
-    id: "content",
-    builderIntro: "Promote flyers, announcements, videos, posts, and awareness content through real human distribution.",
-    contentHeadline: "What would you like to distribute?",
-    contentHelp: "Select the content type first so Qeixova can narrow upload requirements, supported platforms, contributor actions, and proof.",
-    contentTypes: ["Flyer Promotion", "Video Distribution", "Social Media Post", "Announcement Campaign", "Multi-Content Campaign"],
-    goalsHeadline: "What do you want this distribution campaign to achieve?",
-    goals: ["Increase Local Awareness", "Expand Online Reach", "Promote A Launch", "Boost Community Visibility", "Increase Content Exposure", "Drive Traffic To A Link", "Support Viral Momentum"],
-    uploadRequirements: {
-      "Flyer Promotion": ["Flyer image", "Optional caption", "Optional website/social link", "Portrait flyer performs best", "Clear headline", "Strong CTA"],
-      "Video Distribution": ["Video file or video link", "Caption", "Hashtags optional", "Supported: TikTok, Instagram, Facebook, WhatsApp"],
-      "Social Media Post": ["Post URL", "Caption", "Platform source"],
-      "Announcement Campaign": ["Banner/flyer", "Announcement text", "Important details", "CTA link optional"],
-      "Multi-Content Campaign": ["Multiple content assets", "Caption set", "Primary CTA link", "Distribution notes"],
-    },
-    linkLabel: "Content, post, or traffic link",
-    linkPlaceholder: "Paste website, profile, landing page, post, streaming, or campaign link",
-    captionLabel: "Distribution caption",
-    captionPlaceholder: "Example: Please share this update, use the caption, and keep it visible...",
-    bundlesHeadline: "Choose distribution platforms",
-    targetHeadline: "Choose target contributors",
-    targetHelp: "Match your distribution to the right interests, contributor quality, and local audience.",
-    interests: ["Entertainment", "Business", "Fashion", "Students", "Lifestyle", "Music", "Technology", "Local Communities"],
-    levels: ["All Contributors", "Verified Contributors", "Premium Promoters", "Community Influencers"],
-    packages: contentPackages,
-    launchHeadline: "Your Content Distribution Campaign Is Ready",
-    launchSummary: "Qeixova will distribute your campaign based on selected platforms, audience interests, contributor quality, and location targeting.",
-    launchCta: "Launch Campaign",
-    previewLabel: "Distribution Campaign Preview",
-    defaultContentType: "Flyer Promotion",
-    defaultGoal: "Increase Local Awareness",
-    defaultTitle: "Content Distribution Campaign",
-    defaultInterests: ["Business", "Local Communities"],
-    defaultLevels: ["All Contributors"],
-    defaultBundleId: "content-flyer-status",
+const goalInfo: Record<string, GoalInfo> = {
+  "Brand awareness": {
+    detail: "Put your brand in front of real people through simple social visibility actions.",
+    titlePlaceholder: "Build awareness for my fashion brand",
+    bundleIds: ["story-status", "short-video", "community-distribution"],
   },
-  music: {
-    ...defaultFlow,
-    id: "music",
-    builderIntro: "Build release buzz, trend activity, and community-powered music visibility.",
-    contentHeadline: "What music are you pushing?",
-    contentHelp: "Choose the music campaign type so Qeixova can shape the upload fields, contributor actions, bundles, and verification.",
-    contentTypes: ["Song Release", "Music Video", "Song Snippet / Teaser", "Streaming Campaign", "TikTok Sound Campaign", "Artist Awareness Campaign", "Album / EP Launch"],
-    goalsHeadline: "What would you like this music campaign to achieve?",
-    goals: ["Increase Song Awareness", "Push Viral Momentum", "Grow Artist Visibility", "Increase Streams", "Promote A Music Video", "Boost TikTok Usage", "Build Fan Engagement"],
-    uploadRequirements: {
-      "Song Release": ["Song cover art", "Streaming link", "Audio snippet optional", "Artist name", "Song title"],
-      "Music Video": ["Video link", "Thumbnail", "Caption", "Hashtags optional"],
-      "Song Snippet / Teaser": ["Short clip", "Cover art", "Caption", "Hashtags optional"],
-      "Streaming Campaign": ["Streaming link", "Song cover art", "Artist name", "Song title"],
-      "TikTok Sound Campaign": ["TikTok sound link", "Sample video", "Suggested trend caption", "Challenge instructions optional"],
-      "Artist Awareness Campaign": ["Artist photo or flyer", "Artist bio", "Social profile link", "Campaign caption"],
-      "Album / EP Launch": ["Cover art", "Track list", "Streaming links", "Promo flyer", "Artist bio optional"],
-    },
-    linkLabel: "Music or streaming link",
-    linkPlaceholder: "Paste Audiomack, Spotify, Boomplay, TikTok sound, or video link",
-    captionLabel: "Music promo caption",
-    captionPlaceholder: "Example: New sound out now. Stream, share, and tag the artist...",
-    bundlesHeadline: "Recommended music promotion bundle",
-    targetHeadline: "Choose music-focused contributors",
-    targetHelp: "Music campaigns perform better when contributor interests, creator activity, and local buzz match the sound.",
-    interests: ["Music", "Entertainment", "Dance", "Lifestyle", "Campus Communities", "Creators", "Pop Culture"],
-    levels: ["All Contributors", "Verified Music Promoters", "Trend Creators", "Community Influencers"],
-    packages: musicPackages,
-    launchHeadline: "Your music campaign is ready to go live",
-    launchSummary: "Qeixova will distribute your campaign based on music interests, creator activity, platform relevance, trend behavior, and location targeting.",
-    launchCta: "Launch Music Campaign",
-    previewLabel: "Music Promo Preview",
-    defaultContentType: "Song Release",
-    defaultGoal: "Increase Song Awareness",
-    defaultTitle: "Music Release Promotion",
-    defaultInterests: ["Music", "Entertainment", "Campus Communities"],
-    defaultLevels: ["All Contributors"],
-    defaultBundleId: "music-story-status",
+  "Event awareness": {
+    detail: "Spread event flyers, reminders, and announcements before the event date.",
+    titlePlaceholder: "Promote my Lagos pop-up event",
+    bundleIds: ["story-status", "community-distribution", "short-video"],
   },
-  creator: {
-    ...defaultFlow,
-    id: "creator",
-    builderIntro: "Grow creator visibility, social momentum, and audience engagement.",
-    contentHeadline: "What creator campaign are you promoting?",
-    contentHelp: "Choose the content type so the flow can adapt platforms, actions, verification, and the right growth bundle.",
-    contentTypes: ["Short-Form Video Promotion", "Content Awareness Campaign", "Creator Page Growth", "Livestream Promotion", "Community Growth Campaign", "Podcast / Long-Form Content Promotion", "Personal Brand Awareness"],
-    goalsHeadline: "What would you like this creator campaign to achieve?",
-    goals: ["Increase Content Reach", "Boost Engagement", "Grow Creator Visibility", "Push Viral Momentum", "Increase Livestream Attendance", "Grow Community Members", "Strengthen Audience Loyalty", "Increase Profile Traffic"],
-    uploadRequirements: {
-      "Short-Form Video Promotion": ["Video link", "Thumbnail", "Caption", "Hashtags optional"],
-      "Content Awareness Campaign": ["Post URL", "Caption", "Creator handle/page link"],
-      "Creator Page Growth": ["Creator profile link", "Creator bio", "Promo caption"],
-      "Livestream Promotion": ["Livestream flyer/banner", "Stream link", "Stream time/date", "Reminder caption"],
-      "Community Growth Campaign": ["Community invite link", "Community description", "Rules/instructions"],
-      "Podcast / Long-Form Content Promotion": ["Video/podcast link", "Thumbnail", "Episode title", "Short description"],
-      "Personal Brand Awareness": ["Creator profile link", "Brand image", "Short creator bio", "Campaign caption"],
-    },
-    linkLabel: "Creator content link",
-    linkPlaceholder: "Paste TikTok, Instagram, YouTube, livestream, podcast, or community link",
-    captionLabel: "Creator campaign caption",
-    captionPlaceholder: "Example: Check out this creator, engage with the post, and follow for more...",
-    bundlesHeadline: "Recommended creator promotion bundle",
-    targetHeadline: "Choose creator-focused contributors",
-    targetHelp: "Target by content relevance, social interests, community influence, and creator activity.",
-    interests: ["Entertainment", "Lifestyle", "Comedy", "Gaming", "Tech", "Education", "Fashion", "Music", "Sports", "Pop Culture"],
-    levels: ["All Contributors", "Verified Creators", "Community Influencers", "Trend Contributors", "Premium Promoters"],
-    packages: creatorPackages,
-    launchHeadline: "Your creator campaign is ready to go live",
-    launchSummary: "Qeixova will distribute your campaign based on creator content relevance, contributor interests, platform activity, visibility potential, and audience targeting.",
-    launchCta: "Launch Creator Campaign",
-    previewLabel: "Creator Growth Preview",
-    defaultContentType: "Short-Form Video Promotion",
-    defaultGoal: "Increase Content Reach",
-    defaultTitle: "Creator Visibility Campaign",
-    defaultInterests: ["Entertainment", "Lifestyle", "Pop Culture"],
-    defaultLevels: ["All Contributors"],
-    defaultBundleId: "creator-short-form",
+  "Product promotion": {
+    detail: "Get contributors to share product offers, launches, and sales content.",
+    titlePlaceholder: "Promote my skincare product launch",
+    bundleIds: ["story-status", "short-video", "community-distribution"],
   },
-  business: {
-    ...defaultFlow,
-    id: "business",
-    builderIntro: "Launch simple business visibility campaigns without complex ad-manager setup.",
-    contentHeadline: "What business promotion are you running?",
-    contentHelp: "Choose what you want people to discover so Qeixova can recommend the right awareness bundle.",
-    contentTypes: ["Product Promotion", "Service Awareness", "Store / Brand Awareness", "Offer / Discount Campaign", "Event Awareness", "Website / Online Store Traffic", "Multi-Promotion Campaign"],
-    goalsHeadline: "What would you like this campaign to achieve?",
-    goals: ["Increase Local Awareness", "Promote A Product", "Generate Customer Interest", "Drive Store Visits", "Increase Online Traffic", "Promote A Special Offer", "Build Brand Visibility", "Spread Community Awareness"],
-    uploadRequirements: {
-      "Product Promotion": ["Product images", "Product video optional", "Product description", "Pricing optional", "Website/social link"],
-      "Service Awareness": ["Business flyer/banner", "Service description", "Contact information", "Booking link/contact"],
-      "Store / Brand Awareness": ["Brand flyer", "Store photos", "Brand description", "Location details"],
-      "Offer / Discount Campaign": ["Promo flyer", "Offer details", "Expiry date", "CTA link/contact"],
-      "Event Awareness": ["Event flyer", "Event details", "Date/time/location", "CTA link/contact"],
-      "Website / Online Store Traffic": ["Website/store link", "Promo image", "CTA text", "Offer summary"],
-      "Multi-Promotion Campaign": ["Promo flyer", "Product/service list", "Contact link", "CTA text"],
-    },
-    linkLabel: "Website, page, or contact link",
-    linkPlaceholder: "Paste website, Instagram, WhatsApp, booking, catalog, or store link",
-    captionLabel: "Business promo caption",
-    captionPlaceholder: "Example: Discover our new offer. Message us today or visit our store...",
-    bundlesHeadline: "Recommended business awareness bundle",
-    targetHeadline: "Choose business-focused contributors",
-    targetHelp: "Local relevance matters. Select interests, contributor quality, and location signals that match your customers.",
-    interests: ["Fashion", "Food & Restaurants", "Lifestyle", "Tech", "Beauty", "Local Communities", "Students", "Entertainment", "Shopping"],
-    levels: ["All Contributors", "Verified Contributors", "Community Influencers", "Local Promoters", "Premium Contributors"],
-    packages: businessPackages,
-    launchHeadline: "Your business awareness campaign is ready",
-    launchSummary: "Qeixova will distribute your campaign based on audience interests, local relevance, platform activity, contributor quality, and visibility potential.",
-    launchCta: "Launch Campaign",
-    previewLabel: "Business Growth Preview",
-    defaultContentType: "Product Promotion",
-    defaultGoal: "Increase Local Awareness",
-    defaultTitle: "Business Awareness Campaign",
-    defaultInterests: ["Local Communities", "Shopping"],
-    defaultLevels: ["All Contributors"],
-    defaultBundleId: "business-story-status",
+  "Creator content promotion": {
+    detail: "Push creator posts, videos, and announcements across audience-friendly channels.",
+    titlePlaceholder: "Boost my new creator content drop",
+    bundleIds: ["short-video", "story-status", "community-distribution"],
+  },
+  "Local visibility": {
+    detail: "Reach nearby audiences through local groups, statuses, and community shares.",
+    titlePlaceholder: "Increase visibility for my local business",
+    bundleIds: ["community-distribution", "story-status"],
+  },
+  "New song awareness": {
+    detail: "Get contributors to promote a new song or artist through status posts, stories, and social sharing.",
+    titlePlaceholder: "Promote my new single",
+    bundleIds: ["story-status", "streaming-awareness", "short-video"],
+  },
+  "Music link promotion": {
+    detail: "Get contributors to share, post, or promote your music link to real audiences.",
+    titlePlaceholder: "Promote my new song link",
+    bundleIds: ["streaming-awareness"],
+  },
+  "Cover art promotion": {
+    detail: "Get contributors to post your cover art with your music link or release message.",
+    titlePlaceholder: "Promote my song cover art",
+    bundleIds: ["story-status", "short-video"],
+  },
+  "Release promotion": {
+    detail: "Push a song, EP, album, or artist release through status, story, link, and social promo actions.",
+    titlePlaceholder: "Promote my new music release",
+    bundleIds: ["short-video", "story-status"],
+  },
+  "Artist visibility": {
+    detail: "Grow recognition for an artist through contributor shares, status posts, and social promotion.",
+    titlePlaceholder: "Increase visibility for my artist profile",
+    bundleIds: ["story-status", "streaming-awareness", "short-video"],
+  },
+  "New community launch": {
+    detail: "Bring initial members into a new group or community with join proof.",
+    titlePlaceholder: "Launch my Telegram community",
+    bundleIds: ["community-expansion"],
+  },
+  "Increase members": {
+    detail: "Grow membership count while requiring contributors to stay for a set period.",
+    titlePlaceholder: "Grow my WhatsApp community",
+    bundleIds: ["community-expansion"],
+  },
+  "Install and open test": {
+    detail: "Ask contributors to install or open your app, confirm it loads, and share first-use feedback.",
+    titlePlaceholder: "Test installs for my app",
+    bundleIds: ["app-growth"],
+  },
+  "Signup/onboarding test": {
+    detail: "Test account creation, onboarding screens, permissions, and where users get stuck.",
+    titlePlaceholder: "Test signup flow for my fintech app",
+    bundleIds: ["app-growth"],
+  },
+  "Bug discovery": {
+    detail: "Send testers through specific app paths to find bugs, crashes, broken screens, and friction.",
+    titlePlaceholder: "Find bugs in my marketplace app",
+    bundleIds: ["app-growth"],
+  },
+  "Feature testing": {
+    detail: "Validate a new app feature with screenshots, task completion proof, and tester notes.",
+    titlePlaceholder: "Test the new wallet feature",
+    bundleIds: ["app-growth"],
+  },
+  "App review": {
+    detail: "Collect structured impressions, usability notes, and screenshots after contributors use your app.",
+    titlePlaceholder: "Collect app review feedback",
+    bundleIds: ["app-growth"],
+  },
+  "Product feedback": {
+    detail: "Collect opinions about a product, landing page, offer, service, or prototype.",
+    titlePlaceholder: "Get feedback on my product page",
+    bundleIds: ["user-feedback"],
+  },
+  "Content feedback": {
+    detail: "Ask contributors to review copy, design, video, article, flyer, or creative content.",
+    titlePlaceholder: "Review my Instagram campaign content",
+    bundleIds: ["user-feedback"],
+  },
+  "Survey and opinions": {
+    detail: "Run a quick survey, poll, or opinion task for lightweight audience insight.",
+    titlePlaceholder: "Run a quick customer opinion survey",
+    bundleIds: ["user-feedback"],
+  },
+  "Feature validation": {
+    detail: "Validate whether a proposed product or app feature is clear, useful, and worth building.",
+    titlePlaceholder: "Validate my new booking feature idea",
+    bundleIds: ["user-feedback"],
+  },
+  "Market research": {
+    detail: "Gather early signals about demand, pricing, audience preferences, and positioning.",
+    titlePlaceholder: "Research demand for my new service",
+    bundleIds: ["user-feedback"],
   },
 };
 
-const steps = [
-  "Promote",
-  "Goal",
-  "Content",
-  "Mission",
-  "Target",
-  "Budget",
-  "Preview",
-  "Launch",
+const pricingOptions: PricingOption[] = [
+  { id: "content-whatsapp-status", categoryId: "content", bundleId: "story-status", label: "WhatsApp status post", platform: "WhatsApp", rewardQlt: 1200, actionHint: "Post to WhatsApp status and submit screenshot proof" },
+  { id: "content-instagram-status", categoryId: "content", bundleId: "story-status", label: "Instagram status post", platform: "Instagram", rewardQlt: 700, actionHint: "Post to Instagram status and submit screenshot proof" },
+  { id: "content-facebook-status", categoryId: "content", bundleId: "story-status", label: "Facebook status post", platform: "Facebook", rewardQlt: 750, actionHint: "Post to Facebook status and submit screenshot proof" },
+  { id: "content-telegram-status", categoryId: "content", bundleId: "story-status", label: "Telegram status post", platform: "Telegram", rewardQlt: 500, actionHint: "Post to Telegram status and submit screenshot proof" },
+  { id: "content-tiktok-status", categoryId: "content", bundleId: "story-status", label: "TikTok status post", platform: "TikTok", rewardQlt: 800, actionHint: "Post to TikTok status and submit screenshot proof" },
+  { id: "content-snapchat-status", categoryId: "content", bundleId: "story-status", label: "Snapchat status post", platform: "Snapchat", rewardQlt: 600, actionHint: "Post to Snapchat status/story and submit screenshot proof" },
+  { id: "content-whatsapp-group", categoryId: "content", bundleId: "community-distribution", label: "WhatsApp group share", platform: "WhatsApp Groups", rewardQlt: 1500, actionHint: "Share to a WhatsApp group/community and submit proof" },
+  { id: "content-facebook-group", categoryId: "content", bundleId: "community-distribution", label: "Facebook group share", platform: "Facebook Groups", rewardQlt: 1800, actionHint: "Share to a Facebook group and submit proof" },
+  { id: "content-telegram-community", categoryId: "content", bundleId: "community-distribution", label: "Telegram community share", platform: "Telegram Communities", rewardQlt: 1600, actionHint: "Share to a Telegram community and submit proof" },
+  { id: "video-tiktok-share", categoryId: "content", bundleId: "short-video", label: "TikTok Share", platform: "TikTok", rewardQlt: 3000, actionHint: "Share the short video on TikTok and submit proof" },
+  { id: "video-instagram-reel", categoryId: "content", bundleId: "short-video", label: "Instagram Reel Share", platform: "Instagram Reels", rewardQlt: 4000, actionHint: "Share the reel on Instagram and submit proof" },
+  { id: "video-facebook-reel", categoryId: "content", bundleId: "short-video", label: "Facebook Reel Share", platform: "Facebook Reels", rewardQlt: 4000, actionHint: "Share the reel on Facebook and submit proof" },
+  { id: "video-youtube-shorts", categoryId: "content", bundleId: "short-video", label: "YouTube Shorts Share", platform: "YouTube Shorts", rewardQlt: 3000, actionHint: "Share as a YouTube Short and submit proof" },
+  { id: "video-whatsapp-status", categoryId: "content", bundleId: "short-video", label: "WhatsApp Status Video Share", platform: "WhatsApp Status", rewardQlt: 4500, actionHint: "Share the video on WhatsApp Status and submit proof" },
+  { id: "video-x-twitter", categoryId: "content", bundleId: "short-video", label: "X (Twitter) Share", platform: "X (Twitter)", rewardQlt: 4000, actionHint: "Share the short video on X and submit proof" },
+  { id: "music-whatsapp-status", categoryId: "music", bundleId: "story-status", label: "WhatsApp music status promo", platform: "WhatsApp", rewardQlt: 1200, actionHint: "Post the approved song link, cover art, or music promo to WhatsApp status and submit screenshot proof" },
+  { id: "music-instagram-story", categoryId: "music", bundleId: "story-status", label: "Instagram music story promo", platform: "Instagram", rewardQlt: 700, actionHint: "Post the approved music promo to Instagram story and submit screenshot proof" },
+  { id: "music-facebook-story", categoryId: "music", bundleId: "story-status", label: "Facebook music story promo", platform: "Facebook", rewardQlt: 750, actionHint: "Post the approved music promo to Facebook story and submit screenshot proof" },
+  { id: "music-telegram-status", categoryId: "music", bundleId: "story-status", label: "Telegram music status promo", platform: "Telegram", rewardQlt: 500, actionHint: "Post the approved music promo to Telegram status/story and submit screenshot proof" },
+  { id: "music-tiktok-story", categoryId: "music", bundleId: "story-status", label: "TikTok music story promo", platform: "TikTok", rewardQlt: 800, actionHint: "Post the approved music promo to TikTok story and submit screenshot proof" },
+  { id: "music-snapchat-status", categoryId: "music", bundleId: "story-status", label: "Snapchat music status promo", platform: "Snapchat", rewardQlt: 600, actionHint: "Post the approved music promo to Snapchat status/story and submit screenshot proof" },
+  { id: "music-audiomack-link", categoryId: "music", bundleId: "streaming-awareness", label: "Audiomack link promotion", platform: "Audiomack", rewardQlt: 1000, actionHint: "Share or post the Audiomack music link as instructed and submit screenshot proof" },
+  { id: "music-spotify-link", categoryId: "music", bundleId: "streaming-awareness", label: "Spotify link promotion", platform: "Spotify", rewardQlt: 1100, actionHint: "Share or post the Spotify music link as instructed and submit screenshot proof" },
+  { id: "music-boomplay-link", categoryId: "music", bundleId: "streaming-awareness", label: "Boomplay link promotion", platform: "Boomplay", rewardQlt: 1000, actionHint: "Share or post the Boomplay music link as instructed and submit screenshot proof" },
+  { id: "music-apple-link", categoryId: "music", bundleId: "streaming-awareness", label: "Apple Music link promotion", platform: "Apple Music", rewardQlt: 1100, actionHint: "Share or post the Apple Music link as instructed and submit screenshot proof" },
+  { id: "music-youtube-link", categoryId: "music", bundleId: "streaming-awareness", label: "YouTube music link promotion", platform: "YouTube", rewardQlt: 1200, actionHint: "Share or post the YouTube music link as instructed and submit screenshot proof" },
+  { id: "music-tiktok-link", categoryId: "music", bundleId: "streaming-awareness", label: "TikTok music link promotion", platform: "TikTok", rewardQlt: 1200, actionHint: "Share or post the TikTok music link as instructed and submit screenshot proof" },
+  { id: "music-artist-page", categoryId: "music", bundleId: "streaming-awareness", label: "Artist page promotion", platform: "Artist Page", rewardQlt: 1200, actionHint: "Share or post the artist page as instructed and submit screenshot proof" },
+  { id: "music-promo-url", categoryId: "music", bundleId: "streaming-awareness", label: "Promo URL promotion", platform: "Promo URL", rewardQlt: 1000, actionHint: "Share or post the music promo URL as instructed and submit screenshot proof" },
+  { id: "music-whatsapp-video", categoryId: "music", bundleId: "short-video", label: "WhatsApp Status Video music promo", platform: "WhatsApp Status Video", rewardQlt: 1400, actionHint: "Post the approved music video promo to WhatsApp Status and submit screenshot proof" },
+  { id: "music-instagram-reel", categoryId: "music", bundleId: "short-video", label: "Instagram Reel music promo", platform: "Instagram Reel", rewardQlt: 2000, actionHint: "Create or repost an Instagram Reel using the approved music promo asset or link and submit proof" },
+  { id: "music-facebook-reel", categoryId: "music", bundleId: "short-video", label: "Facebook Reel music promo", platform: "Facebook Reel", rewardQlt: 1800, actionHint: "Create or repost a Facebook Reel using the approved music promo asset or link and submit proof" },
+  { id: "music-tiktok-video", categoryId: "music", bundleId: "short-video", label: "TikTok Video music promo", platform: "TikTok Video", rewardQlt: 2000, actionHint: "Create or repost a TikTok video using the approved music promo asset or link and submit proof" },
+  { id: "music-youtube-shorts", categoryId: "music", bundleId: "short-video", label: "YouTube Shorts music promo", platform: "YouTube Shorts", rewardQlt: 1900, actionHint: "Create or repost a YouTube Short using the approved music promo asset or link and submit proof" },
+  { id: "music-snapchat-spotlight", categoryId: "music", bundleId: "short-video", label: "Snapchat Spotlight music promo", platform: "Snapchat Spotlight", rewardQlt: 1500, actionHint: "Create or repost a Snapchat Spotlight using the approved music promo asset or link and submit proof" },
+  { id: "community-24h", categoryId: "community", bundleId: "community-expansion", label: "Join community + 24-hour retention", platform: "Community", rewardQlt: 800, actionHint: "Join the community, stay for 24 hours, and submit proof" },
+  { id: "community-3day-intro", categoryId: "community", bundleId: "community-expansion", label: "Join + intro + 3-day retention", platform: "Community", rewardQlt: 1200, actionHint: "Join, introduce yourself, stay for 3 days, and submit proof" },
+  { id: "community-7day-participation", categoryId: "community", bundleId: "community-expansion", label: "Join + meaningful participation + 7-day retention", platform: "Community", rewardQlt: 2000, actionHint: "Join, participate meaningfully, stay for 7 days, and submit proof" },
+  { id: "app-android-install", categoryId: "apps", bundleId: "app-growth", label: "Android install + open test", platform: "Android", rewardQlt: 3000, actionHint: "Install/open the Android app, complete the assigned checks, and submit screenshot proof with feedback" },
+  { id: "app-ios-install", categoryId: "apps", bundleId: "app-growth", label: "iOS install + open test", platform: "iOS", rewardQlt: 3500, actionHint: "Install/open the iOS app, complete the assigned checks, and submit screenshot proof with feedback" },
+  { id: "app-web-test", categoryId: "apps", bundleId: "app-growth", label: "Web app test", platform: "Web App", rewardQlt: 2500, actionHint: "Open the web app, test the assigned flow, and submit screenshot proof with feedback" },
+  { id: "app-apk-test", categoryId: "apps", bundleId: "app-growth", label: "APK test", platform: "APK", rewardQlt: 4000, actionHint: "Install the APK, complete the assigned checks, and submit screenshot proof with feedback" },
+  { id: "app-onboarding-test", categoryId: "apps", bundleId: "app-growth", label: "Signup/onboarding test", platform: "Onboarding", rewardQlt: 5000, actionHint: "Complete signup or onboarding, note any confusion, and submit screenshot proof with feedback" },
+  { id: "app-bug-discovery", categoryId: "apps", bundleId: "app-growth", label: "Bug discovery report", platform: "Bug Report", rewardQlt: 8000, actionHint: "Test the assigned feature path, document bugs or friction, and submit screenshots with clear notes" },
+  { id: "app-feature-test", categoryId: "apps", bundleId: "app-growth", label: "Feature testing report", platform: "Feature Test", rewardQlt: 7000, actionHint: "Test the selected feature, confirm what worked or failed, and submit screenshots with feedback" },
+  { id: "app-review", categoryId: "apps", bundleId: "app-growth", label: "Structured app review", platform: "App Review", rewardQlt: 4500, actionHint: "Use the app, review the experience, and submit screenshots with a structured response" },
+  { id: "feedback-short-survey", categoryId: "feedback", bundleId: "user-feedback", label: "Short survey/opinion", platform: "Survey Form", rewardQlt: 1500, actionHint: "Complete every required survey question with honest answers" },
+  { id: "feedback-product", categoryId: "feedback", bundleId: "user-feedback", label: "Product feedback", platform: "Product Page", rewardQlt: 3000, actionHint: "Review the product or service context and submit useful feedback" },
+  { id: "feedback-content", categoryId: "feedback", bundleId: "user-feedback", label: "Content feedback", platform: "Content Link", rewardQlt: 2500, actionHint: "Review the content and submit clear feedback on message, design, or clarity" },
+  { id: "feedback-feature-validation", categoryId: "feedback", bundleId: "user-feedback", label: "Feature validation", platform: "Feature Brief", rewardQlt: 3500, actionHint: "Review the feature idea or prototype and explain whether it is useful, clear, and worth building" },
+  { id: "feedback-market-research", categoryId: "feedback", bundleId: "user-feedback", label: "Market research response", platform: "Research Brief", rewardQlt: 4000, actionHint: "Review the research brief and answer the audience, demand, pricing, or positioning questions" },
+  { id: "feedback-detailed-review", categoryId: "feedback", bundleId: "user-feedback", label: "Detailed review", platform: "Review Form", rewardQlt: 5000, actionHint: "Submit a detailed review with useful observations and clear reasoning" },
 ];
 
-function MultiSelectDropdown({ options, selected, onChange, placeholder = "Select options" }: { options: string[]; selected: string[]; onChange: (next: string[]) => void; placeholder?: string }) {
-  const toggle = (option: string) => onChange(selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option]);
-  const preview = selected.length ? selected.slice(0, 3).join(", ") : placeholder;
-
-  return (
-    <details className="multiSelectDropdown">
-      <summary>
-        <span>
-          <strong>{selected.length ? `${selected.length} selected` : "Choose"}</strong>
-          <small>{preview}{selected.length > 3 ? ` +${selected.length - 3} more` : ""}</small>
-        </span>
-        <em>v</em>
-      </summary>
-      {selected.length > 0 && (
-        <div className="selectedPreview">
-          {selected.slice(0, 6).map((item) => <span key={item}>{item}</span>)}
-        </div>
-      )}
-      <div className="multiSelectMenu">
-        {options.map((option) => {
-          const active = selected.includes(option);
-          return (
-            <button key={option} type="button" onClick={() => toggle(option)} className={active ? "selected" : ""}>
-              <span>{active ? "OK" : ""}</span>
-              <strong>{option}</strong>
-            </button>
-          );
-        })}
-      </div>
-    </details>
-  );
+function toQlt(naira: number) {
+  return Math.round(naira * QLT_PER_NAIRA);
 }
 
-function PlatformChoiceGrid({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (next: string[]) => void }) {
-  const toggle = (option: string) => onChange(selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option]);
-
-  return (
-    <div className="choicePlatformGrid">
-      {options.map((option) => {
-        const active = selected.includes(option);
-        const meta = platformMeta[option] ?? {
-          icon: option.split(" ").map((word) => word[0]).join("").slice(0, 2),
-          recommendedFor: "Flexible content",
-          visibility: "Platform visibility",
-          audience: "Relevant audiences",
-        };
-        return (
-          <button key={option} type="button" onClick={() => toggle(option)} className={active ? "choicePlatformCard selected" : "choicePlatformCard"}>
-            <b>{meta.icon}</b>
-            <span>{option}</span>
-            <strong>{meta.visibility}</strong>
-            <small>{meta.recommendedFor}</small>
-            <em>{meta.audience}</em>
-          </button>
-        );
-      })}
-    </div>
-  );
+function qltToNaira(qlt: number) {
+  return qlt / QLT_PER_NAIRA;
 }
 
-function getCategoryFlow(categoryId: string) {
-  return categoryFlows[categoryId] ?? defaultFlow;
+function isPricingOptionForGoal(option: PricingOption, goal: string) {
+  const normalizedGoal = goal.toLowerCase();
+
+  if (option.categoryId === "apps") {
+    if (normalizedGoal.includes("install")) return ["app-android-install", "app-ios-install", "app-web-test", "app-apk-test"].includes(option.id);
+    if (normalizedGoal.includes("signup") || normalizedGoal.includes("onboarding")) return option.id === "app-onboarding-test";
+    if (normalizedGoal.includes("bug")) return option.id === "app-bug-discovery";
+    if (normalizedGoal.includes("feature")) return option.id === "app-feature-test";
+    if (normalizedGoal.includes("review")) return option.id === "app-review";
+  }
+
+  if (option.categoryId === "feedback") {
+    if (normalizedGoal.includes("product")) return option.id === "feedback-product";
+    if (normalizedGoal.includes("content")) return option.id === "feedback-content";
+    if (normalizedGoal.includes("survey") || normalizedGoal.includes("opinion")) return option.id === "feedback-short-survey";
+    if (normalizedGoal.includes("feature")) return option.id === "feedback-feature-validation";
+    if (normalizedGoal.includes("market")) return option.id === "feedback-market-research";
+  }
+
+  return true;
 }
 
-function getBundlesForCategory(categoryId: string) {
-  if (categoryId === "content") return campaignBundles.filter((bundle) => bundle.id.startsWith("content-"));
-  if (categoryId === "music") return campaignBundles.filter((bundle) => bundle.id.startsWith("music-"));
-  if (categoryId === "creator") return campaignBundles.filter((bundle) => bundle.id.startsWith("creator-"));
-  if (categoryId === "business") return campaignBundles.filter((bundle) => bundle.id.startsWith("business-"));
-  return campaignBundles.filter((bundle) => !bundle.id.startsWith("content-") && !bundle.id.startsWith("music-") && !bundle.id.startsWith("creator-") && !bundle.id.startsWith("business-"));
+function getPricingOptions(categoryId: string, bundleId: string, goal = "") {
+  return pricingOptions.filter((option) => (
+    option.categoryId === categoryId
+    && option.bundleId === bundleId
+    && isPricingOptionForGoal(option, goal)
+  ));
 }
 
-function getRecommendedBundle(contentType: string, categoryId: string, goal = "") {
-  if (categoryId === "content") {
-    if (contentType === "Video Distribution" || goal === "Support Viral Momentum") return campaignBundles.find((bundle) => bundle.id === "content-video-distribution") ?? campaignBundles[0];
-    if (contentType === "Social Media Post" || goal === "Expand Online Reach") return campaignBundles.find((bundle) => bundle.id === "content-social-post") ?? campaignBundles[0];
-    if (contentType === "Announcement Campaign" || goal === "Boost Community Visibility" || goal === "Promote A Launch") return campaignBundles.find((bundle) => bundle.id === "content-community-announcement") ?? campaignBundles[0];
-    if (goal === "Drive Traffic To A Link") return campaignBundles.find((bundle) => bundle.id === "content-traffic-push") ?? campaignBundles[0];
-    return campaignBundles.find((bundle) => bundle.id === "content-flyer-status") ?? campaignBundles[0];
+function getGoalInfo(goal: string) {
+  return goalInfo[goal] ?? {
+    detail: "Use this goal to guide the recommended actions, proof style, and platforms.",
+    titlePlaceholder: "Promote my campaign",
+    bundleIds: bundles.map((bundle) => bundle.id),
+  };
+}
+
+function getRecommendedBundles(categoryId: string, goal: string) {
+  const info = getGoalInfo(goal);
+  return bundles.filter((bundle) => {
+    const hasPricing = pricingOptions.some((option) => option.categoryId === categoryId && option.bundleId === bundle.id);
+    return hasPricing && info.bundleIds.includes(bundle.id);
+  });
+}
+
+function summarizePricingOptions(options: PricingOption[]) {
+  if (options.length === 0) return "";
+  if (options.length === 1) return options[0].label;
+  return options.map((option) => option.label).join(" + ");
+}
+
+function summarizeTargetLocation(location: TargetLocation) {
+  if (location.name) {
+    const placeParts = location.type === "region"
+      ? [location.name, location.country]
+      : [location.name, location.region, location.country];
+
+    return placeParts
+      .map((item) => item?.trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return [location.address, location.city, location.state, location.country]
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function normalizeTargetState(value: string) {
+  const normalized = value
+    .trim()
+    .replace(/\s+State$/i, "")
+    .replace(/^Federal Capital Territory$/i, "FCT - Abuja");
+
+  if (/^(fct|abuja|fct - abuja)$/i.test(normalized)) return "FCT - Abuja";
+  return normalized;
+}
+
+function getStateTarget(location: TargetLocation) {
+  if (location.type === "country") return "";
+  const candidate = location.state.trim() || location.region?.trim() || location.name?.trim() || "";
+  return normalizeTargetState(candidate);
+}
+
+function isTargetLocationFilled(location: TargetLocation) {
+  return Boolean(location.id) || location.state.trim().length > 1 || location.city.trim().length > 1 || location.address.trim().length > 2;
+}
+
+function createEmptyTargetLocation(): TargetLocation {
+  return { country: "Nigeria", state: "", city: "", address: "", query: "" };
+}
+
+function buildActionsForPricing(baseActions: string[], options: PricingOption[]) {
+  return [...new Set([...baseActions, ...options.map((option) => option.actionHint)])];
+}
+
+function cleanActionForContributor(action: string) {
+  return action
+    .replace(/\s+and submit (?:a )?(?:clear )?(?:link or screenshot|screenshot|screenshots|join\/final)?\s*proof(?: with feedback| of the promotion)?\.?$/i, "")
+    .replace(/\s+and submit proof\.?$/i, "")
+    .replace(/\s+and submit screenshot proof\.?$/i, "")
+    .trim();
+}
+
+function buildContributorSteps(input: {
+  hasUploadedAsset: boolean;
+  hasContentLink: boolean;
+  categoryId: string;
+  actions: string[];
+  selectedPricingOptions: PricingOption[];
+  appGuidedSteps: string[];
+}) {
+  const assetStep = input.hasUploadedAsset && !input.hasContentLink
+    ? "Download the uploaded campaign content first, then upload or share it manually on the required platform if the platform cannot preview it."
+    : "";
+  const selectedPlatformSteps = input.selectedPricingOptions
+    .map((option) => cleanActionForContributor(option.actionHint))
+    .filter(Boolean);
+  const fallbackSteps = input.actions
+    .map(cleanActionForContributor)
+    .filter((step) => step && !/^submit\b/i.test(step));
+  const keepVisibleStep = input.actions.find((step) => /keep .*visible/i.test(step));
+  const proofStep = input.categoryId === "feedback"
+    ? "Submit a clear written response"
+    : input.categoryId === "apps"
+      ? "Submit screenshots and useful feedback"
+      : "Submit screenshot proof";
+
+  const actionSteps = input.categoryId === "apps"
+    ? input.appGuidedSteps.map(cleanActionForContributor).filter(Boolean)
+    : (selectedPlatformSteps.length > 0 ? selectedPlatformSteps : fallbackSteps);
+
+  return [...new Set([
+    assetStep,
+    ...actionSteps,
+    keepVisibleStep,
+    proofStep,
+  ].filter(Boolean))];
+}
+
+function getBundleDisplay(bundle: CampaignBundle, categoryId: string) {
+  if (categoryId === "apps" && bundle.id === "app-growth") {
+    return {
+      ...bundle,
+      name: "App Testing & Review Flow",
+      description: "Choose the app platform or testing path contributors must complete before submitting proof and feedback.",
+      platforms: ["Android", "iOS", "Web App", "APK", "Onboarding", "Bug Report", "Feature Test", "App Review"],
+      actionHint: ["Open or install the app", "Complete the assigned test flow", "Submit screenshots and useful feedback"],
+    };
+  }
+
+  if (categoryId === "feedback" && bundle.id === "user-feedback") {
+    return {
+      ...bundle,
+      name: "Survey & Feedback Flow",
+      description: "Choose the feedback format contributors must complete with a clear written response.",
+      platforms: ["Survey Form", "Product Page", "Content Link", "Feature Brief", "Research Brief", "Review Form"],
+      actionHint: ["Open the feedback context", "Answer every required question", "Submit a clear written response"],
+    };
+  }
+
+  if (categoryId !== "music") return bundle;
+
+  if (bundle.id === "story-status") {
+    return {
+      ...bundle,
+      name: "Music Status Promotion",
+      description: "Contributors post your song link, cover art, or release promo on WhatsApp, Instagram, Facebook, Telegram, TikTok, and Snapchat.",
+      platforms: ["WhatsApp", "Instagram", "Facebook", "Telegram", "TikTok", "Snapchat"],
+      actionHint: ["Post the approved music promo asset", "Keep it visible for the required duration", "Submit screenshot proof of the promotion"],
+    };
+  }
+
+  if (bundle.id === "short-video") {
+    return {
+      ...bundle,
+      name: "Short Video Music Promotion",
+      description: "Contributors promote your music through short-form video platforms using your approved promo asset or link.",
+      platforms: ["WhatsApp Status Video", "Instagram Reel", "Facebook Reel", "TikTok Video", "YouTube Shorts", "Snapchat Spotlight"],
+      actionHint: ["Create or repost the approved music promo", "Use the provided caption or campaign instruction", "Submit link or screenshot proof"],
+    };
+  }
+
+  if (bundle.id === "streaming-awareness") {
+    return {
+      ...bundle,
+      name: "Music Link Promotion",
+      description: "Contributors share your song link, artist page, release page, or promo URL to help push the music campaign.",
+      platforms: ["Audiomack", "Spotify", "Boomplay", "Apple Music", "YouTube", "TikTok", "Artist Page", "Promo URL"],
+      actionHint: ["Open the campaign link", "Share or post the music link as instructed", "Submit screenshot proof of the promotion"],
+    };
+  }
+
+  return bundle;
+}
+
+function getRewardRecommendation(categoryId: string, goal: string, bundleId: string, contentType: string) {
+  const combined = `${categoryId} ${goal} ${bundleId} ${contentType}`.toLowerCase();
+
+  if (categoryId === "apps") {
+    if (combined.includes("bug") || combined.includes("feature")) return { label: "High-effort mission", naira: 300, min: 150, max: 500 };
+    if (combined.includes("signup") || combined.includes("onboarding")) return { label: "High-effort mission", naira: 250, min: 150, max: 400 };
+    return { label: "High-effort mission", naira: 150, min: 150, max: 400 };
+  }
+  if (categoryId === "feedback") {
+    if (combined.includes("detailed") || combined.includes("review")) return { label: "Verified engagement mission", naira: 200, min: 80, max: 200 };
+    if (combined.includes("product") || combined.includes("content") || combined.includes("feature")) return { label: "Verified engagement mission", naira: 120, min: 80, max: 150 };
+    return { label: "Verified engagement mission", naira: 80, min: 80, max: 150 };
+  }
+  if (categoryId === "community") {
+    if (combined.includes("retention")) return { label: "Verified engagement mission", naira: 120, min: 80, max: 200 };
+    return { label: "Verified engagement mission", naira: 80, min: 80, max: 150 };
   }
   if (categoryId === "music") {
-    if (contentType === "TikTok Sound Campaign" || contentType === "Song Snippet / Teaser" || goal === "Push Viral Momentum" || goal === "Boost TikTok Usage") return campaignBundles.find((bundle) => bundle.id === "music-short-video") ?? campaignBundles[0];
-    if (contentType === "Streaming Campaign" || goal === "Increase Streams") return campaignBundles.find((bundle) => bundle.id === "music-streaming") ?? campaignBundles[0];
-    if (contentType === "Artist Awareness Campaign" || goal === "Build Fan Engagement") return campaignBundles.find((bundle) => bundle.id === "music-fan-engagement") ?? campaignBundles[0];
-    return campaignBundles.find((bundle) => bundle.id === "music-story-status") ?? campaignBundles[0];
+    if (combined.includes("video") || combined.includes("reels") || combined.includes("tiktok")) return { label: "High-effort mission", naira: 250, min: 150, max: 400 };
+    if (combined.includes("music link") || combined.includes("release") || combined.includes("artist")) return { label: "Verified promotion mission", naira: 100, min: 80, max: 150 };
+    return { label: "Standard participation mission", naira: 50, min: 40, max: 80 };
   }
-  if (categoryId === "creator") {
-    if (contentType === "Livestream Promotion" || goal === "Increase Livestream Attendance") return campaignBundles.find((bundle) => bundle.id === "creator-livestream") ?? campaignBundles[0];
-    if (contentType === "Community Growth Campaign" || goal === "Grow Community Members") return campaignBundles.find((bundle) => bundle.id === "creator-community") ?? campaignBundles[0];
-    if (contentType === "Short-Form Video Promotion" || goal === "Push Viral Momentum") return campaignBundles.find((bundle) => bundle.id === "creator-short-form") ?? campaignBundles[0];
-    if (goal === "Boost Engagement" || goal === "Increase Profile Traffic") return campaignBundles.find((bundle) => bundle.id === "creator-engagement") ?? campaignBundles[0];
-    return campaignBundles.find((bundle) => bundle.id === "creator-story-status") ?? campaignBundles[0];
-  }
-  if (categoryId === "business") {
-    if (contentType === "Website / Online Store Traffic" || goal === "Increase Online Traffic") return campaignBundles.find((bundle) => bundle.id === "business-traffic") ?? campaignBundles[0];
-    if (contentType === "Event Awareness" || goal === "Spread Community Awareness" || goal === "Drive Store Visits") return campaignBundles.find((bundle) => bundle.id === "business-community") ?? campaignBundles[0];
-    if (contentType === "Store / Brand Awareness" || goal === "Build Brand Visibility") return campaignBundles.find((bundle) => bundle.id === "business-social-feed") ?? campaignBundles[0];
-    if (contentType === "Product Promotion" && goal === "Promote A Product") return campaignBundles.find((bundle) => bundle.id === "business-short-form") ?? campaignBundles[0];
-    return campaignBundles.find((bundle) => bundle.id === "business-story-status") ?? campaignBundles[0];
-  }
-  if (categoryId === "community") return campaignBundles.find((bundle) => bundle.id === "community-growth") ?? campaignBundles[0];
-  if (categoryId === "video" || categoryId === "music" || contentType === "Video") return campaignBundles.find((bundle) => bundle.id === "video-distribution") ?? campaignBundles[0];
-  if (contentType === "Link" || categoryId === "apps" || categoryId === "surveys") return campaignBundles.find((bundle) => bundle.id === "guided-engagement") ?? campaignBundles[0];
-  return campaignBundles.find((bundle) => bundle.id === "story-status") ?? campaignBundles[0];
+  if (combined.includes("group") || combined.includes("community")) return { label: "Standard participation mission", naira: 70, min: 40, max: 80 };
+  if (combined.includes("24") || combined.includes("story") || combined.includes("status")) return { label: "Standard participation mission", naira: 50, min: 40, max: 80 };
+  return { label: "Simple awareness mission", naira: MIN_REWARD_NAIRA, min: MIN_REWARD_NAIRA, max: 40 };
 }
 
-export default function CreateCampaignPage() {
+function buildPricing(rewardNaira: number, contributors: number) {
+  const reward = Math.max(MIN_REWARD_NAIRA, rewardNaira);
+  const contributorRewards = reward * contributors;
+  const commission = Math.round(contributorRewards * COMMISSION_RATE);
+  const verification = Math.round(contributorRewards * VERIFICATION_RATE);
+  const total = contributorRewards + commission + verification;
+
+  return {
+    rewardNaira: reward,
+    rewardQlt: toQlt(reward),
+    contributorRewards,
+    contributorRewardsQlt: toQlt(contributorRewards),
+    commission,
+    verification,
+    feeTotal: commission + verification,
+    total,
+    totalQlt: toQlt(total),
+  };
+}
+
+type ContentRequirement = {
+  mode: "link" | "upload" | "either";
+  title: string;
+  detail: string;
+  linkLabel: string;
+  linkHint: string;
+  uploadHint: string;
+};
+
+function getContentRequirement(categoryId: string, contentType: string): ContentRequirement {
+  const value = `${categoryId} ${contentType}`.toLowerCase();
+
+  if (categoryId === "apps") {
+    return {
+      mode: "link",
+      title: "App test link required",
+      detail: "Add the exact app, build, prototype, or instruction link contributors must open before completing the test.",
+      linkLabel: "Required app or test link",
+      linkHint: "Use the Play Store, App Store, TestFlight, APK, web app, prototype, or testing instruction link.",
+      uploadHint: "No file upload",
+    };
+  }
+
+  if (categoryId === "feedback") {
+    return {
+      mode: "link",
+      title: "Feedback context required",
+      detail: "Add the survey, product page, content link, prototype, research brief, or form contributors must review.",
+      linkLabel: "Required feedback link",
+      linkHint: "Contributors will open this link, review the context, and submit their written response.",
+      uploadHint: "No file upload",
+    };
+  }
+
+  const needsLink = ["app", "android", "ios", "web app", "apk", "song link", "music video", "snippet", "video", "sound", "community", "group", "server", "survey", "feature validation", "review"].some((term) => value.includes(term));
+  const needsUpload = ["flyer", "announcement", "offer"].some((term) => value.includes(term));
+
+  if (value.includes("cover art")) {
+    return {
+      mode: "either",
+      title: "Campaign content",
+      detail: "Upload the cover art or paste a direct link contributors can open and use for the campaign.",
+      linkLabel: "Cover art link",
+      linkHint: "Use this if the cover art already lives online.",
+      uploadHint: "Upload image, PDF, or use a link",
+    };
+  }
+
+  if (needsLink && !needsUpload) {
+    return {
+      mode: "link",
+      title: "Campaign link required",
+      detail: "This content type needs a link contributors can open directly. File upload is hidden so the instruction stays clear.",
+      linkLabel: "Required link",
+      linkHint: "Contributors will open this link to complete the task.",
+      uploadHint: "No file upload",
+    };
+  }
+
+  if (needsUpload && !needsLink) {
+    return {
+      mode: "upload",
+      title: "Campaign asset required",
+      detail: "This content type needs an uploaded visual or document that contributors can use for the campaign.",
+      linkLabel: "Optional supporting link",
+      linkHint: "Add a link only if contributors need extra context.",
+      uploadHint: "Images, PDF, or document only",
+    };
+  }
+
+  return {
+    mode: "either",
+    title: "Campaign content",
+    detail: "Upload the campaign material or add a link, depending on what contributors need to complete the task.",
+    linkLabel: "Campaign link",
+    linkHint: "Use this if the content already lives online.",
+    uploadHint: "Upload a file or use a link",
+  };
+}
+
+function getProofConfig(categoryId: string) {
+  if (categoryId === "feedback") {
+    return {
+      type: "text",
+      label: "Submit your written feedback response",
+      maxScreenshots: 0,
+    };
+  }
+
+  if (categoryId === "apps") {
+    return {
+      type: "screenshot",
+      label: "Upload screenshots and describe what happened during the app test",
+      maxScreenshots: 3,
+    };
+  }
+
+  return {
+    type: "screenshot",
+    label: "Upload proof showing you completed the mission",
+    maxScreenshots: 2,
+  };
+}
+
+function formatMissingFields(fields: string[]) {
+  if (fields.length <= 1) return fields[0] || "the missing details";
+  if (fields.length === 2) return `${fields[0]} and ${fields[1]}`;
+  return `${fields.slice(0, -1).join(", ")}, and ${fields[fields.length - 1]}`;
+}
+
+export default function NewCampaignPage() {
   const router = useRouter();
-  const [business, setBusiness] = useState<{ name: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [categoryId, setCategoryId] = useState("content");
+  const [goal, setGoal] = useState(missionCategories[0].goals[0]);
+  const [title, setTitle] = useState("");
+  const [objective, setObjective] = useState("");
+  const [contentType, setContentType] = useState(missionCategories[0].contentTypes[0]);
+  const [contentCaption, setContentCaption] = useState("");
+  const [contentLink, setContentLink] = useState("");
+  const [assetName, setAssetName] = useState("");
+  const [assetPreviewUrl, setAssetPreviewUrl] = useState("");
+  const [assetDataUrl, setAssetDataUrl] = useState("");
+  const [assetMimeType, setAssetMimeType] = useState("");
+  const [bundleId, setBundleId] = useState("");
+  const [selectedPricingIds, setSelectedPricingIds] = useState<string[]>([]);
+  const [actions, setActions] = useState<string[]>(missionCategories[0].defaultActions);
+  const [appContributorInstructions, setAppContributorInstructions] = useState("");
+  const [audience, setAudience] = useState<string[]>(missionCategories[0].defaultAudience.slice(0, 2));
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(categoryInterestDefaults[missionCategories[0].id]);
+  const [reachId, setReachId] = useState("starter");
+  const [customContributors, setCustomContributors] = useState("");
+  const [locationMode, setLocationMode] = useState<"nationwide" | "exact">("nationwide");
+  const [targetLocations, setTargetLocations] = useState<TargetLocation[]>([]);
+  const [locationSearchDraft, setLocationSearchDraft] = useState<TargetLocation>(createEmptyTargetLocation());
+  const [focusedLocationIndex, setFocusedLocationIndex] = useState<number | null>(null);
+  const [locationResults, setLocationResults] = useState<Record<number, LocationSearchResult[]>>({});
+  const [locationSearchLoading, setLocationSearchLoading] = useState<Record<number, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [policyAccepted, setPolicyAccepted] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
+  const [draftReady, setDraftReady] = useState(false);
+  const skipCategorySyncRef = useRef(false);
+  const lastStepIndexRef = useRef(stepIndex);
 
-  const [categoryId, setCategoryId] = useState("content");
-  const [goal, setGoal] = useState("Increase Local Awareness");
-  const [contentType, setContentType] = useState("Flyer Promotion");
-  const [contentLink, setContentLink] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [caption, setCaption] = useState("");
-  const [title, setTitle] = useState("Content Distribution Campaign");
-  const [bundleId, setBundleId] = useState("content-flyer-status");
-  const [actions, setActions] = useState<string[]>(["Post flyer to WhatsApp status", "Post to Facebook story", "Post to Instagram story", "Use provided caption", "Keep post active for 24 hours"]);
-  const [instructions, setInstructions] = useState("Leave the post visible for at least 24 hours.");
-  const [interests, setInterests] = useState<string[]>(["Local Communities", "Shopping"]);
-  const [platforms, setPlatforms] = useState<string[]>(["WhatsApp Status"]);
-  const [levels, setLevels] = useState<string[]>(["All Contributors"]);
-  const [states, setStates] = useState<string[]>(["Lagos"]);
-  const [cities, setCities] = useState<string[]>([]);
-  const [campuses, setCampuses] = useState<string[]>([]);
-  const [packageId, setPackageId] = useState("starter-distribution");
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [customReward, setCustomReward] = useState("");
-  const [customContributors, setCustomContributors] = useState("");
-  const [customDuration, setCustomDuration] = useState("");
-  const [customPacing, setCustomPacing] = useState("Steady distribution");
+  const category = useMemo(() => missionCategories.find((item) => item.id === categoryId) ?? missionCategories[0], [categoryId]);
+  const selectedGoalInfo = useMemo(() => getGoalInfo(goal), [goal]);
+  const recommendedBundles = useMemo(() => getRecommendedBundles(category.id, goal), [category.id, goal]);
+  const bundle = useMemo(() => bundles.find((item) => item.id === bundleId) ?? null, [bundleId]);
+  const reach = useMemo(() => reachPackages.find((item) => item.id === reachId) ?? reachPackages[0], [reachId]);
+  const contributorCount = Math.max(1, Number(customContributors) || reach.contributors);
+  const pricingChoices = useMemo(() => bundle ? getPricingOptions(category.id, bundle.id, goal) : [], [bundle, category.id, goal]);
+  const selectedPricingOptions = useMemo(() => pricingChoices.filter((item) => selectedPricingIds.includes(item.id)), [pricingChoices, selectedPricingIds]);
+  const selectedPricingLabel = summarizePricingOptions(selectedPricingOptions);
+  const activeTargetLocations = useMemo(() => targetLocations.filter(isTargetLocationFilled), [targetLocations]);
+  const locationSummary = locationMode === "nationwide"
+    ? "Nationwide"
+    : activeTargetLocations.map(summarizeTargetLocation).filter(Boolean).join(" + ");
+  const locationStateTargets = activeTargetLocations
+    .map(getStateTarget)
+    .filter(Boolean);
+  const reward = useMemo(() => {
+    if (selectedPricingOptions.length > 0) {
+      const rewardQlt = selectedPricingOptions.reduce((total, option) => total + option.rewardQlt, 0);
+      const naira = qltToNaira(rewardQlt);
+      return { label: selectedPricingLabel, naira, min: naira, max: naira };
+    }
+    return getRewardRecommendation(category.id, goal, bundle?.id ?? "", contentType);
+  }, [bundle, category.id, contentType, goal, selectedPricingLabel, selectedPricingOptions]);
+  const pricing = useMemo(() => buildPricing(reward.naira, contributorCount), [contributorCount, reward.naira]);
+  const selectedPlatforms = selectedPricingOptions.length > 0 ? selectedPricingOptions.map((option) => option.platform) : (bundle?.platforms ?? []);
+  const progress = Math.round(((stepIndex + 1) / steps.length) * 100);
+  const heroCopy = stepHeroCopy[stepIndex] ?? stepHeroCopy[0];
+  const contentRequirement = getContentRequirement(category.id, contentType);
+  const proofConfig = getProofConfig(category.id);
+  const acceptsUpload = contentRequirement.mode !== "link";
+  const acceptsLink = contentRequirement.mode !== "upload";
+  const hasUploadedAsset = assetName.trim().length > 0;
+  const hasContentLink = contentLink.trim().length >= 3;
+  const hasCampaignAsset = hasContentLink || hasUploadedAsset;
+  const hasPricingSelection = Boolean(bundle && selectedPricingOptions.length > 0);
+  const hasLocationTarget = locationMode === "nationwide" || activeTargetLocations.length > 0;
+  const appInstructionSteps = appContributorInstructions
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const hasContributorActions = category.id === "apps" ? appInstructionSteps.length > 0 : actions.length > 0;
+  const missingLaunchFields = [
+    title.trim().length >= 4 ? "" : "campaign title",
+    objective.trim().length >= 10 ? "" : "campaign objective",
+    hasCampaignAsset ? "" : "campaign link or attached asset",
+    hasPricingSelection ? "" : "selected platform",
+    hasContributorActions ? "" : category.id === "apps" ? "app test instructions" : "contributor action",
+    hasLocationTarget ? "" : "target location",
+    policyAccepted ? "" : "prohibited campaign confirmation",
+  ].filter(Boolean);
+  const canSubmit = missingLaunchFields.length === 0;
+  const canContinueStep = (
+    (stepIndex !== 2 || hasCampaignAsset)
+    && (stepIndex !== 3 || hasPricingSelection)
+    && (stepIndex !== 4 || category.id !== "apps" || appInstructionSteps.length > 0)
+    && (stepIndex !== 5 || hasLocationTarget)
+  );
+  const hasEnoughBalance = Number(business?.balance ?? 0) >= pricing.totalQlt;
+  const showWallet = stepIndex === steps.length - 1;
+  const draftStorageKey = business ? `qeixova:campaign-builder-draft:${business.id}` : "";
+  const hasDraftProgress = stepIndex > 0
+    || categoryId !== missionCategories[0].id
+    || title.trim().length > 0
+    || objective.trim().length > 0
+    || contentCaption.trim().length > 0
+    || contentLink.trim().length > 0
+    || assetName.trim().length > 0
+    || bundleId.trim().length > 0
+    || selectedPricingIds.length > 0
+    || appContributorInstructions.trim().length > 0
+    || customContributors.trim().length > 0
+    || locationMode !== "nationwide"
+    || targetLocations.length > 0;
+  const shouldGuardExit = draftReady && hasDraftProgress && !success;
 
-  const category = campaignCategories.find((item) => item.id === categoryId) ?? campaignCategories[0];
-  const categoryFlow = getCategoryFlow(categoryId);
-  const recommendedBundle = getRecommendedBundle(contentType, categoryId, goal);
-  const selectedBundle = campaignBundles.find((item) => item.id === bundleId) ?? recommendedBundle;
-  const selectedPackage = categoryFlow.packages.find((item) => item.id === packageId) ?? categoryFlow.packages[0];
-  const categoryPlatforms = useMemo(() => Array.from(new Set(getBundlesForCategory(categoryId).flatMap((bundle) => bundle.platforms))), [categoryId]);
-  const resolvedReward = advancedOpen && Number(customReward) > 0 ? Number(customReward) : selectedPackage.reward;
-  const resolvedContributors = advancedOpen && Number(customContributors) > 0 ? Number(customContributors) : selectedPackage.contributors;
-  const resolvedDuration = advancedOpen && customDuration.trim() ? customDuration.trim() : selectedPackage.duration;
-  const estimatedBudget = resolvedReward * resolvedContributors;
+  const buildDraft = useCallback((savedAt = new Date().toISOString()): CampaignBuilderDraft => ({
+    version: DRAFT_VERSION,
+    savedAt,
+    stepIndex,
+    categoryId,
+    goal,
+    title,
+    objective,
+    contentType,
+    contentCaption,
+    contentLink,
+    assetName,
+    assetDataUrl,
+    assetMimeType,
+    bundleId,
+    selectedPricingIds,
+    actions,
+    appContributorInstructions,
+    audience,
+    selectedInterests,
+    reachId,
+    customContributors,
+    locationMode,
+    targetLocations,
+    locationSearchDraft,
+  }), [
+    actions,
+    appContributorInstructions,
+    assetDataUrl,
+    assetMimeType,
+    assetName,
+    audience,
+    bundleId,
+    categoryId,
+    contentCaption,
+    contentLink,
+    contentType,
+    customContributors,
+    goal,
+    locationMode,
+    locationSearchDraft,
+    objective,
+    reachId,
+    selectedInterests,
+    selectedPricingIds,
+    stepIndex,
+    targetLocations,
+    title,
+  ]);
+
+  const saveDraft = useCallback(() => {
+    if (!draftStorageKey) return;
+    try {
+      const savedAt = new Date().toISOString();
+      window.localStorage.setItem(draftStorageKey, JSON.stringify(buildDraft(savedAt)));
+    } catch {
+      // Local storage can be unavailable in private or restricted browser modes.
+    }
+  }, [buildDraft, draftStorageKey]);
+
+  const applyDraft = (draft: CampaignBuilderDraft) => {
+    skipCategorySyncRef.current = true;
+    setStepIndex(Math.min(Math.max(Number(draft.stepIndex) || 0, 0), steps.length - 1));
+    setCategoryId(draft.categoryId || missionCategories[0].id);
+    setGoal(draft.goal || missionCategories[0].goals[0]);
+    setTitle(draft.title || "");
+    setObjective(draft.objective || "");
+    setContentType(draft.contentType || missionCategories[0].contentTypes[0]);
+    setContentCaption(draft.contentCaption || "");
+    setContentLink(draft.contentLink || "");
+    setAssetName(draft.assetName || "");
+    setAssetDataUrl(draft.assetDataUrl || "");
+    setAssetPreviewUrl(draft.assetDataUrl || "");
+    setAssetMimeType(draft.assetMimeType || "");
+    setBundleId(draft.bundleId || "");
+    setSelectedPricingIds(Array.isArray(draft.selectedPricingIds) ? draft.selectedPricingIds : []);
+    setActions(Array.isArray(draft.actions) && draft.actions.length > 0 ? draft.actions : missionCategories[0].defaultActions);
+    setAppContributorInstructions(draft.appContributorInstructions || "");
+    setAudience(Array.isArray(draft.audience) ? draft.audience : missionCategories[0].defaultAudience.slice(0, 2));
+    setSelectedInterests(Array.isArray(draft.selectedInterests) ? draft.selectedInterests : categoryInterestDefaults[missionCategories[0].id]);
+    setReachId(draft.reachId || "starter");
+    setCustomContributors(draft.customContributors || "");
+    setLocationMode(draft.locationMode === "exact" ? "exact" : "nationwide");
+    setTargetLocations(Array.isArray(draft.targetLocations) ? draft.targetLocations : []);
+    setLocationSearchDraft(draft.locationSearchDraft ?? createEmptyTargetLocation());
+    setError("");
+  };
 
   useEffect(() => {
     fetch("/api/business/me")
@@ -885,139 +1060,438 @@ export default function CreateCampaignPage() {
       .then((data) => {
         if (data?.business) setBusiness(data.business);
       })
-      .finally(() => setLoading(false));
+      .catch(() => router.push("/business/login"));
   }, [router]);
 
-  const previewInstructions = useMemo(() => {
-    return [
-      `Goal: ${goal}.`,
-      selectedBundle ? `Campaign bundle: ${selectedBundle.name}. Verification: ${selectedBundle.verification.join(", ")}.` : "",
-      contentType ? `Campaign content: ${contentType}${contentLink ? ` - ${contentLink}` : fileName ? ` - ${fileName}` : ""}.` : "",
-      actions.length ? `Contributor actions: ${actions.join(", ")}.` : "",
-      caption ? `Suggested caption: ${caption}` : "",
-      instructions ? `Important instructions: ${instructions}` : "",
-      `Audience: ${interests.length ? interests.join(", ") : "All interests"}.`,
-      `Platforms: ${platforms.length ? platforms.join(", ") : "All platforms"}.`,
-      `Contributor level: ${levels.join(", ")}.`,
-      cities.length || campuses.length ? `Local focus: ${[...cities, ...campuses].join(", ")}.` : "",
-      advancedOpen ? `Campaign pacing: ${customPacing}.` : "",
-    ].filter(Boolean).join("\n");
-  }, [actions, advancedOpen, campuses, caption, cities, contentLink, contentType, customPacing, fileName, goal, instructions, interests, levels, platforms, selectedBundle]);
+  useEffect(() => {
+    if (!draftStorageKey || draftReady) return;
+    try {
+      const raw = window.localStorage.getItem(draftStorageKey);
+      if (raw) {
+        const draft = JSON.parse(raw) as CampaignBuilderDraft;
+        if (draft?.version === DRAFT_VERSION) applyDraft(draft);
+      }
+    } catch {
+      setError("Saved draft could not be restored.");
+    } finally {
+      setDraftReady(true);
+    }
+  }, [draftReady, draftStorageKey]);
 
-  const proofLabel = useMemo(() => {
-    if (actions.some((action) => action.toLowerCase().includes("feedback"))) return "Submit your feedback and attach proof if requested";
-    if (actions.some((action) => action.toLowerCase().includes("download"))) return "Upload a screenshot showing the app installed or opened";
-    return "Upload a screenshot showing your post, share, or completed action";
-  }, [actions]);
+  useEffect(() => {
+    if (skipCategorySyncRef.current) {
+      skipCategorySyncRef.current = false;
+      return;
+    }
+    const nextCategory = missionCategories.find((item) => item.id === categoryId) ?? missionCategories[0];
+    setGoal(nextCategory.goals[0]);
+    setContentType(nextCategory.contentTypes[0]);
+    setActions(nextCategory.defaultActions);
+    setAppContributorInstructions("");
+    setAudience(nextCategory.defaultAudience.slice(0, 2));
+    setSelectedInterests(categoryInterestDefaults[nextCategory.id] ?? []);
+    setBundleId("");
+    setSelectedPricingIds([]);
+    setError("");
+  }, [categoryId]);
 
-  const recommended = useMemo(() => {
-    const recommendedPlatforms = platforms.length ? platforms.slice(0, 3).join(", ") : "WhatsApp, Instagram, TikTok";
-    const quality = category.missionType === "premium" ? "high-touch participation" : category.missionType === "participation" ? "useful feedback quality" : "fast visibility";
-    return { platforms: recommendedPlatforms, quality };
-  }, [category.missionType, platforms]);
+  useEffect(() => {
+    if (!draftReady || !draftStorageKey || success) return;
+    if (!hasDraftProgress) return;
 
-  const applyBundle = (bundle: CampaignBundle) => {
-    setBundleId(bundle.id);
-    setPlatforms(bundle.platforms);
-    setActions(bundle.actions);
-    setInstructions(
-      bundle.id === "story-status"
-        ? "Use the provided caption, keep the story/status visible for 24 hours, and upload screenshots with timestamps."
-        : bundle.id === "video-distribution"
-          ? "Use the provided caption and hashtags, keep the video public during the campaign, and submit repost links or screenshots."
-          : bundle.id === "community-growth"
-            ? "Join the selected community, remain active for the required duration, and submit proof of membership or participation."
-            : "Follow the campaign instruction, submit proof clearly, and keep the action visible until review is complete."
-    );
+    const timeout = window.setTimeout(() => {
+      saveDraft();
+    }, DRAFT_SAVE_DELAY_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [draftReady, draftStorageKey, hasDraftProgress, saveDraft, success]);
+
+  useEffect(() => {
+    if (!shouldGuardExit) return;
+
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      saveDraft();
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    const onDocumentClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      const link = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!link) return;
+      if (link.target === "_blank" || link.hasAttribute("download")) return;
+
+      const destination = new URL(link.href, window.location.href);
+      if (destination.href === window.location.href) return;
+
+      saveDraft();
+      const shouldLeave = window.confirm("Your campaign draft has been autosaved. Leave this page?");
+      if (!shouldLeave) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    document.addEventListener("click", onDocumentClick, true);
+
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("click", onDocumentClick, true);
+    };
+  }, [saveDraft, shouldGuardExit]);
+
+  useEffect(() => {
+    if (lastStepIndexRef.current === stepIndex) return;
+    lastStepIndexRef.current = stepIndex;
+
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.scrollingElement?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }, [stepIndex]);
+
+  useEffect(() => {
+    if (!assetPreviewUrl) return;
+    return () => URL.revokeObjectURL(assetPreviewUrl);
+  }, [assetPreviewUrl]);
+
+  useEffect(() => {
+    if (focusedLocationIndex === null) return;
+    const query = locationSearchDraft.query?.trim() ?? "";
+    if (query.length < 2) {
+      setLocationResults((current) => ({ ...current, [focusedLocationIndex]: [] }));
+      return;
+    }
+
+    let cancelled = false;
+    setLocationSearchLoading((current) => ({ ...current, [focusedLocationIndex]: true }));
+    const timeout = window.setTimeout(() => {
+      fetch(`/api/locations/search?q=${encodeURIComponent(query)}`)
+        .then((response) => response.ok ? response.json() : Promise.reject(new Error("Location search failed")))
+        .then((data) => {
+          if (!cancelled) {
+            setLocationResults((current) => ({ ...current, [focusedLocationIndex]: data.locations ?? [] }));
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setLocationResults((current) => ({ ...current, [focusedLocationIndex]: [] }));
+        })
+        .finally(() => {
+          if (!cancelled) setLocationSearchLoading((current) => ({ ...current, [focusedLocationIndex]: false }));
+        });
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [focusedLocationIndex, locationSearchDraft.query]);
+
+  const handleAssetUpload = (file: File | undefined) => {
+    if (!file) {
+      setAssetName("");
+      setAssetMimeType("");
+      setAssetPreviewUrl("");
+      setAssetDataUrl("");
+      setError("");
+      return;
+    }
+
+    if (file && file.size > MAX_STORED_ASSET_BYTES) {
+      setAssetName("");
+      setAssetMimeType("");
+      setAssetPreviewUrl("");
+      setAssetDataUrl("");
+      setError("Upload a campaign asset under 2.5MB so it can be stored and shown to contributors.");
+      return;
+    }
+    setError("");
+    setAssetName(file.name);
+    setAssetMimeType(file.type);
+    setAssetPreviewUrl(URL.createObjectURL(file));
+    setAssetDataUrl("");
+
+    const reader = new FileReader();
+    reader.onload = () => setAssetDataUrl(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => {
+      setAssetDataUrl("");
+      setError("The campaign asset could not be prepared. Try uploading the file again.");
+    };
+    reader.readAsDataURL(file);
   };
 
-  const applyFlow = (nextCategoryId: string) => {
-    const flow = getCategoryFlow(nextCategoryId);
-    const bundle = campaignBundles.find((item) => item.id === flow.defaultBundleId) ?? getRecommendedBundle(flow.defaultContentType, nextCategoryId, flow.defaultGoal);
-    setCategoryId(nextCategoryId);
-    setGoal(flow.defaultGoal);
-    setContentType(flow.defaultContentType);
-    setTitle(flow.defaultTitle);
-    setInterests(flow.defaultInterests);
-    setLevels(flow.defaultLevels);
-    setPackageId(flow.packages[0]?.id ?? "starter");
-    setCustomPacing(nextCategoryId === "music" ? "Fast launch burst" : nextCategoryId === "creator" ? "Weekend push" : "Steady distribution");
-    applyBundle(bundle);
-  };
-
-  const applyContentType = (nextContentType: string) => {
+  const selectContentType = (nextContentType: string) => {
     setContentType(nextContentType);
-    applyBundle(getRecommendedBundle(nextContentType, categoryId, goal));
+    setError("");
   };
 
-  const canContinue = () => {
-    if (stepIndex === 0) return Boolean(categoryId) && Boolean(contentType);
-    if (stepIndex === 1) return Boolean(goal);
-    if (stepIndex === 2) return Boolean(contentType) && (contentLink.trim() || fileName || contentType !== "Link");
-    if (stepIndex === 3) return Boolean(title.trim()) && actions.length > 0;
-    if (stepIndex === 4) return platforms.length > 0 && levels.length > 0;
-    if (stepIndex === 5) return resolvedReward >= 1000 && resolvedContributors > 0;
-    return true;
+  const toggleAction = (action: string) => {
+    setActions((current) => current.includes(action) ? current.filter((item) => item !== action) : [...current, action]);
+  };
+
+  const toggleInterest = (interest: string) => {
+    setSelectedInterests((current) => current.includes(interest)
+      ? current.filter((item) => item !== interest)
+      : [...current, interest]);
+  };
+
+  const updateLocationQuery = (value: string) => {
+    setLocationMode("exact");
+    setLocationSearchDraft((current) => ({
+      ...current,
+      query: value,
+      id: undefined,
+      name: undefined,
+      type: undefined,
+      latitude: undefined,
+      longitude: undefined,
+      population: undefined,
+      boundary: undefined,
+    }));
+    setFocusedLocationIndex(0);
+    setError("");
+  };
+
+  const clearLocationSearch = () => {
+    setLocationMode("exact");
+    setLocationSearchDraft(createEmptyTargetLocation());
+    setLocationResults((current) => ({ ...current, 0: [] }));
+    setLocationSearchLoading((current) => ({ ...current, 0: false }));
+    setFocusedLocationIndex(null);
+    setError("");
+  };
+
+  const removeTargetLocation = (index: number) => {
+    setTargetLocations((current) => current.filter((_, locationIndex) => locationIndex !== index));
+    setFocusedLocationIndex(null);
+    setError("");
+  };
+
+  const selectTargetLocation = (result: LocationSearchResult) => {
+    if (targetLocations.some((location) => location.id === result.id)) {
+      setError(`${result.name} is already selected.`);
+      return;
+    }
+
+    const state = result.type === "region" ? result.name : result.region ?? "";
+    const city = result.type === "city" || result.type === "locality" ? result.name : "";
+    const selectedLocation: TargetLocation = {
+        id: result.id,
+        name: result.name,
+        type: result.type,
+        country: result.country,
+        countryCode: result.countryCode,
+        region: result.region,
+        state,
+        city,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        population: result.population,
+        contributorCount: result.contributorCount,
+        boundary: result.boundary,
+        address: "",
+        query: summarizeTargetLocation({ ...locationSearchDraft, name: result.name, region: result.region, country: result.country }),
+    };
+
+    setTargetLocations((current) => [...current, selectedLocation]);
+    setLocationSearchDraft(createEmptyTargetLocation());
+    setLocationResults((current) => ({ ...current, 0: [] }));
+    setLocationSearchLoading((current) => ({ ...current, 0: false }));
+    setFocusedLocationIndex(null);
+    setError("");
+  };
+
+  const selectGoal = (nextGoal: string) => {
+    setGoal(nextGoal);
+    setBundleId("");
+    setSelectedPricingIds([]);
+    setContentType(category.contentTypes[0]);
+    setActions(category.defaultActions);
+    setAppContributorInstructions("");
+    setSelectedInterests(categoryInterestDefaults[category.id] ?? []);
+    setError("");
+  };
+
+  const selectBundle = (nextBundleId: string) => {
+    const isUnselecting = bundleId === nextBundleId;
+    if (isUnselecting) {
+      setBundleId("");
+      setSelectedPricingIds([]);
+      setActions(category.defaultActions);
+      if (category.id !== "apps") setAppContributorInstructions("");
+      setError("");
+      return;
+    }
+    setBundleId(nextBundleId);
+    setSelectedPricingIds([]);
+    setActions(category.defaultActions);
+    if (category.id !== "apps") setAppContributorInstructions("");
+    setError("");
+  };
+
+  const togglePricing = (option: PricingOption) => {
+    setBundleId(option.bundleId);
+    setSelectedPricingIds((current) => {
+      const alreadySelected = current.includes(option.id);
+      const nextIds = alreadySelected
+        ? current.filter((id) => id !== option.id)
+        : [...current, option.id];
+      const nextOptions = pricingChoices.filter((choice) => nextIds.includes(choice.id));
+      setActions(buildActionsForPricing(category.defaultActions, nextOptions));
+      setError("");
+      return nextIds;
+    });
   };
 
   const nextStep = () => {
+    if (stepIndex === 2 && !hasCampaignAsset) {
+      setError("Add a campaign link or attach an asset before continuing.");
+      return;
+    }
+    if (stepIndex === 3 && !hasPricingSelection) {
+      setError("Select a bundle and at least one platform before continuing.");
+      return;
+    }
+    if (stepIndex === 4 && category.id === "apps" && appInstructionSteps.length === 0) {
+      setError("Write the app test instructions contributors should follow.");
+      return;
+    }
+    if (stepIndex === 5 && !hasLocationTarget) {
+      setError("Choose nationwide targeting or add the exact location you want to reach.");
+      return;
+    }
     setError("");
-    if (!canContinue()) {
-      setError("Complete the highlighted choices so Qeixova can shape the campaign properly.");
+    setStepIndex((current) => Math.min(steps.length - 1, current + 1));
+  };
+  const previousStep = () => setStepIndex((current) => Math.max(0, current - 1));
+
+  const submitCampaign = async () => {
+    if (!hasEnoughBalance) {
+      router.push("/business/wallet");
       return;
     }
-    setStepIndex((current) => Math.min(current + 1, steps.length - 1));
-  };
-
-  const previousStep = () => {
-    setError("");
-    setStepIndex((current) => Math.max(current - 1, 0));
-  };
-
-  const generateCaption = () => {
-    const platformHint = platforms.length ? `on ${platforms[0]}` : "today";
-    if (categoryId === "music") {
-      setCaption(`New music alert: ${title || "this release"} is out now. Listen, share ${platformHint}, use the sound, and help more people discover the artist.`);
+    if (!canSubmit) {
+      setError(`Add ${formatMissingFields(missingLaunchFields)} before launch.`);
       return;
     }
-    if (categoryId === "creator") {
-      setCaption(`Discover ${title || "this creator campaign"}. Watch, engage, share ${platformHint}, and help the content reach the right audience.`);
+    if (assetName && !contentLink.trim() && !assetDataUrl) {
+      setError("Please wait for the uploaded campaign asset to finish preparing before launch.");
       return;
     }
-    setCaption(`Discover ${title || category.title}. Join the conversation ${platformHint}, share with your circle, and help more people see what is coming from ${business?.name || "this brand"}.`);
-  };
-
-  const handleSubmit = async () => {
-    if (!canContinue()) {
-      setError("Review the campaign details before launch.");
+    if (!policyAccepted) {
+      setError("Confirm this campaign does not involve scams, fake engagement, spam, harassment, illegal products, misleading claims, privacy violations, or prohibited activity.");
       return;
     }
 
     setSaving(true);
     setError("");
+    const appGuidedSteps = [
+      ...selectedPricingOptions.map((option) => option.actionHint),
+      ...appInstructionSteps,
+    ];
+    const contributorSteps = buildContributorSteps({
+      hasUploadedAsset: Boolean(assetName),
+      hasContentLink: Boolean(contentLink.trim()),
+      categoryId: category.id,
+      actions,
+      selectedPricingOptions,
+      appGuidedSteps,
+    });
+    const instructions = [
+      `Objective: ${objective.trim()}`,
+      contentCaption.trim() ? `Content caption: ${contentCaption.trim()}` : "",
+      assetName ? `Attached asset: ${assetName}` : "",
+      contentLink.trim() ? `Campaign link: ${contentLink.trim()}` : "",
+      `Bundle: ${bundle?.name ?? ""}`,
+      selectedPricingLabel ? `Selected platform: ${selectedPricingLabel}` : "",
+      `Platforms: ${selectedPlatforms.join(", ")}`,
+      selectedInterests.length > 0 ? `Target interests: ${selectedInterests.join(", ")}` : "Target interests: Broad audience",
+      `Target location: ${locationSummary}`,
+      `Contributor actions: ${contributorSteps.join(" | ")}`,
+      `Reward: ${pricing.rewardQlt.toLocaleString()} QLT per approved participation.`,
+    ].join("\n");
+
     const payload = {
       title: title.trim(),
-      category: category.category,
-      reward: String(resolvedReward),
-      duration: resolvedDuration,
-      instructions: previewInstructions,
-      steps: actions,
-      proof_type: actions.some((action) => action.toLowerCase().includes("feedback")) ? "text" : "screenshot",
-      proof_label: proofLabel,
-      max_screenshots: 2,
+      category: category.apiCategory,
+      reward: String(pricing.rewardQlt),
+      duration: reach.duration,
+      instructions,
+      steps: contributorSteps,
+      proof_type: proofConfig.type,
+      proof_label: proofConfig.label,
+      max_screenshots: proofConfig.maxScreenshots,
       task_link: contentLink.trim(),
-      total_budget: String(estimatedBudget),
-      target_completion_count: String(resolvedContributors),
+      total_budget: String(pricing.totalQlt),
+      target_completion_count: String(contributorCount),
       mission_type: category.missionType,
-      verification_type: actions.some((action) => action.toLowerCase().includes("feedback")) ? "text" : "screenshot",
+      verification_type: proofConfig.type,
       difficulty: category.missionType === "premium" ? "hard" : category.missionType === "participation" ? "medium" : "easy",
-      min_level: levels.includes("Premium Promoters") || levels.includes("Community Influencers") ? 2 : 1,
-      target_professions: levels,
-      target_interests: interests,
-      target_platforms: platforms,
+      min_level: audience.some((item) => item.includes("Premium") || item.includes("Verified")) ? 2 : 1,
+      target_professions: audience,
+      target_interests: selectedInterests,
+      target_platforms: selectedPlatforms,
       target_age_ranges: [],
       target_genders: [],
-      target_states: [...states, ...cities, ...campuses],
+      target_states: locationMode === "nationwide" ? [] : locationStateTargets,
+      campaign_goal: goal,
+      campaign_package: reach.name,
+      campaign_metadata: {
+        productBibleVersion: "participation-growth-v1",
+        missionCategoryId: category.id,
+        contentType,
+        contentCaption: contentCaption.trim(),
+        assetName,
+        assetDataUrl,
+        assetMimeType,
+        contentLink: contentLink.trim(),
+        bundleId: bundle?.id ?? null,
+        selectedPricingIds: selectedPricingOptions.map((option) => option.id),
+        selectedPricingLabel: selectedPricingLabel || null,
+        selectedPricingOptions: selectedPricingOptions.map((option) => ({
+          id: option.id,
+          label: option.label,
+          platform: option.platform,
+          rewardQlt: option.rewardQlt,
+          actionHint: option.actionHint,
+        })),
+        selectedPricingPlatforms: selectedPricingOptions.map((option) => option.platform),
+        targetLocation: {
+          mode: locationMode,
+          locations: locationMode === "nationwide" ? [] : activeTargetLocations.map((location) => ({
+            id: location.id ?? null,
+            name: location.name ?? null,
+            type: location.type ?? null,
+            country: location.country.trim(),
+            countryCode: location.countryCode ?? null,
+            region: location.region ?? null,
+            state: location.state.trim(),
+            city: location.city.trim(),
+            address: location.address.trim(),
+            latitude: location.latitude ?? null,
+            longitude: location.longitude ?? null,
+            population: location.population ?? null,
+            boundary: location.boundary ?? null,
+            summary: summarizeTargetLocation(location),
+          })),
+          summary: locationSummary,
+        },
+        objective,
+        audience,
+        selectedInterests,
+        appContributorInstructions: category.id === "apps" ? appContributorInstructions.trim() : null,
+        pricing: {
+          rewardTier: reward.label,
+          rewardPerContributorNaira: pricing.rewardNaira,
+          rewardPerContributorQlt: pricing.rewardQlt,
+          contributorRewardsNaira: pricing.contributorRewards,
+          platformCommissionNaira: pricing.commission,
+          verificationFeeNaira: pricing.verification,
+          totalCampaignCostNaira: pricing.total,
+          totalCampaignCostQlt: pricing.totalQlt,
+        },
+      },
     };
 
     const res = await fetch("/api/business/tasks", {
@@ -1027,21 +1501,20 @@ export default function CreateCampaignPage() {
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
+      if (draftStorageKey) window.localStorage.removeItem(draftStorageKey);
       setSuccess(true);
-      setStepIndex(7);
     } else {
-      setError(data.error || "Failed to launch campaign");
+      setError(data.error || "Campaign could not be launched.");
     }
     setSaving(false);
   };
 
-  if (loading || !business) {
+  if (!business) {
     return (
-      <div className="loadingScreen">
-        <div className="spinner" />
-        <p>Preparing campaign builder...</p>
-        <style jsx>{pageStyles}</style>
-      </div>
+      <BusinessLoading
+        title="Loading campaign builder"
+        detail="Preparing goals, platform bundles, proof rules, and launch checks."
+      />
     );
   }
 
@@ -1049,22 +1522,34 @@ export default function CreateCampaignPage() {
     return (
       <>
         <BusinessSidebar name={business.name} />
-        <main className="page-body campaignPage business-page-pro">
-          <section className="launchScreen">
-            <div className="launchIcon">
-              <Image src="/icon-check-circle.svg" alt="" width={34} height={34} />
+        <main className="successShell">
+          <section className="successPanel">
+            <div className="successMark" aria-hidden="true">
+              <Image src="/qeixova-icon.png" alt="" width={42} height={42} />
             </div>
-            <p className="eyebrow">Campaign ready</p>
-            <h1>{categoryFlow.launchHeadline}</h1>
-            <p className="launchCopy">{categoryFlow.launchSummary}</p>
-            <div className="momentumGrid">
-              <div><strong>0</strong><span>early participants</span></div>
-              <div><strong>Pending</strong><span>approval status</span></div>
-              <div><strong>{resolvedContributors.toLocaleString()}</strong><span>estimated reach</span></div>
+            <div className="successCopy">
+              <span className="successStatus">Submitted successfully</span>
+              <p className="eyebrow">Campaign submitted</p>
+              <h1>{title || selectedGoalInfo.titlePlaceholder}</h1>
+              <p>Your campaign is now in review. Once approved, contributors will be able to participate and approved completions will be paid from the reserved campaign budget.</p>
             </div>
-            <div className="launchActions">
-              <button type="button" className="secondaryButton" onClick={() => router.push("/business/tasks")}>View dashboard</button>
-              <button type="button" className="primaryButton" onClick={() => router.push("/business/tasks/new")}>Create another</button>
+            <div className="successSummaryGrid" aria-label="Campaign submission summary">
+              <article>
+                <span>Status</span>
+                <strong>Pending review</strong>
+              </article>
+              <article>
+                <span>Review window</span>
+                <strong>Up to 24 hours</strong>
+              </article>
+              <article>
+                <span>Budget</span>
+                <strong>Reserved</strong>
+              </article>
+            </div>
+            <div className="successActions">
+              <button type="button" className="primary" onClick={() => router.push("/business/tasks")}>View Campaigns</button>
+              <button type="button" onClick={() => router.push("/business/tasks/new")}>Create Another</button>
             </div>
           </section>
         </main>
@@ -1077,331 +1562,480 @@ export default function CreateCampaignPage() {
   return (
     <>
       <BusinessSidebar name={business.name} />
-      <main className="page-body campaignPage business-page-pro">
-        <header className="campaignHeader">
+      <main className="pageShell">
+        <section className="heroBand">
           <div>
-            <p className="eyebrow">Qeixova Tasks</p>
-            <h1>Create Campaign</h1>
-            <p>{categoryFlow.builderIntro}</p>
+            <p className="eyebrow">{heroCopy.eyebrow}</p>
+            <h1>{heroCopy.title}</h1>
+            <p>{heroCopy.description}</p>
           </div>
-          <div className="headerStats">
-            <span>{steps.length} guided steps</span>
-            <strong>{Math.round(((stepIndex + 1) / steps.length) * 100)}%</strong>
-          </div>
-        </header>
+          {showWallet && (
+            <div className="walletCard">
+              <span>Business wallet</span>
+              <strong>{business.balance.toLocaleString()} QLT</strong>
+              <small>{business.name}</small>
+            </div>
+          )}
+        </section>
 
-        <nav className="stepper" aria-label="Campaign steps">
-          {steps.map((step, index) => (
-            <button key={step} type="button" onClick={() => index <= stepIndex && setStepIndex(index)} className={index === stepIndex ? "step active" : index < stepIndex ? "step done" : "step"}>
-              <span>{index + 1}</span>
-              {step}
-            </button>
-          ))}
-        </nav>
+        <section className="builderLayout">
+          <aside className="stepRail" aria-label="Campaign steps">
+            <div className="progressHeader">
+              <span>Step {stepIndex + 1} of {steps.length}</span>
+              <strong>{progress}%</strong>
+            </div>
+            <div className="progressTrack"><span style={{ width: `${progress}%` }} /></div>
+            {steps.map((step, index) => (
+              <button
+                key={step}
+                type="button"
+                className={index === stepIndex ? "step active" : index < stepIndex ? "step done" : "step"}
+                onClick={() => index <= stepIndex && setStepIndex(index)}
+                disabled={index > stepIndex}
+              >
+                <span>{index + 1}</span>
+                {step}
+              </button>
+            ))}
+          </aside>
 
-        {error && <div className="errorBox">{error}</div>}
-
-        <div className="builderShell">
           <section className="builderPanel">
             {stepIndex === 0 && (
-              <div className="stepContent">
-                <div className="sectionTitle">
-                  <p className="eyebrow">Step 1</p>
-                  <h2>{categoryFlow.contentHeadline}</h2>
-                  <p>{categoryFlow.contentHelp}</p>
+              <StepSection eyebrow="Step 1" title="Select mission category" note="Start with the type of growth participation this campaign needs.">
+                <div className="categoryGrid">
+                  {visibleMissionCategories.map((item) => (
+                    <button key={item.id} type="button" className={item.id === categoryId ? "choiceCard active" : "choiceCard"} onClick={() => setCategoryId(item.id)}>
+                      <strong>{item.name}</strong>
+                      <span>{item.description}</span>
+                    </button>
+                  ))}
                 </div>
-                <div className="categoryRail">
-                  {campaignCategories.map((item) => {
-                    const active = item.id === categoryId;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => applyFlow(item.id)}
-                        className={active ? "categoryChip selected" : "categoryChip"}
-                        style={{ borderColor: active ? item.accent : "#202020" }}
-                      >
-                        <span style={{ background: `${item.accent}18` }}>
-                          <Image src={item.icon} alt="" width={18} height={18} />
-                        </span>
-                        <strong>{item.title}</strong>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="contentTypeGrid">
-                  {categoryFlow.contentTypes.map((item) => {
-                    const active = item === contentType;
-                    const requirements = categoryFlow.uploadRequirements[item] ?? [];
-                    return (
-                      <button key={item} type="button" onClick={() => applyContentType(item)} className={active ? "contentTypeCard selected" : "contentTypeCard"}>
-                        <span>{active ? "Selected" : "Content type"}</span>
-                        <strong>{item}</strong>
-                        <small>{requirements.slice(0, 3).join(" • ")}</small>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              </StepSection>
             )}
 
             {stepIndex === 1 && (
-              <div className="stepContent">
-                <div className="sectionTitle">
-                  <p className="eyebrow">Step 2</p>
-                  <h2>{categoryFlow.goalsHeadline}</h2>
-                  <p>Pick the main outcome. Keep it focused so contributors understand the mission quickly.</p>
-                </div>
-                <div className="goalGrid">
-                  {categoryFlow.goals.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => {
-                        setGoal(item);
-                        applyBundle(getRecommendedBundle(contentType, categoryId, item));
-                      }}
-                      className={goal === item ? "goalButton active" : "goalButton"}
-                    >
-                      {item}
-                    </button>
+              <StepSection eyebrow="Step 2" title="Select campaign goal" note="The goal controls the recommended reward, actions, and verification path.">
+                <div className="goalChecklist">
+                  {category.goals.map((item) => (
+                    <label key={item} className={goal === item ? "goalOption active" : "goalOption"}>
+                      <input
+                        type="checkbox"
+                        checked={goal === item}
+                        onChange={() => selectGoal(item)}
+                      />
+                      <span>
+                        <strong>{item}</strong>
+                        <small>{getGoalInfo(item).detail}</small>
+                      </span>
+                    </label>
                   ))}
                 </div>
-              </div>
+                <label className="fieldBlock">
+                  Campaign title
+                  <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={selectedGoalInfo.titlePlaceholder} />
+                </label>
+                <label className="fieldBlock">
+                  Campaign objective
+                  <textarea value={objective} onChange={(event) => setObjective(event.target.value)} placeholder="Describe what contributors should help you achieve." />
+                </label>
+              </StepSection>
             )}
 
             {stepIndex === 2 && (
-              <div className="stepContent">
-                <div className="sectionTitle">
-                  <p className="eyebrow">Step 3</p>
-                  <h2>Upload campaign content</h2>
-                  <p>Keep the source material clear. Qeixova adapts the requirements to this campaign type.</p>
+              <StepSection eyebrow="Step 3" title="Attach campaign content" note="Add the exact content contributors will promote, test, join, review, or respond to.">
+                <div className="pillGrid">
+                  {category.contentTypes.map((item) => (
+                    <button key={item} type="button" className={contentType === item ? "pill active" : "pill"} onClick={() => selectContentType(item)}>{item}</button>
+                  ))}
                 </div>
-                <div className="splitGrid">
-                  <div className="uploadBox">
-                    <Image src="/icon-content.svg" alt="" width={30} height={30} />
-                    <strong>{fileName || "Drop your campaign asset here"}</strong>
-                    <span>{categoryFlow.contentHelp}</span>
-                    <div className="requirementList">
-                      {(categoryFlow.uploadRequirements[contentType] ?? []).map((requirement) => <small key={requirement}>{requirement}</small>)}
-                    </div>
-                    <label className="fileButton">
-                      Choose file
-                      <input type="file" accept="image/*,video/*,audio/*,.pdf" onChange={(event) => setFileName(event.target.files?.[0]?.name || "")} />
-                    </label>
+                <div className={acceptsUpload ? "assetPanel" : "assetPanel linkOnlyPanel"}>
+                  <div>
+                    <p className="eyebrow">{contentRequirement.title}</p>
+                    <h3>{contentType}</h3>
+                    <span>{contentRequirement.detail}</span>
                   </div>
-                  <div className="fieldStack">
-                    <label>
-                      Content type
-                      <select
-                        value={contentType}
-                        onChange={(event) => {
-                          const nextContentType = event.target.value;
-                          applyContentType(nextContentType);
-                        }}
-                      >
-                        {categoryFlow.contentTypes.map((item) => <option key={item}>{item}</option>)}
-                      </select>
+                  {acceptsUpload ? (
+                    <label className="uploadBox">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf,.doc,.docx"
+                        onChange={(event) => handleAssetUpload(event.target.files?.[0])}
+                      />
+                      <strong>{assetName || "Choose campaign asset"}</strong>
+                      <small>{contentRequirement.uploadHint}</small>
                     </label>
-                    <label>
-                      {categoryFlow.linkLabel}
-                      <input value={contentLink} onChange={(event) => setContentLink(event.target.value)} placeholder={categoryFlow.linkPlaceholder} />
-                    </label>
-                    <div className="assistBox">
-                      <div>
-                        <strong>Need help with your caption?</strong>
-                        <span>Generate a simple promotional caption from your campaign choices.</span>
-                      </div>
-                      <button type="button" onClick={generateCaption}>Generate</button>
+                  ) : (
+                    <div className="linkBadge">
+                      <strong>Add link</strong>
+                      <small>{contentRequirement.uploadHint}</small>
                     </div>
-                    <label>
-                      {categoryFlow.captionLabel}
-                      <textarea value={caption} onChange={(event) => setCaption(event.target.value)} rows={4} placeholder={categoryFlow.captionPlaceholder} />
-                    </label>
-                  </div>
+                  )}
                 </div>
-              </div>
+                {acceptsLink && (
+                  <label className="fieldBlock">
+                    {category.contentLabel} <small>{contentRequirement.linkLabel}</small>
+                    <input value={contentLink} onChange={(event) => setContentLink(event.target.value)} placeholder="Add link of the content or campaign" />
+                    <span className="fieldHelp">{contentRequirement.linkHint}</span>
+                  </label>
+                )}
+                <label className="fieldBlock captionField">
+                  Content caption <small>Optional</small>
+                  <textarea
+                    value={contentCaption}
+                    onChange={(event) => setContentCaption(event.target.value)}
+                    placeholder="Write the caption, message, hashtags, or post text contributors should use with this content."
+                    rows={4}
+                    maxLength={1200}
+                  />
+                  <span className="fieldHelp">{contentCaption.trim().length.toLocaleString()}/1,200 characters. Contributors will see this before the action steps.</span>
+                </label>
+                {!acceptsLink && contentLink && (
+                  <div className="fieldNotice">
+                    <div>
+                      <strong>Supporting link saved</strong>
+                      <span>{contentLink}</span>
+                    </div>
+                    <button type="button" onClick={() => setContentLink("")}>Remove</button>
+                  </div>
+                )}
+              </StepSection>
             )}
 
             {stepIndex === 3 && (
-              <div className="stepContent">
-                <div className="sectionTitle">
-                  <p className="eyebrow">Step 4</p>
-                  <h2>{categoryFlow.bundlesHeadline}</h2>
-                  <p>Qeixova recommends a bundle first, then you can customize the exact platforms and actions.</p>
-                </div>
-                <div className="fieldStack">
-                  <div className="recommendBox">
-                    <div className="recommendIcon">
-                      <Image src={recommendedBundle.icon} alt="" width={24} height={24} />
-                    </div>
-                    <div>
-                      <span>Recommended bundle</span>
-                      <strong>{recommendedBundle.name}</strong>
-                      <p>{contentType} campaigns perform best with {recommendedBundle.shortName.toLowerCase()} because the platforms, actions, and proof match how this audience behaves.</p>
-                    </div>
-                    <button type="button" onClick={() => applyBundle(recommendedBundle)}>Apply</button>
-                  </div>
-                  <div className="bundleGrid">
-                    {getBundlesForCategory(categoryId).map((bundle) => {
-                      const active = selectedBundle.id === bundle.id;
-                      return (
-                        <button
-                          key={bundle.id}
-                          type="button"
-                          onClick={() => applyBundle(bundle)}
-                          className={active ? "bundleCard selected" : "bundleCard"}
-                        >
-                          <span className="bundleIcon">
-                            <Image src={bundle.icon} alt="" width={22} height={22} />
-                          </span>
-                          <strong>{bundle.shortName}</strong>
-                          <small>{bundle.description}</small>
-                          <em>{bundle.verification.slice(0, 2).join(" + ")}</em>
+              <StepSection eyebrow="Step 4" title="Choose bundle and platform" note="Pick a bundle, then check one or more platforms inside that bundle.">
+                <div className="bundleGrid">
+                  {recommendedBundles.map((item) => {
+                    const itemPricing = getPricingOptions(category.id, item.id, goal);
+                    const isActive = item.id === bundleId;
+                    const itemDisplay = getBundleDisplay(item, category.id);
+                    return (
+                      <div key={item.id} className={isActive ? "bundleCard active" : "bundleCard"}>
+                        <button type="button" className="bundleSelectButton" onClick={() => selectBundle(item.id)}>
+                          <strong>{itemDisplay.name}</strong>
+                          <span>{itemDisplay.description}</span>
+                          <small>{itemDisplay.platforms.join(" / ")}</small>
                         </button>
-                      );
-                    })}
-                  </div>
-                  <label>
-                    Mission title
-                    <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Restaurant Awareness Campaign" />
-                  </label>
-                  <div>
-                    <div className="rowLabel">
-                      <p className="labelText">Distribution platforms</p>
-                      <span>{platforms.length} selected</span>
-                    </div>
-                    <PlatformChoiceGrid options={selectedBundle.platforms} selected={platforms} onChange={setPlatforms} />
-                  </div>
-                  <div>
-                    <p className="labelText">What should contributors do?</p>
-                    <MultiSelectDropdown options={actionOptions} selected={actions} onChange={setActions} placeholder="Choose contributor actions" />
-                  </div>
-                  <label>
-                    Important instructions
-                    <textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} rows={5} placeholder="Leave post for 24 hours. Use the hashtag provided. Avoid deleting repost early." />
-                  </label>
+                        {isActive && (
+                          <div className="bundlePricingList">
+                            <p className="eyebrow">Selectable platforms</p>
+                            {itemPricing.length > 0 ? itemPricing.map((option) => (
+                              <label key={option.id} className={selectedPricingIds.includes(option.id) ? "pricingCheck active" : "pricingCheck"}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedPricingIds.includes(option.id)}
+                                  onChange={() => togglePricing(option)}
+                                />
+                                <span>
+                                  <strong>{option.label}</strong>
+                                  <small>{option.platform}</small>
+                                </span>
+                                <em>{option.rewardQlt.toLocaleString()} QLT</em>
+                              </label>
+                            )) : (
+                              <p className="emptyPricing">No fixed platform option is configured for this bundle yet.</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+                {recommendedBundles.length === 0 && (
+                  <p className="emptyPricing">No recommended bundle is available for this goal yet.</p>
+                )}
+                {!hasPricingSelection && (
+                  <p className="errorText compact">Select a bundle and at least one platform before continuing.</p>
+                )}
+              </StepSection>
             )}
 
             {stepIndex === 4 && (
-              <div className="stepContent">
-                <div className="sectionTitle">
-                  <p className="eyebrow">Step 5</p>
-                  <h2>{categoryFlow.targetHeadline}</h2>
-                  <p>{categoryFlow.targetHelp}</p>
-                </div>
-                <div className="targetStack">
-                  <div><p className="labelText">Audience interests</p><MultiSelectDropdown options={categoryFlow.interests} selected={interests} onChange={setInterests} placeholder="Choose audience interests" /></div>
-                  <div><p className="labelText">Extra platform focus</p><MultiSelectDropdown options={categoryPlatforms.length ? categoryPlatforms : platformOptions} selected={platforms} onChange={setPlatforms} placeholder="Choose extra platforms" /></div>
-                  <div><p className="labelText">Contributor type</p><MultiSelectDropdown options={categoryFlow.levels} selected={levels} onChange={setLevels} placeholder="Choose contributor types" /></div>
-                  <div><p className="labelText">Nigeria state targeting</p><MultiSelectDropdown options={stateOptions} selected={states} onChange={setStates} placeholder="Choose states" /></div>
-                  <div className="splitGrid compact">
-                    <div><p className="labelText">City focus</p><MultiSelectDropdown options={cityOptions} selected={cities} onChange={setCities} placeholder="Choose cities" /></div>
-                    <div><p className="labelText">Campus focus</p><MultiSelectDropdown options={campusOptions} selected={campuses} onChange={setCampuses} placeholder="Choose campuses" /></div>
+              <StepSection eyebrow="Step 5" title="Confirm actions and reach" note="Set what contributors must do and how many people should complete the campaign.">
+                {category.id === "apps" ? (
+                  <div className="appInstructionPanel">
+                    <header className="appInstructionTop">
+                      <div>
+                        <p className="inlineSectionTitle">Contributor checklist</p>
+                        <h3>What should testers do?</h3>
+                      </div>
+                      <span>{appInstructionSteps.length > 0 ? `${appInstructionSteps.length} steps added` : "Required"}</span>
+                    </header>
+                    <p className="appInstructionCopy">Enter the exact actions contributors must complete. Use one line per step so the mission is easy to follow.</p>
+                    <label className="appInstructionEditor">
+                      <textarea
+                        value={appContributorInstructions}
+                        onChange={(event) => {
+                          setAppContributorInstructions(event.target.value);
+                          setError("");
+                        }}
+                        placeholder={"Install the app and create an account\nOpen the wallet page and test the fund button\nTake screenshots of each completed step\nWrite what worked, what failed, and what confused you"}
+                      />
+                      <small>Each line becomes a separate contributor step.</small>
+                    </label>
+                    <div className="appTestSummary">
+                      <span>Selected test path</span>
+                      <strong>{selectedPricingOptions.map((option) => option.label).join(" + ") || "No test path selected"}</strong>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {stepIndex === 5 && (
-              <div className="stepContent">
-                <div className="sectionTitle">
-                  <p className="eyebrow">Step 6</p>
-                  <h2>Campaign reach package</h2>
-                  <p>Choose the momentum level. Advanced controls are available when you need exact limits.</p>
-                </div>
+                ) : (
+                  <div className="checkGrid">
+                    {[...new Set([...category.defaultActions, ...(bundle?.actionHint ?? []), ...selectedPricingOptions.map((option) => option.actionHint)])].map((item) => (
+                      <label key={item} className={actions.includes(item) ? "checkItem active" : "checkItem"}>
+                        <input type="checkbox" checked={actions.includes(item)} onChange={() => toggleAction(item)} />
+                        <span>{item}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <div className="sectionDivider" />
+                <p className="inlineSectionTitle">Reach package</p>
                 <div className="packageGrid">
-                  {categoryFlow.packages.map((item) => (
-                    <button key={item.id} type="button" onClick={() => setPackageId(item.id)} className={packageId === item.id ? "packageCard selected" : "packageCard"}>
-                      <span>{item.name}</span>
-                      <strong>{item.reach}</strong>
-                      <small>{item.description}</small>
-                      <em>{item.reward.toLocaleString()} QLT per contributor</em>
+                  {reachPackages.map((item) => (
+                    <button key={item.id} type="button" className={item.id === reachId ? "packageCard active" : "packageCard"} onClick={() => setReachId(item.id)}>
+                      <strong>{item.name}</strong>
+                      <span>{item.contributors.toLocaleString()} contributors</span>
+                      <small>{item.duration}</small>
                     </button>
                   ))}
                 </div>
-                <button type="button" className="advancedToggle" onClick={() => setAdvancedOpen((open) => !open)}>
-                  {advancedOpen ? "Hide advanced mode" : "Customize advanced mode"}
-                </button>
-                {advancedOpen && (
-                  <div className="advancedGrid">
-                    <label>Reward per contributor<input type="number" min={1000} value={customReward} onChange={(event) => setCustomReward(event.target.value)} placeholder="1500" /></label>
-                    <label>Contributor limit<input type="number" min={1} value={customContributors} onChange={(event) => setCustomContributors(event.target.value)} placeholder="500" /></label>
-                    <label>Campaign duration<input value={customDuration} onChange={(event) => setCustomDuration(event.target.value)} placeholder="7 days" /></label>
-                    <label>Campaign pacing<select value={customPacing} onChange={(event) => setCustomPacing(event.target.value)}><option>Steady distribution</option><option>Fast launch burst</option><option>Weekend push</option><option>Manual review first</option></select></label>
+                <label className="fieldBlock compact">
+                  Custom contributor quantity
+                  <input type="number" min="1" value={customContributors} onChange={(event) => setCustomContributors(event.target.value)} placeholder="Use package quantity" />
+                </label>
+              </StepSection>
+            )}
+
+            {stepIndex === 5 && (
+              <StepSection eyebrow="Step 6" title="Target people and location" note="Choose the interests and location that make this campaign feel like real human participation.">
+                <div className="interestTargeting">
+                  <div>
+                    <p className="inlineSectionTitle">Contributor interests</p>
+                    <span>Select interests that match the people most likely to understand, share, test, or respond to this campaign.</span>
                   </div>
-                )}
-              </div>
+                  <details className="interestDropdown">
+                    <summary>
+                      <span className="interestDropdownCopy">
+                        <span>Interest profile</span>
+                        <strong>{selectedInterests.length > 0 ? selectedInterests.slice(0, 3).join(", ") : "Broad audience"}</strong>
+                      </span>
+                      <span className="interestDropdownMeta">
+                        <span>{selectedInterests.length > 0 ? `${selectedInterests.length} selected` : "Optional"}</span>
+                        <i aria-hidden="true" />
+                      </span>
+                    </summary>
+                    <div className="interestDropdownPanel">
+                      {interestOptions.map((interest) => (
+                        <label key={interest} className={selectedInterests.includes(interest) ? "dropdownCheck active" : "dropdownCheck"}>
+                          <input type="checkbox" checked={selectedInterests.includes(interest)} onChange={() => toggleInterest(interest)} />
+                          <span>{interest}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                </div>
+                <div className="sectionDivider" />
+                <div className="locationTargeting">
+                  <div className="locationTargetingHead">
+                    <div>
+                      <p className="inlineSectionTitle">Location targeting</p>
+                      <span>{locationSummary}</span>
+                    </div>
+                    <strong>{locationMode === "nationwide" ? "Nationwide reach" : "Specific area"}</strong>
+                  </div>
+                  <div className="locationModeGrid">
+                    <button type="button" className={locationMode === "nationwide" ? "locationMode active" : "locationMode"} onClick={() => setLocationMode("nationwide")}>
+                      <span className="locationModeIcon">NG</span>
+                      <strong>Nationwide</strong>
+                      <span>Open this campaign to contributors across the country.</span>
+                    </button>
+                    <button type="button" className={locationMode === "exact" ? "locationMode active" : "locationMode"} onClick={() => setLocationMode("exact")}>
+                      <span className="locationModeIcon">PIN</span>
+                      <strong>Exact location</strong>
+                      <span>Target a state, city, address, or business service area.</span>
+                    </button>
+                  </div>
+
+                  {locationMode === "exact" && (
+                    <div className="locationGrid">
+                      {[locationSearchDraft].map((location, index) => {
+                        const results = locationResults[index] ?? [];
+                        const suggestionId = `locationSuggestions-${index}`;
+                        const selectedMeta = "";
+
+                        return (
+                          <div key={index} className="locationSlot">
+                            <div className="locationSlotHead">
+                              <strong>Search and add locations</strong>
+                              <span>{activeTargetLocations.length > 0 ? `${activeTargetLocations.length} selected` : "Required"}</span>
+                            </div>
+                            <div className="fieldBlock stateField locationField locationSearchField">
+                              <label htmlFor={`targetLocation-${index}`}>Search location</label>
+                              <input
+                                id={`targetLocation-${index}`}
+                                value={location.query ?? summarizeTargetLocation(location)}
+                                onChange={(event) => updateLocationQuery(event.target.value)}
+                                onFocus={() => setFocusedLocationIndex(index)}
+                                onBlur={() => window.setTimeout(() => setFocusedLocationIndex((current) => current === index ? null : current), 120)}
+                                placeholder="Start typing, e.g. Lagos or Ikeja"
+                                autoComplete="off"
+                                aria-autocomplete="list"
+                                aria-controls={suggestionId}
+                              />
+                              {focusedLocationIndex === index && results.length > 0 && (
+                                <div id={suggestionId} className="stateSuggestions" role="listbox">
+                                  {results.map((result) => (
+                                    <button
+                                      key={result.id}
+                                      type="button"
+                                      role="option"
+                                      aria-selected={location.id === result.id}
+                                      onMouseDown={(event) => {
+                                        event.preventDefault();
+                                        selectTargetLocation(result);
+                                      }}
+                                    >
+                                      <strong>{result.name}</strong>
+                                      <span>{[result.type.replace("_", " "), result.region, result.country].filter(Boolean).join(" · ")}</span>
+                                      <small>{result.contributorCount.toLocaleString()} contributor{result.contributorCount === 1 ? "" : "s"} in this state</small>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {locationSearchLoading[index] ? <small>Searching location database...</small> : null}
+                              {!locationSearchLoading[index] && (location.query?.trim().length ?? 0) > 1 && focusedLocationIndex === index && results.length === 0 ? (
+                                <small>No match yet. Try a city, state, neighborhood, or country.</small>
+                              ) : null}
+                            </div>
+                            {location.id && (
+                              <div className="locationGeoCard">
+                                <span>{location.type?.replace("_", " ") ?? "location"}</span>
+                                <strong>{summarizeTargetLocation(location)}</strong>
+                                <small>
+                                  {[
+                                    selectedMeta,
+                                    typeof location.contributorCount === "number" ? `${location.contributorCount.toLocaleString()} contributors in this state` : "",
+                                    location.population ? `${location.population.toLocaleString()} people est.` : "",
+                                    location.boundary ? `${location.boundary.type.toUpperCase()} boundary` : "",
+                                  ].filter(Boolean).join(" · ")}
+                                </small>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {activeTargetLocations.length > 0 && (
+                        <div className="selectedLocationList">
+                          {activeTargetLocations.map((location, index) => {
+                            const selectedMeta = "";
+
+                            return (
+                              <div key={location.id ?? `${summarizeTargetLocation(location)}-${index}`} className="locationGeoCard">
+                                <span>{location.type?.replace("_", " ") ?? "location"}</span>
+                                <strong>{summarizeTargetLocation(location)}</strong>
+                                <small>
+                                  {[
+                                    selectedMeta,
+                                    typeof location.contributorCount === "number" ? `${location.contributorCount.toLocaleString()} contributors in this state` : "",
+                                    location.population ? `${location.population.toLocaleString()} people est.` : "",
+                                    location.boundary ? `${location.boundary.type.toUpperCase()} boundary` : "",
+                                  ].filter(Boolean).join(" - ")}
+                                </small>
+                                <button type="button" className="removeLocationButton" onClick={() => removeTargetLocation(index)}>
+                                  Remove
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {activeTargetLocations.length > 0 && (
+                        <button type="button" className="addLocationButton" onClick={clearLocationSearch}>
+                          Search another location
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="locationSummary">
+                  <span>Target location</span>
+                  <strong>{locationSummary || "Add a location"}</strong>
+                </div>
+                <div className="locationSummary interestSummary">
+                  <span>Target interests</span>
+                  <strong>{selectedInterests.length > 0 ? selectedInterests.join(", ") : "Broad audience"}</strong>
+                </div>
+              </StepSection>
             )}
 
             {stepIndex === 6 && (
-              <div className="stepContent">
-                <div className="sectionTitle">
-                  <p className="eyebrow">Step 7</p>
-                  <h2>{categoryFlow.previewLabel}</h2>
-                  <p>This is the confidence check before launch. It mirrors what contributors need to understand.</p>
-                </div>
-                <PreviewCard
-                  category={category}
-                  bundle={selectedBundle}
-                  title={title}
+              <StepSection eyebrow="Step 7" title="Preview campaign" note="This is what the business and contributor experience are built from.">
+                <CampaignPreview
+                  title={title || selectedGoalInfo.titlePlaceholder}
+                  objective={objective || selectedGoalInfo.detail}
                   goal={goal}
-                  contributors={resolvedContributors}
-                  duration={resolvedDuration}
-                  platforms={platforms}
-                  interests={interests}
+                  bundleName={bundle?.name ?? "No bundle selected"}
+                  selectedPlatforms={selectedPlatforms}
+                  selectedPlatformLabel={selectedPricingLabel || "No platform selected"}
                   actions={actions}
-                  instructions={previewInstructions}
+                  selectedInterests={selectedInterests}
+                  locationSummary={locationSummary}
                   contentType={contentType}
-                  businessName={business.name}
-                  budget={estimatedBudget}
-                  previewLabel={categoryFlow.previewLabel}
+                  contentCaption={contentCaption}
+                  contentLink={contentLink}
+                  assetName={assetName}
+                  assetPreviewUrl={assetPreviewUrl}
+                  assetMimeType={assetMimeType}
+                  contributorCount={contributorCount}
+                  duration={reach.duration}
+                  totalCostQlt={pricing.totalQlt}
+                  contributorRewardsQlt={pricing.contributorRewardsQlt}
+                  qeixovaCommissionQlt={toQlt(pricing.commission)}
+                  verificationFeeQlt={toQlt(pricing.verification)}
+                  balanceQlt={business.balance}
+                  proofLabel={proofConfig.label}
+                  ready={canSubmit}
+                  onBack={() => setStepIndex(5)}
+                  onEditGoal={() => setStepIndex(1)}
+                  onChangeContent={() => setStepIndex(2)}
+                  onChangePlatforms={() => setStepIndex(3)}
+                  onViewLocation={() => setStepIndex(5)}
+                  onChangePackage={() => setStepIndex(4)}
                 />
-              </div>
+              </StepSection>
             )}
 
-            {stepIndex === 7 && (
-              <div className="stepContent">
-                <div className="sectionTitle">
-                  <p className="eyebrow">Step 8</p>
-                  <h2>{categoryFlow.launchHeadline}</h2>
-                  <p>{categoryFlow.launchSummary}</p>
-                </div>
-                <div className="readyPanel">
-                  <div className="readyMetric"><span>Recommended platforms</span><strong>{recommended.platforms}</strong></div>
-                  <div className="readyMetric"><span>Expected quality</span><strong>{recommended.quality}</strong></div>
-                  <div className="readyMetric"><span>Estimated participation</span><strong>{resolvedContributors.toLocaleString()} contributors</strong></div>
-                </div>
-              </div>
+            {error && <p className="errorText">{error}</p>}
+
+            {stepIndex === steps.length - 1 && (
+              <label className="policyConfirmBox">
+                <input
+                  type="checkbox"
+                  checked={policyAccepted}
+                  onChange={(event) => {
+                    setPolicyAccepted(event.target.checked);
+                    if (event.target.checked) setError("");
+                  }}
+                />
+                <span>
+                  I confirm that this campaign does not involve scams, fake engagement, spam, harassment, illegal products, misleading claims, privacy violations, or prohibited activity. I agree to the <a href="/prohibited-campaign-policy" target="_blank" rel="noopener noreferrer">Prohibited Campaign Policy</a>.
+                </span>
+              </label>
             )}
 
-            <div className="wizardActions">
+            <div className="actionsBar">
               <button type="button" className="secondaryButton" onClick={previousStep} disabled={stepIndex === 0}>Back</button>
-              {stepIndex < 7 ? (
-                <button type="button" className="primaryButton" onClick={nextStep}>Continue</button>
+              {stepIndex < steps.length - 1 ? (
+                <button type="button" className="primaryButton" onClick={nextStep} disabled={!canContinueStep}>Continue</button>
               ) : (
-                <button type="button" className="primaryButton" disabled={saving} onClick={handleSubmit}>{saving ? "Launching..." : categoryFlow.launchCta}</button>
+                <button type="button" className="primaryButton" disabled={saving} onClick={submitCampaign}>
+                  {saving ? "Processing..." : hasEnoughBalance ? "Payment" : "Add funds"}
+                </button>
               )}
             </div>
           </section>
 
-          <aside className="summaryPanel">
-            <p className="eyebrow">Live summary</p>
-            <h3>{title || category.title}</h3>
-            <div className="summaryIcon" style={{ background: `${category.accent}18` }}>
-              <Image src={category.icon} alt="" width={26} height={26} />
-            </div>
-            <dl>
-              <div><dt>Goal</dt><dd>{goal}</dd></div>
-              <div><dt>Platforms</dt><dd>{platforms.length ? platforms.join(", ") : "All platforms"}</dd></div>
-              <div><dt>Audience</dt><dd>{interests.length ? interests.join(", ") : "All interests"}</dd></div>
-              <div><dt>Reward</dt><dd>{resolvedReward.toLocaleString()} QLT</dd></div>
-              <div><dt>Budget</dt><dd>{estimatedBudget.toLocaleString()} QLT</dd></div>
-            </dl>
-          </aside>
-        </div>
+        </section>
       </main>
       <BusinessBottomNav />
       <style jsx>{pageStyles}</style>
@@ -1409,1355 +2043,2476 @@ export default function CreateCampaignPage() {
   );
 }
 
-function PreviewCard({
-  category,
-  bundle,
+function StepSection({ eyebrow, title, note, children }: { eyebrow: string; title: string; note: string; children: React.ReactNode }) {
+  return (
+    <div className="stepSection">
+      <div className="sectionHeader">
+        <p className="eyebrow">{eyebrow}</p>
+        <h2>{title}</h2>
+        <span>{note}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function CampaignPreview({
   title,
+  objective,
   goal,
-  contributors,
-  duration,
-  platforms,
-  interests,
+  bundleName,
+  selectedPlatforms,
+  selectedPlatformLabel,
   actions,
-  instructions,
+  selectedInterests,
+  locationSummary,
   contentType,
-  businessName,
-  budget,
-  previewLabel,
+  contentCaption,
+  contentLink,
+  assetName,
+  assetPreviewUrl,
+  assetMimeType,
+  contributorCount,
+  duration,
+  totalCostQlt,
+  contributorRewardsQlt,
+  qeixovaCommissionQlt,
+  verificationFeeQlt,
+  balanceQlt,
+  proofLabel,
+  ready,
+  onBack,
+  onEditGoal,
+  onChangeContent,
+  onChangePlatforms,
+  onViewLocation,
+  onChangePackage,
 }: {
-  category: CampaignCategory;
-  bundle: CampaignBundle;
   title: string;
+  objective: string;
   goal: string;
-  contributors: number;
-  duration: string;
-  platforms: string[];
-  interests: string[];
+  bundleName: string;
+  selectedPlatforms: string[];
+  selectedPlatformLabel: string;
   actions: string[];
-  instructions: string;
+  selectedInterests: string[];
+  locationSummary: string;
   contentType: string;
-  businessName: string;
-  budget: number;
-  previewLabel: string;
+  contentCaption: string;
+  contentLink: string;
+  assetName: string;
+  assetPreviewUrl: string;
+  assetMimeType: string;
+  contributorCount: number;
+  duration: string;
+  totalCostQlt: number;
+  contributorRewardsQlt: number;
+  qeixovaCommissionQlt: number;
+  verificationFeeQlt: number;
+  balanceQlt: number;
+  proofLabel: string;
+  ready: boolean;
+  onBack: () => void;
+  onEditGoal: () => void;
+  onChangeContent: () => void;
+  onChangePlatforms: () => void;
+  onViewLocation: () => void;
+  onChangePackage: () => void;
 }) {
-  const estimatedReach = `${Math.max(contributors * 50, 5000).toLocaleString()} - ${Math.max(contributors * 160, 12000).toLocaleString()}`;
-  const shownPlatforms = platforms.length ? platforms : bundle.platforms;
+  const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
+  const visiblePlatforms = selectedPlatforms.length > 0 ? selectedPlatforms : ["No platform selected"];
+  const currentBalance = Number(balanceQlt ?? 0);
+  const balanceAfter = currentBalance - totalCostQlt;
+  const fundingGap = Math.max(0, totalCostQlt - currentBalance);
+  const hasEnoughBalance = balanceAfter >= 0;
+  const assetSource = contentLink || (assetName ? "Uploaded campaign asset" : contentType);
+  const isImageAsset = assetPreviewUrl && assetMimeType.startsWith("image/");
+  const shownActions = actions;
 
   return (
-    <article className="previewCard">
-      <div className="previewNav">
-        <button type="button" aria-label="Back to edit">{"<"}</button>
-        <div>
-          <strong>{previewLabel}</strong>
-          <span>Review and launch your campaign</span>
-        </div>
-        <button type="button">Edit</button>
+    <div className="campaignPreview">
+      <div className="previewTopbar">
+        <button type="button" className="previewTextButton muted" onClick={onBack}>Back</button>
+        <strong>Campaign Preview</strong>
+        <button type="button" className="previewTextButton" onClick={onEditGoal}>Edit</button>
       </div>
 
-      <div className="readyBanner">
-        <Image src="/icon-check-circle.svg" alt="" width={28} height={28} />
-        <div>
-          <strong>Ready to Launch</strong>
-          <span>Your campaign bundle is all set.</span>
-        </div>
-      </div>
-
-      <div className="previewHero">
-        <div className="campaignBadge">
-          <Image src={category.icon} alt="" width={25} height={25} />
-        </div>
-        <div>
+      <section className="previewHeroCard">
+        <div className="previewHeroCopy">
+          <span className={ready ? "previewStatus ready" : "previewStatus"}>{ready ? "Ready to launch" : "Needs setup"}</span>
           <h3>{title}</h3>
-          <p>{category.title} - {bundle.shortName}</p>
-        </div>
-      </div>
-
-      <div className="goalLine">
-        <span>Goal</span>
-        <p>{goal} for {businessName} using a guided {bundle.shortName.toLowerCase()} campaign.</p>
-      </div>
-
-      <section className="flyerPanel">
-        <div className="panelHeader">
-          <strong>Campaign {contentType}</strong>
-          <span>{bundle.shortName}</span>
-        </div>
-        <div className="mockFlyer">
-          <div>
-            <span>{businessName}</span>
-            <strong>{contentType === "Video" ? "VIDEO BOOST" : "AWARENESS PUSH"}</strong>
-            <p>{goal}</p>
+          <p>{objective}</p>
+          {contentCaption.trim() ? (
+            <div className="previewCaptionBox">
+              <strong>Caption for contributors</strong>
+              <span>{contentCaption.trim()}</span>
+            </div>
+          ) : null}
+          <div className="previewGoalLine">
+            <strong>Goal</strong>
+            <span>{goal}</span>
           </div>
-          <small>{bundle.platforms.slice(0, 3).join(" + ")}</small>
+        </div>
+        <div className="previewAssetCard">
+          {isImageAsset ? (
+            <img src={assetPreviewUrl} alt="Campaign content preview" />
+          ) : (
+            <span>{contentType.slice(0, 2).toUpperCase()}</span>
+          )}
+          <strong>{assetSource}</strong>
+          {assetName && !contentLink ? null : (
+            <small>{contentLink ? "Linked campaign asset" : "Campaign asset preview"}</small>
+          )}
+          <button type="button" className="previewAssetButton" onClick={onChangeContent}>Change content</button>
         </div>
       </section>
 
       <section className="previewSection">
-        <div className="panelHeader">
-          <strong>Distribution Platforms</strong>
-          <span>{shownPlatforms.length} selected</span>
+        <div className="previewSectionHead">
+          <h3>Distribution platforms</h3>
+          <button type="button" className="previewPillButton" onClick={onChangePlatforms}>{visiblePlatforms.length} selected</button>
         </div>
-        <div className="platformCards">
-          {shownPlatforms.slice(0, 4).map((platform, index) => {
-            const meta = platformMeta[platform];
-            return (
-              <div key={platform} className="platformCard">
-                <b>{meta?.icon ?? platform.split(" ").map((word) => word[0]).join("").slice(0, 2)}</b>
-                <div>
-                  <strong>{platform}</strong>
-                  <span>{index === 0 ? "Primary" : meta?.visibility ?? "Optional"}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="previewSection actionSection">
-        <div className="panelHeader">
-          <strong>Contributors Will</strong>
-          <span>{actions.length} actions</span>
-        </div>
-        <ul>
-          {actions.slice(0, 5).map((action) => (
-            <li key={action}><span>OK</span>{action}</li>
+        <div className="previewPlatformGrid">
+          {visiblePlatforms.map((platform, index) => (
+            <article key={`${platform}-${index}`} className="previewPlatformCard">
+              <span>{platform.slice(0, 1).toUpperCase()}</span>
+              <strong>{platform}</strong>
+              <small>{index === 0 ? "Primary" : "Selected"}</small>
+            </article>
           ))}
-        </ul>
+        </div>
       </section>
 
       <section className="previewSection">
-        <div className="panelHeader">
-          <strong>Target Audience</strong>
-          <span>View Details</span>
+        <div className="previewSectionHead">
+          <h3>Contributors will</h3>
+          <button type="button" className="previewPillButton" onClick={onChangePackage}>{shownActions.length} selected</button>
         </div>
-        <div className="audienceRows">
-          <div><span>Interests</span><p>{interests.length ? interests.join(", ") : "All interests"}</p></div>
-          <div><span>Verification</span><p>{bundle.verification.join(", ")}</p></div>
+        <div className="previewActionGrid">
+          {shownActions.length > 0 ? shownActions.map((action) => (
+            <div key={action} className="previewActionItem">
+              <p>{action}</p>
+            </div>
+          )) : (
+            <div className="previewActionItem">
+              <p>No contributor actions selected.</p>
+            </div>
+          )}
         </div>
       </section>
 
-      <div className="previewStats">
-        <div><strong>{contributors.toLocaleString()}</strong><span>Est. Contributors</span></div>
-        <div><strong>{estimatedReach}</strong><span>Est. Reach</span></div>
-        <div><strong>{duration}</strong><span>Duration</span></div>
-        <div><strong>{budget.toLocaleString()} QLT</strong><span>Total Budget</span></div>
-      </div>
+      <section className="previewSection">
+        <div className="previewSectionHead">
+          <h3>Target audience</h3>
+          <button type="button" className="previewPillButton" onClick={onViewLocation}>View details</button>
+        </div>
+        <div className="previewAudienceGrid">
+          <article><strong>Interests</strong><span>{selectedInterests.length > 0 ? selectedInterests.join(", ") : "Broad audience"}</span></article>
+          <article><strong>Location</strong><span>{locationSummary}</span></article>
+          <article><strong>Quality</strong><span>{proofLabel}</span></article>
+        </div>
+      </section>
 
-      <details className="instructionDetails">
-        <summary>Verification and instruction details</summary>
-        <pre>{instructions}</pre>
-      </details>
-    </article>
+      <section className="previewFooterGrid">
+        <article className="previewSection">
+          <div className="previewSectionHead">
+            <h3>Campaign package and duration</h3>
+            <button type="button" className="previewPillButton" onClick={onChangePackage}>Change</button>
+          </div>
+          <div className="previewSplit">
+            <div><strong>{bundleName}</strong><span>{selectedPlatformLabel}</span></div>
+            <div><strong>{duration}</strong><span>{contributorCount.toLocaleString()} contributors</span></div>
+          </div>
+        </article>
+        <article className="previewSection">
+          <div className="previewSectionHead">
+            <h3>Budget summary</h3>
+            <button
+              type="button"
+              className="previewPillButton"
+              aria-expanded={showBudgetBreakdown}
+              aria-controls="preview-budget-breakdown"
+              onClick={() => setShowBudgetBreakdown((current) => !current)}
+            >
+              {showBudgetBreakdown ? "Hide breakdown" : "View breakdown"}
+            </button>
+          </div>
+          <div className="previewSplit">
+            <div><strong>{totalCostQlt.toLocaleString()} QLT</strong><span>Total campaign cost</span></div>
+            <div className={hasEnoughBalance ? "" : "fundingRequired"}>
+              <strong>{hasEnoughBalance ? `${balanceAfter.toLocaleString()} QLT` : `${fundingGap.toLocaleString()} QLT`}</strong>
+              <span>{hasEnoughBalance ? "Balance after launch" : "Add funds required"}</span>
+            </div>
+          </div>
+          {!hasEnoughBalance && (
+            <div className="fundingHint" role="status" aria-live="polite">
+              <div>
+                <span>Wallet funding required</span>
+                <strong>Top up {fundingGap.toLocaleString()} QLT to launch this campaign.</strong>
+              </div>
+              <small>Current balance: {currentBalance.toLocaleString()} QLT</small>
+            </div>
+          )}
+          {showBudgetBreakdown && (
+            <div id="preview-budget-breakdown" className="previewBudgetBreakdown" aria-label="Campaign budget breakdown">
+              <div><span>Contributor reward</span><strong>{contributorRewardsQlt.toLocaleString()} QLT</strong></div>
+              <div><span>Qeixova commission</span><strong>{qeixovaCommissionQlt.toLocaleString()} QLT</strong></div>
+              <div><span>Verification fee</span><strong>{verificationFeeQlt.toLocaleString()} QLT</strong></div>
+            </div>
+          )}
+        </article>
+      </section>
+    </div>
   );
 }
 
 const pageStyles = `
-  .campaignPage {
-    max-width: 1180px;
-    margin: 0 auto;
-    color: #f5f5f5;
+  :global(body) {
+    background: #070808;
+    color: #f7f7f7;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
-  .loadingScreen {
+
+  .loadingShell,
+  .successShell,
+  .pageShell {
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 14px;
-    background: #050505;
-    color: #aaa;
+    padding: 24px 24px 104px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 340px),
+      #070808;
   }
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #171717;
-    border-top-color: #f5a623;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .campaignHeader {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: flex-start;
-    margin-bottom: 18px;
-  }
-  .campaignHeader h1 {
-    font-size: clamp(28px, 5vw, 42px);
-    line-height: 1.05;
-    letter-spacing: 0;
-    margin: 4px 0 8px;
-  }
-  .campaignHeader p, .sectionTitle p, .launchCopy {
-    color: #aaa;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-  .eyebrow {
-    color: #f5a623 !important;
-    font-size: 11px !important;
-    font-weight: 800;
-    letter-spacing: 1.3px;
-    text-transform: uppercase;
-  }
-  .headerStats {
-    min-width: 132px;
-    border: 1px solid #202020;
-    background: #0a0a0a;
-    border-radius: 14px;
-    padding: 12px;
-    text-align: right;
-  }
-  .headerStats span {
-    display: block;
-    color: #777;
-    font-size: 11px;
-    margin-bottom: 6px;
-  }
-  .headerStats strong {
-    color: #1aef22;
-    font-size: 22px;
-  }
-  .stepper {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 6px 0 16px;
-    margin-bottom: 8px;
-  }
-  .step {
-    border: 1px solid #202020;
-    background: #0a0a0a;
-    color: #777;
-    border-radius: 999px;
-    padding: 8px 12px 8px 8px;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .step span {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #151515;
+
+  .loadingShell {
     display: grid;
     place-items: center;
-    color: #999;
+    color: #b8b8b8;
   }
-  .step.active {
-    color: #f5a623;
-    border-color: rgba(245, 166, 35, 0.45);
-    background: rgba(245, 166, 35, 0.08);
-  }
-  .step.done {
-    color: #1aef22;
-    border-color: rgba(26, 239, 34, 0.24);
-  }
-  .builderShell {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 18px;
-    align-items: start;
-  }
-  .builderPanel, .summaryPanel, .launchScreen {
-    border: 1px solid #191919;
-    background: #090909;
-    border-radius: 20px;
-  }
-  .builderPanel {
-    min-height: 620px;
-    padding: 22px;
-  }
-  .summaryPanel {
-    position: sticky;
-    top: 24px;
-    padding: 18px;
-  }
-  .summaryPanel h3 {
-    font-size: 20px;
-    line-height: 1.2;
-    margin: 8px 0 14px;
-  }
-  .summaryIcon {
-    width: 54px;
-    height: 54px;
-    border-radius: 15px;
+
+  .successShell {
     display: grid;
     place-items: center;
-    margin-bottom: 14px;
   }
-  .summaryPanel dl {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .summaryPanel div {
-    min-width: 0;
-  }
-  .summaryPanel dt {
-    color: #777;
-    font-size: 11px;
-    text-transform: uppercase;
-    font-weight: 800;
-    margin-bottom: 3px;
-  }
-  .summaryPanel dd {
-    color: #ddd;
-    font-size: 13px;
-    line-height: 1.45;
-  }
-  .sectionTitle {
-    max-width: 650px;
-    margin-bottom: 20px;
-  }
-  .sectionTitle h2 {
-    font-size: clamp(24px, 4vw, 34px);
-    line-height: 1.08;
-    margin: 5px 0 8px;
-    letter-spacing: 0;
-  }
-  .categoryGrid {
+
+  .successPanel {
+    width: min(720px, 100%);
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 12px;
-  }
-  .categoryRail {
-    display: flex;
-    gap: 9px;
-    overflow-x: auto;
-    padding: 2px 0 14px;
-    margin-bottom: 12px;
-  }
-  .categoryChip {
-    min-width: 190px;
-    border: 1px solid #202020;
-    background: #0f0f0f;
-    color: #ddd;
-    border-radius: 13px;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    text-align: left;
-    cursor: pointer;
-  }
-  .categoryChip.selected {
-    background: rgba(245, 166, 35, 0.08);
-    color: #f5a623;
-  }
-  .categoryChip span {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-  }
-  .categoryChip strong {
-    font-size: 13px;
-    line-height: 1.2;
-  }
-  .contentTypeGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 12px;
-  }
-  .contentTypeCard {
-    min-height: 156px;
-    border: 1px solid #202020;
-    background: #0f0f0f;
-    color: #f5f5f5;
-    border-radius: 14px;
-    padding: 15px;
-    text-align: left;
-    cursor: pointer;
-  }
-  .contentTypeCard.selected {
-    border-color: rgba(245, 166, 35, 0.68);
-    background: rgba(245, 166, 35, 0.09);
-  }
-  .contentTypeCard span {
-    color: #f5a623;
-    font-size: 11px;
-    font-weight: 900;
-    text-transform: uppercase;
-  }
-  .contentTypeCard strong {
-    display: block;
-    margin: 10px 0 8px;
-    font-size: 18px;
-    line-height: 1.15;
-  }
-  .contentTypeCard small {
-    display: block;
-    color: #aaa;
-    font-size: 12px;
-    line-height: 1.45;
-  }
-  .categoryCard, .packageCard {
-    text-align: left;
-    border: 1px solid #202020;
-    background: #0f0f0f;
-    color: #f5f5f5;
-    border-radius: 14px;
-    padding: 15px;
-    cursor: pointer;
-    min-height: 228px;
-    transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-  }
-  .categoryCard:hover, .packageCard:hover {
-    transform: translateY(-2px);
-    background: #121212;
-  }
-  .categoryCard.selected, .packageCard.selected {
-    background: rgba(245, 166, 35, 0.07);
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
-  }
-  .iconBox {
-    width: 42px;
-    height: 42px;
+    gap: 20px;
+    justify-items: center;
+    text-align: center;
+    border: 1px solid #252a28;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(245, 166, 35, .14), transparent 36%),
+      linear-gradient(180deg, #111312, #080909);
     border-radius: 12px;
+    padding: 34px;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, .34);
+  }
+
+  .successMark {
+    width: 64px;
+    height: 64px;
     display: grid;
     place-items: center;
-    margin-bottom: 12px;
+    border: 1px solid rgba(245, 166, 35, .34);
+    border-radius: 18px;
+    background: rgba(245, 166, 35, .1);
+    box-shadow: 0 16px 40px rgba(245, 166, 35, .1);
   }
-  .categoryCard strong, .packageCard strong {
-    display: block;
+
+  .successMark img {
+    border-radius: 12px;
+  }
+
+  .successCopy {
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+  }
+
+  .successStatus {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    border: 1px solid rgba(245, 166, 35, .28);
+    border-radius: 999px;
+    background: rgba(245, 166, 35, .1);
+    color: #f5a623;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+
+  .successPanel h1 {
+    margin: 0;
+    max-width: 620px;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.08;
+  }
+
+  .successPanel p {
+    max-width: 610px;
+    margin: 0;
+    color: #bdbdbd;
+    line-height: 1.7;
+  }
+
+  .successSummaryGrid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .successSummaryGrid article {
+    display: grid;
+    gap: 6px;
+    min-height: 90px;
+    align-content: center;
+    border: 1px solid #202423;
+    border-radius: 10px;
+    background: #0b0d0c;
+    padding: 14px;
+    text-align: left;
+  }
+
+  .successSummaryGrid span {
+    color: #8f9692;
+    font-size: 11px;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+
+  .successSummaryGrid strong {
+    color: #f5f5f5;
     font-size: 15px;
     line-height: 1.25;
-    margin-bottom: 7px;
   }
-  .categoryCard span, .categoryCard small, .packageCard small, .packageCard em, .assistBox span {
-    display: block;
-    color: #aaa;
-    font-size: 12px;
-    line-height: 1.45;
-    font-style: normal;
-  }
-  .categoryCard small {
-    color: #777;
-    margin-top: 10px;
-    overflow-wrap: anywhere;
-  }
-  .goalGrid, .previewTags {
+
+  .successActions {
+    width: 100%;
     display: flex;
-    gap: 9px;
+    justify-content: center;
+    gap: 12px;
     flex-wrap: wrap;
+    margin-top: 2px;
   }
-  .goalButton {
-    border: 1px solid #282828;
-    background: #101010;
-    color: #ccc;
-    border-radius: 999px;
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 700;
+
+  .successActions button,
+  .primaryButton,
+  .secondaryButton {
+    border: 0;
+    border-radius: 10px;
+    padding: 13px 18px;
+    font-weight: 900;
     cursor: pointer;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
   }
-  .goalButton.active {
-    border-color: rgba(26, 239, 34, 0.55);
-    background: rgba(26, 239, 34, 0.1);
-    color: #1aef22;
+
+  .successActions .primary,
+  .primaryButton {
+    background: #f5a623;
+    color: #050505;
+    box-shadow: 0 12px 24px rgba(245, 166, 35, .18);
   }
-  .multiSelectDropdown {
-    border: 1px solid #292929;
-    background: #101010;
-    border-radius: 14px;
+
+  .successActions button,
+  .secondaryButton {
+    background: #111312;
+    color: #f8f8f8;
+    border: 1px solid #252a28;
+  }
+
+  .primaryButton:hover,
+  .secondaryButton:hover,
+  .successActions button:hover {
+    transform: translateY(-1px);
+  }
+
+  @keyframes campaignFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes campaignRailWake {
+    0%,
+    100% {
+      border-color: #202322;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, .24);
+    }
+    50% {
+      border-color: rgba(245, 166, 35, .34);
+      box-shadow: 0 18px 58px rgba(245, 166, 35, .08);
+    }
+  }
+
+  .primaryButton:disabled,
+  .secondaryButton:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+  }
+
+  .heroBand {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 16px;
+    align-items: start;
+    margin-bottom: 18px;
+    max-width: 1360px;
+  }
+
+  .heroBand > div:first-child,
+  .walletCard,
+  .builderPanel,
+  .stepRail {
+    background: linear-gradient(180deg, #111312, #0a0b0b);
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, .24);
+  }
+
+  .heroBand > div:first-child {
+    padding: 28px 32px;
+    position: relative;
     overflow: hidden;
+    animation: campaignFadeUp .42s ease both;
   }
-  .multiSelectDropdown[open] {
-    border-color: rgba(245, 166, 35, 0.5);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.2);
+
+  .heroBand h1 {
+    margin: 6px 0 12px;
+    max-width: 760px;
+    font-size: clamp(34px, 3.1vw, 48px);
+    line-height: 1.08;
+    letter-spacing: 0;
   }
-  .multiSelectDropdown summary {
-    list-style: none;
-    cursor: pointer;
+
+  .heroBand p:not(.eyebrow) {
+    max-width: 740px;
+    color: #bdbdbd;
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .walletCard {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    border-color: rgba(245, 166, 35, .28);
+    background: #12100c;
+    min-height: 156px;
+    animation: campaignFadeUp .46s ease .04s both;
+  }
+
+  .walletCard span,
+  .walletCard small,
+  .sectionHeader span,
+  .choiceCard span,
+  .bundleCard span,
+  .bundleCard small,
+  .packageCard span,
+  .packageCard small {
+    color: #a8a8a8;
+  }
+
+  .walletCard strong {
+    font-size: 28px;
+    letter-spacing: 0;
+  }
+
+  .builderLayout {
+    display: grid;
+    grid-template-columns: 240px minmax(560px, 1fr);
+    gap: 16px;
+    align-items: start;
+    max-width: 1360px;
+  }
+
+  .stepRail {
+    padding: 14px;
+    position: sticky;
+    top: 20px;
+    animation: campaignFadeUp .44s ease .06s both, campaignRailWake 7s ease-in-out infinite;
+  }
+
+  .progressHeader {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 14px;
-    padding: 13px 14px;
+    color: #bdbdbd;
+    font-size: 12px;
+    font-weight: 800;
   }
-  .multiSelectDropdown summary::-webkit-details-marker {
+
+  .progressTrack {
+    height: 7px;
+    background: #171717;
+    border-radius: 99px;
+    overflow: hidden;
+    margin: 12px 0 16px;
+  }
+
+  .progressTrack span {
+    display: block;
+    height: 100%;
+    background: #f5a623;
+  }
+
+  .step {
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #a8a8a8;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 800;
+    text-align: left;
+  }
+
+  .step:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .step span {
+    width: 24px;
+    height: 24px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #171717;
+    color: #d8d8d8;
+    font-size: 12px;
+  }
+
+  .step.active {
+    border-color: #f5a623;
+    color: #fff;
+    background: rgba(245, 166, 35, .11);
+  }
+
+  .step.done span {
+    background: #1aef22;
+    color: #041004;
+  }
+
+  .builderPanel {
+    min-height: 660px;
+    padding: 26px;
+    overflow: hidden;
+    animation: campaignFadeUp .48s ease .1s both;
+  }
+
+  .stepSection {
+    display: grid;
+    gap: 20px;
+  }
+
+  .sectionHeader {
+    display: grid;
+    gap: 7px;
+    border: 1px solid #202423;
+    border-radius: 10px;
+    background:
+      linear-gradient(135deg, rgba(245, 166, 35, .08), transparent 44%),
+      #0b0d0c;
+    padding: 16px;
+  }
+
+  .sectionHeader h2 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.12;
+    letter-spacing: 0;
+  }
+
+  .sectionHeader span {
+    line-height: 1.55;
+  }
+
+  .eyebrow {
+    margin: 0;
+    color: #f5a623;
+    font-size: 11px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: 0;
+  }
+
+  .categoryGrid,
+  .bundleGrid,
+  .packageGrid,
+  .locationModeGrid,
+  .locationGrid,
+  .previewGrid,
+  .launchGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .choiceCard,
+  .bundleCard,
+  .packageCard,
+  .locationMode {
+    text-align: left;
+    background: linear-gradient(180deg, #101312, #090a0a);
+    color: #f5f5f5;
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    padding: 18px;
+    display: grid;
+    gap: 8px;
+    cursor: pointer;
+    min-height: 124px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .16s ease, background .16s ease, transform .16s ease, box-shadow .16s ease;
+  }
+
+  .choiceCard::after,
+  .bundleCard::after,
+  .packageCard::after,
+  .locationMode::after {
+    content: "";
+    position: absolute;
+    inset: auto 14px 12px auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2e3431;
+    transition: background .16s ease, box-shadow .16s ease;
+  }
+
+  .choiceCard strong,
+  .bundleCard strong,
+  .packageCard strong,
+  .locationMode strong {
+    line-height: 1.25;
+  }
+
+  .choiceCard span,
+  .bundleCard span,
+  .bundleCard small,
+  .packageCard span,
+  .packageCard small,
+  .locationMode span {
+    line-height: 1.45;
+  }
+
+  .choiceCard:hover,
+  .bundleCard:hover,
+  .packageCard:hover,
+  .locationMode:hover,
+  .pill:hover,
+  .checkItem:hover {
+    transform: translateY(-2px);
+    border-color: #3b3f3d;
+    background: #121414;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, .22);
+  }
+
+  .choiceCard.active,
+  .bundleCard.active,
+  .packageCard.active,
+  .locationMode.active,
+  .pill.active,
+  .checkItem.active {
+    border-color: #f5a623;
+    background: linear-gradient(180deg, rgba(245, 166, 35, .16), rgba(245, 166, 35, .07));
+    box-shadow: inset 0 0 0 1px rgba(245, 166, 35, .18);
+  }
+
+  .choiceCard.active::after,
+  .bundleCard.active::after,
+  .packageCard.active::after,
+  .locationMode.active::after {
+    background: #f5a623;
+    box-shadow: 0 0 18px rgba(245, 166, 35, .42);
+  }
+
+  .pillGrid,
+  .checkGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .pill {
+    border: 1px solid #222625;
+    background: #0d100f;
+    color: #f5f5f5;
+    border-radius: 999px;
+    padding: 11px 15px;
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+  }
+
+  .sectionDivider {
+    height: 1px;
+    background: #1b1f1d;
+    margin: 4px 0;
+  }
+
+  .appInstructionPanel {
+    display: grid;
+    gap: 12px;
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    background: #0a0c0b;
+    padding: 16px;
+  }
+
+  .appInstructionTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .appInstructionTop > div {
+    display: grid;
+    gap: 5px;
+  }
+
+  .appInstructionTop h3 {
+    margin: 0;
+    color: #f7f7f7;
+    font-size: 22px;
+    line-height: 1.15;
+  }
+
+  .appInstructionTop > span {
+    flex: 0 0 auto;
+    border: 1px solid rgba(245, 166, 35, .24);
+    border-radius: 999px;
+    background: rgba(245, 166, 35, .08);
+    color: #f5a623;
+    padding: 6px 9px;
+    font-size: 11px;
+    font-weight: 950;
+  }
+
+  .appInstructionCopy {
+    margin: 0;
+    max-width: 760px;
+    color: #b4b8b6;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .appInstructionEditor {
+    display: grid;
+    gap: 8px;
+  }
+
+  .appInstructionEditor textarea {
+    width: 100%;
+    min-height: 210px;
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    background: #070808;
+    color: #f7f7f7;
+    line-height: 1.6;
+    font-size: 14px;
+    padding: 15px;
+    resize: vertical;
+  }
+
+  .appInstructionEditor small {
+    color: #8f9692;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .appTestSummary {
+    display: grid;
+    gap: 5px;
+    border: 1px solid rgba(245, 166, 35, .18);
+    border-radius: 9px;
+    background: rgba(245, 166, 35, .055);
+    padding: 12px;
+  }
+
+  .appTestSummary span {
+    color: #f5a623;
+    font-size: 11px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .appTestSummary strong {
+    color: #f5f5f5;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .interestTargeting {
+    display: grid;
+    gap: 12px;
+    border: 1px solid #222625;
+    border-radius: 8px;
+    background: #0b0c0c;
+    padding: 15px;
+  }
+
+  .interestTargeting > div:first-child {
+    display: grid;
+    gap: 6px;
+  }
+
+  .interestTargeting span {
+    color: #a8a8a8;
+    line-height: 1.55;
+  }
+
+  .interestDropdown {
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #101211, #080909);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .22);
+    overflow: hidden;
+  }
+
+  .interestDropdown summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    min-height: 66px;
+    padding: 13px 15px;
+    cursor: pointer;
+    list-style: none;
+    outline: none;
+    transition: background .16s ease, border-color .16s ease;
+  }
+
+  .interestDropdown summary:hover {
+    background: rgba(245, 166, 35, .05);
+  }
+
+  .interestDropdown summary:focus-visible {
+    box-shadow: inset 0 0 0 2px rgba(245, 166, 35, .5);
+  }
+
+  .interestDropdown summary::-webkit-details-marker {
     display: none;
   }
-  .multiSelectDropdown summary span,
-  .multiSelectDropdown summary strong,
-  .multiSelectDropdown summary small {
-    display: block;
+
+  .interestDropdownCopy {
     min-width: 0;
+    display: grid;
+    gap: 4px;
   }
-  .multiSelectDropdown summary strong {
+
+  .interestDropdownCopy > span {
+    color: #f5a623;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: .06em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .interestDropdownCopy strong {
+    max-width: 100%;
     color: #f5f5f5;
-    font-size: 13px;
-    font-weight: 900;
-    margin-bottom: 3px;
-  }
-  .multiSelectDropdown summary small {
-    color: #8d8d8d;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 950;
     line-height: 1.35;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .multiSelectDropdown summary em {
-    width: 30px;
-    height: 30px;
-    border-radius: 9px;
-    background: rgba(245, 166, 35, 0.1);
-    color: #f5a623;
-    display: grid;
-    place-items: center;
-    font-style: normal;
-    font-size: 12px;
-    font-weight: 950;
-    flex-shrink: 0;
-  }
-  .selectedPreview {
-    border-top: 1px solid #1f1f1f;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    padding: 10px 12px;
-  }
-  .selectedPreview span {
-    border: 1px solid rgba(26, 239, 34, 0.3);
-    background: rgba(26, 239, 34, 0.09);
-    color: #1aef22;
-    border-radius: 999px;
-    padding: 6px 9px;
-    font-size: 11px;
-    font-weight: 900;
-  }
-  .multiSelectMenu {
-    border-top: 1px solid #1f1f1f;
-    max-height: 310px;
-    overflow-y: auto;
-    padding: 8px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
-  }
-  .multiSelectMenu button {
-    border: 1px solid #242424;
-    background: #0b0b0b;
-    color: #d7d7d7;
-    border-radius: 11px;
-    min-height: 44px;
-    padding: 9px 10px;
-    display: flex;
+
+  .interestDropdownMeta {
+    display: inline-flex;
     align-items: center;
-    gap: 9px;
-    text-align: left;
-    cursor: pointer;
+    gap: 10px;
+    min-width: max-content;
   }
-  .multiSelectMenu button.selected {
-    border-color: rgba(26, 239, 34, 0.48);
-    background: rgba(26, 239, 34, 0.09);
-    color: #1aef22;
-  }
-  .multiSelectMenu button span {
-    width: 22px;
-    height: 22px;
-    border: 1px solid #363636;
-    border-radius: 7px;
-    display: grid;
-    place-items: center;
-    color: #1aef22;
-    font-size: 9px;
-    font-weight: 950;
-    flex-shrink: 0;
-  }
-  .multiSelectMenu button.selected span {
-    border-color: #1aef22;
-    background: rgba(26, 239, 34, 0.1);
-  }
-  .multiSelectMenu button strong {
-    color: inherit;
-    font-size: 12px;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-  }
-  .splitGrid {
-    display: grid;
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-    gap: 16px;
-  }
-  .splitGrid.compact {
-    grid-template-columns: 1fr 1fr;
-  }
-  .uploadBox {
-    border: 1px dashed #333;
-    background: #0f0f0f;
-    border-radius: 18px;
-    min-height: 320px;
-    display: flex;
-    flex-direction: column;
+
+  .interestDropdownMeta > span {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    gap: 12px;
-    padding: 26px;
+    min-height: 28px;
+    border: 1px solid rgba(245, 166, 35, .24);
+    border-radius: 999px;
+    background: rgba(245, 166, 35, .1);
+    color: #f5a623;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 950;
+    line-height: 1;
   }
-  .uploadBox strong {
-    font-size: 17px;
+
+  .interestDropdownMeta i {
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid #f5a623;
+    border-bottom: 2px solid #f5a623;
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform .16s ease;
   }
-  .uploadBox span {
-    color: #888;
-    font-size: 13px;
-    line-height: 1.55;
-    max-width: 320px;
+
+  .interestDropdown[open] .interestDropdownMeta i {
+    transform: rotate(225deg) translateY(-1px);
   }
-  .requirementList {
+
+  .interestDropdownPanel {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
-    width: 100%;
-    max-width: 360px;
-    margin: 2px auto 4px;
+    gap: 9px;
+    border-top: 1px solid #202423;
+    background: #080909;
+    padding: 12px;
   }
-  .requirementList small {
-    border: 1px solid rgba(245, 166, 35, 0.2);
-    background: rgba(245, 166, 35, 0.08);
-    color: #f5a623;
-    border-radius: 9px;
-    padding: 7px 8px;
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 1.25;
-  }
-  .fileButton {
-    position: relative;
-    overflow: hidden;
-    border-radius: 11px;
-    background: #f5a623;
-    color: #000;
-    padding: 10px 16px;
-    font-weight: 900;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .fileButton input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .fieldStack, .targetStack {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  label, .labelText {
-    display: block;
-    color: #ccc;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.4px;
-  }
-  input, select, textarea {
-    width: 100%;
-    margin-top: 7px;
-    border: 1px solid #303030;
-    background: #121212;
-    color: #f5f5f5;
-    border-radius: 12px;
-    padding: 12px 13px;
-    font-size: 14px;
-    outline: none;
-  }
-  textarea {
-    resize: vertical;
-    line-height: 1.55;
-  }
-  input:focus, select:focus, textarea:focus {
-    border-color: #f5a623;
-  }
-  .assistBox {
-    border: 1px solid rgba(74, 158, 255, 0.22);
-    background: rgba(74, 158, 255, 0.07);
-    border-radius: 14px;
-    padding: 14px;
+
+  .dropdownCheck {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px;
+    min-height: 44px;
+    border: 1px solid #202423;
+    border-radius: 8px;
+    background: #0d100f;
+    padding: 10px 11px;
+    color: #f5f5f5;
+    font-size: 13px;
+    font-weight: 850;
+    cursor: pointer;
+    transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+  }
+
+  .dropdownCheck:hover {
+    transform: translateY(-1px);
+    border-color: #363d3a;
+    background: #111514;
+  }
+
+  .dropdownCheck input {
+    width: 16px;
+    height: 16px;
+    accent-color: #f5a623;
+  }
+
+  .dropdownCheck span {
+    color: inherit;
+    line-height: 1.35;
+  }
+
+  .dropdownCheck.active {
+    border-color: #f5a623;
+    background: linear-gradient(180deg, rgba(245, 166, 35, .16), rgba(245, 166, 35, .08));
+    box-shadow: inset 0 0 0 1px rgba(245, 166, 35, .18);
+  }
+
+  .interestGrid .checkItem {
+    min-height: 42px;
+  }
+
+  .inlineSectionTitle {
+    margin: 0;
+    color: #f5a623;
+    font-size: 12px;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+
+  .bundleCard {
+    cursor: default;
+  }
+
+  .bundleSelectButton {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    display: grid;
+    gap: 8px;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .bundlePricingList {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 14px;
+    border-top: 1px solid #252a28;
+  }
+
+  .pricingCheck {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    background: #0d100f;
+    padding: 12px;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+  }
+
+  .pricingCheck:hover {
+    transform: translateY(-1px);
+    border-color: rgba(245, 166, 35, .34);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, .2);
+  }
+
+  .pricingCheck.active {
+    border-color: #f5a623;
+    background: rgba(245, 166, 35, .1);
+  }
+
+  .pricingCheck input {
+    width: 16px;
+    height: 16px;
+    accent-color: #f5a623;
+  }
+
+  .pricingCheck span {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .pricingCheck small {
+    color: #a8a8a8;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .pricingCheck em {
+    color: #f5a623;
+    font-style: normal;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .emptyPricing {
+    margin: 0;
+    color: #a8a8a8;
+    border: 1px solid #222625;
+    border-radius: 8px;
+    padding: 16px;
+    background: #0c0d0d;
+  }
+
+  .fieldBlock {
+    display: grid;
+    gap: 8px;
+    color: #e8e8e8;
+    font-weight: 850;
+  }
+
+  .fieldBlock input,
+  .fieldBlock textarea {
+    border-color: #252a28;
+    background: #080909;
+  }
+
+  .fieldBlock input::placeholder,
+  .fieldBlock textarea::placeholder {
+    color: rgba(116, 124, 120, .68);
+    font-size: 12px;
+    font-weight: 400;
+    opacity: 1;
+  }
+
+  .goalChecklist {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
-  .assistBox button, .advancedToggle {
-    border: 1px solid rgba(74, 158, 255, 0.36);
-    background: rgba(74, 158, 255, 0.1);
-    color: #7dbaff;
+
+  .goalOption {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 86px;
+    padding: 14px;
+    border: 1px solid #252a28;
     border-radius: 10px;
-    padding: 9px 12px;
+    background: linear-gradient(180deg, #101312, #090a0a);
+    color: #d9d9d9;
+    cursor: pointer;
+    font-weight: 850;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+  }
+
+  .goalOption:hover {
+    transform: translateY(-1px);
+    border-color: #3b3f3d;
+    background: #111514;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, .2);
+  }
+
+  .goalOption.active {
+    background: linear-gradient(180deg, rgba(245, 166, 35, .16), rgba(245, 166, 35, .07));
+    border-color: #f5a623;
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(245, 166, 35, .18);
+  }
+
+  .goalOption input {
+    width: 16px;
+    height: 16px;
+    accent-color: #f5a623;
+  }
+
+  .goalOption span {
+    display: grid;
+    gap: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  .goalOption strong {
+    line-height: 1.25;
+  }
+
+  .goalOption small {
+    color: #a8a8a8;
+    line-height: 1.45;
+    font-weight: 700;
+  }
+
+  .fieldBlock small {
+    color: #8f8f8f;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .fieldBlock.compact {
+    max-width: 320px;
+  }
+
+  .locationTargeting {
+    display: grid;
+    gap: 14px;
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #101211, #080909);
+    padding: 15px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .2);
+  }
+
+  .locationTargetingHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid #202423;
+  }
+
+  .locationTargetingHead > div {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .locationTargetingHead span {
+    color: #a8a8a8;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .locationTargetingHead > strong {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    border: 1px solid rgba(245, 166, 35, .24);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(245, 166, 35, .15), rgba(245, 166, 35, .07));
+    box-shadow: inset 0 0 0 1px rgba(245, 166, 35, .16);
+    color: #f5a623;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 950;
+    white-space: nowrap;
+  }
+
+  .locationModeGrid {
+    gap: 10px;
+  }
+
+  .locationMode {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    min-height: 112px;
+    border-color: #252a28;
+    background: #0d100f;
+    padding: 14px;
+  }
+
+  .locationModeIcon {
+    grid-row: span 2;
+    width: 38px;
+    height: 38px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    background: #080909;
+    color: #f5a623;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: .03em;
+  }
+
+  .locationMode.active .locationModeIcon {
+    border-color: rgba(245, 166, 35, .42);
+    background: #f5a623;
+    color: #080909;
+  }
+
+  .locationMode.active {
+    background: linear-gradient(180deg, rgba(245, 166, 35, .16), rgba(245, 166, 35, .08));
+  }
+
+  .locationField {
+    border: 1px solid #202423;
+    border-radius: 10px;
+    background: #0b0d0c;
+    padding: 12px;
+  }
+
+  .locationField > span,
+  .locationField > label,
+  .locationField > span:first-child {
+    color: #f5f5f5;
+    font-size: 12px;
+    font-weight: 950;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+
+  .locationField input {
+    border-color: #252a28;
+    background: #070808;
+  }
+
+  .locationField input:focus {
+    border-color: rgba(245, 166, 35, .62);
+    box-shadow: 0 0 0 3px rgba(245, 166, 35, .12);
+  }
+
+  .locationField small {
+    margin-left: 4px;
+    color: #8f8f8f;
+    font-size: 11px;
     font-weight: 800;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .fieldHelp {
+    display: block;
+    margin-top: 7px;
+    color: #9d9d9d;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .fieldNotice {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid #222625;
+    border-radius: 10px;
+    background: #0b0c0c;
+    padding: 13px;
+  }
+
+  .fieldNotice div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .fieldNotice strong {
+    color: #f5f5f5;
+  }
+
+  .fieldNotice span {
+    color: #a8a8a8;
+    overflow-wrap: anywhere;
+  }
+
+  .fieldNotice button {
+    border: 1px solid rgba(245, 166, 35, .34);
+    border-radius: 8px;
+    background: rgba(245, 166, 35, .1);
+    color: #f5a623;
+    padding: 9px 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .locationGrid {
+    display: grid;
+    gap: 12px;
+    margin-top: 0;
+    border-top: 1px solid #202423;
+    padding-top: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stateField {
+    position: relative;
+  }
+
+  .stateSuggestions {
+    position: absolute;
+    z-index: 18;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    display: grid;
+    gap: 5px;
+    max-height: 238px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid rgba(245, 166, 35, .24);
+    border-radius: 10px;
+    background: #0b0d0c;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .34);
+  }
+
+  .stateSuggestions button {
+    width: 100%;
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 11px;
+    background: transparent;
+    color: #ededed;
+    text-align: left;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  .stateSuggestions button strong,
+  .stateSuggestions button span,
+  .stateSuggestions button small {
+    display: block;
+  }
+
+  .stateSuggestions button strong {
+    color: #f5f5f5;
+    font-size: 13px;
+  }
+
+  .stateSuggestions button span {
+    margin-top: 3px;
+    color: #a8a8a8;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: capitalize;
+  }
+
+  .stateSuggestions button small {
+    margin-top: 4px;
+    color: #f5a623;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .stateSuggestions button:hover,
+  .stateSuggestions button[aria-selected="true"] {
+    background: rgba(245, 166, 35, .14);
+    color: #fff;
+  }
+
+  .locationSlot {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    align-content: start;
+    border: 1px solid #202423;
+    border-radius: 10px;
+    background: #090b0a;
+    padding: 12px;
+  }
+
+  .locationSlotHead {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding-bottom: 2px;
+  }
+
+  .locationSlotHead strong {
+    color: #f5f5f5;
+    font-size: 13px;
+    font-weight: 950;
+  }
+
+  .locationSlotHead span {
+    border: 1px solid rgba(245, 166, 35, .24);
+    border-radius: 999px;
+    background: rgba(245, 166, 35, .1);
+    color: #f5a623;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 950;
+  }
+
+  .removeLocationButton,
+  .addLocationButton {
+    border: 1px solid rgba(245, 166, 35, .34);
+    border-radius: 8px;
+    background: rgba(245, 166, 35, .08);
+    color: #f5a623;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 950;
+    cursor: pointer;
+  }
+
+  .removeLocationButton {
+    padding: 7px 10px;
+  }
+
+  .addLocationButton {
+    min-height: 46px;
+    border-style: dashed;
+    background: #0b0d0c;
+  }
+
+  .removeLocationButton:hover,
+  .addLocationButton:hover {
+    border-color: rgba(245, 166, 35, .62);
+    background: rgba(245, 166, 35, .12);
+  }
+
+  .locationAddress {
+    grid-column: 1 / -1;
+  }
+
+  .locationSearchField,
+  .locationGeoCard {
+    grid-column: 1 / -1;
+  }
+
+  .selectedLocationList {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 10px;
+  }
+
+  .locationGeoCard {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px 12px;
+    border: 1px solid rgba(26, 239, 34, .22);
+    border-radius: 10px;
+    background: rgba(26, 239, 34, .06);
+    padding: 12px;
+  }
+
+  .locationGeoCard span {
+    grid-column: 1;
+    width: fit-content;
+    border: 1px solid rgba(26, 239, 34, .28);
+    border-radius: 999px;
+    color: #1aef22;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 950;
+    text-transform: capitalize;
+  }
+
+  .locationGeoCard strong {
+    grid-column: 1;
+    color: #f5f5f5;
+    overflow-wrap: anywhere;
+  }
+
+  .locationGeoCard small {
+    display: none;
+    grid-column: 1;
+    color: #a8a8a8;
+    line-height: 1.45;
+  }
+
+  .locationGeoCard .removeLocationButton {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
+  }
+
+  .locationSummary {
+    display: grid;
+    gap: 5px;
+    border: 1px solid rgba(245, 166, 35, .26);
+    border-radius: 8px;
+    background: rgba(245, 166, 35, .08);
+    padding: 15px;
+  }
+
+  .locationSummary span {
+    color: #a8a8a8;
+    font-size: 12px;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  .locationSummary strong {
+    color: #f5f5f5;
+    line-height: 1.45;
+  }
+
+  .interestSummary {
+    border-color: rgba(255, 255, 255, .14);
+    background: rgba(255, 255, 255, .035);
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    background: #090a0a;
+    color: #f7f7f7;
+    padding: 13px 14px;
+    font: inherit;
+    outline: none;
+  }
+
+  input:focus,
+  textarea:focus {
+    border-color: rgba(245, 166, 35, .75);
+    box-shadow: 0 0 0 3px rgba(245, 166, 35, .12);
+  }
+
+  textarea {
+    min-height: 112px;
+    resize: vertical;
+  }
+
+  .checkItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    border: 1px solid #252a28;
+    background: #0d100f;
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-weight: 800;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+  }
+
+  .checkItem input {
+    width: 16px;
+    height: 16px;
+    accent-color: #f5a623;
+  }
+
+  .assetPanel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 14px;
+    align-items: stretch;
+    background: linear-gradient(180deg, #101312, #090a0a);
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    padding: 17px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .2);
+  }
+
+  .assetPanel h3 {
+    margin: 4px 0 8px;
+    font-size: 22px;
+  }
+
+  .assetPanel span {
+    display: block;
+    color: #a8a8a8;
+    line-height: 1.6;
+  }
+
+  .uploadBox {
+    min-height: 138px;
+    border: 1px dashed rgba(245, 166, 35, .36);
+    border-radius: 10px;
+    background: rgba(245, 166, 35, .06);
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 6px;
+    padding: 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .16s ease, background .16s ease, transform .16s ease;
+  }
+
+  .uploadBox:hover {
+    transform: translateY(-1px);
+    border-color: rgba(245, 166, 35, .62);
+    background: rgba(245, 166, 35, .1);
+  }
+
+  .uploadBox input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .uploadBox strong {
+    color: #f5f5f5;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .uploadBox small {
+    color: #a8a8a8;
+    font-weight: 700;
+  }
+
+  .linkOnlyPanel {
+    grid-template-columns: minmax(0, 1fr) 180px;
+  }
+
+  .linkBadge {
+    border: 1px solid #2d312f;
+    border-radius: 10px;
+    background: #111413;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 6px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .linkBadge strong {
+    color: #f5a623;
+    font-size: 20px;
+  }
+
+  .linkBadge small {
+    color: #a8a8a8;
+    font-weight: 800;
+  }
+
+  .campaignPreview,
+  .previewSection,
+  .readinessPanel {
+    background: linear-gradient(180deg, #101312, #090a0a);
+    border: 1px solid #252a28;
+    border-radius: 10px;
+    padding: 18px;
+  }
+
+  .campaignPreview {
+    display: grid;
+    gap: 14px;
+    width: min(100%, 920px);
+    margin: 0 auto;
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  .previewTopbar {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 90px;
+    align-items: center;
+    color: #a8a8a8;
+    font-weight: 900;
+  }
+
+  .previewTopbar strong {
+    color: #fff;
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .previewTextButton {
+    border: 0;
+    background: transparent;
+    color: #f5a623;
+    font: inherit;
+    font-weight: 950;
+    cursor: pointer;
+    padding: 8px 0;
+    text-align: right;
+  }
+
+  .previewTextButton.muted {
+    color: #a8a8a8;
+    text-align: left;
+  }
+
+  .readyItem {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid #1b1f1d;
+  }
+
+  .previewSection h3,
+  .previewHeroCard h3 {
+    margin: 0 0 12px;
+  }
+
+  .previewHeroCard {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) 260px;
+    gap: 16px;
+    align-items: stretch;
+    background: #0b0c0c;
+    border: 1px solid #222625;
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  .previewHeroCopy {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+  }
+
+  .previewStatus {
+    width: fit-content;
+    border-radius: 999px;
+    background: rgba(245, 166, 35, .12);
+    color: #f5a623;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .previewStatus.ready {
+    background: rgba(26, 239, 34, .12);
+    color: #1aef22;
+  }
+
+  .previewHeroCard h3 {
+    color: #fff;
+    font-size: clamp(24px, 4vw, 36px);
+    line-height: 1.08;
+  }
+
+  .previewHeroCard p {
+    max-width: 680px;
+    color: #b8b8b8;
+    line-height: 1.65;
+  }
+
+  .previewGoalLine {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .previewCaptionBox {
+    display: grid;
+    gap: 7px;
+    border: 1px solid rgba(245,166,35,.25);
+    border-radius: 12px;
+    background: rgba(245,166,35,.08);
+    padding: 12px;
+    margin-top: 12px;
+  }
+
+  .previewCaptionBox strong {
+    color: #F5A623;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .previewCaptionBox span {
+    color: #f5f5f5;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .previewGoalLine strong,
+  .previewSectionHead span,
+  .previewPlatformCard small,
+  .contributorMissionCard span,
+  .contributorMeta small,
+  .previewSplit span,
+  .previewAudienceGrid span {
+    color: #a8a8a8;
+  }
+
+  .previewGoalLine strong,
+  .previewSectionHead span,
+  .previewPillButton {
+    border-radius: 999px;
+    background: rgba(245, 166, 35, .12);
+    color: #f5a623;
+    padding: 5px 9px;
+    font-size: 12px;
+  }
+
+  .previewPillButton {
+    border: 0;
+    font-weight: 950;
     cursor: pointer;
     white-space: nowrap;
   }
-  .recommendBox {
-    border: 1px solid rgba(245, 166, 35, 0.26);
-    background: linear-gradient(135deg, rgba(245, 166, 35, 0.14), rgba(245, 166, 35, 0.04));
-    border-radius: 16px;
-    padding: 14px;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 12px;
-    align-items: center;
-  }
-  .recommendIcon, .bundleIcon {
-    width: 46px;
-    height: 46px;
-    border-radius: 13px;
-    background: rgba(245, 166, 35, 0.14);
-    display: grid;
-    place-items: center;
-  }
-  .recommendBox span, .rowLabel span {
-    color: #f5a623;
-    font-size: 11px;
-    font-weight: 900;
-    text-transform: uppercase;
-  }
-  .recommendBox strong {
-    display: block;
-    color: #fff;
-    font-size: 17px;
-    margin: 3px 0;
-  }
-  .recommendBox p {
-    color: #aaa;
-    font-size: 12px;
-    line-height: 1.45;
-  }
-  .recommendBox button {
-    border: 0;
-    background: #f5a623;
-    color: #050505;
-    border-radius: 11px;
-    padding: 10px 13px;
-    font-weight: 900;
-    cursor: pointer;
-  }
-  .bundleGrid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .choicePlatformGrid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .choicePlatformCard {
-    border: 1px solid #242424;
-    background: #101010;
-    color: #f5f5f5;
-    border-radius: 14px;
-    padding: 12px;
-    text-align: left;
-    cursor: pointer;
-    min-height: 154px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-  .choicePlatformCard.selected {
-    border-color: rgba(245, 166, 35, 0.62);
-    background: rgba(245, 166, 35, 0.08);
-  }
-  .choicePlatformCard b {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: #f5a623;
-    color: #050505;
-    display: grid;
-    place-items: center;
-    font-size: 11px;
-  }
-  .choicePlatformCard span {
-    color: #fff;
-    font-size: 13px;
-    font-weight: 900;
-    line-height: 1.2;
-  }
-  .choicePlatformCard strong, .choicePlatformCard small, .choicePlatformCard em {
-    display: block;
-    color: #aaa;
-    font-size: 11px;
-    line-height: 1.35;
-    font-style: normal;
-  }
-  .choicePlatformCard strong {
-    color: #f5a623;
-  }
-  .bundleCard {
-    border: 1px solid #242424;
-    background: #101010;
-    color: #f5f5f5;
-    border-radius: 14px;
-    padding: 13px;
-    text-align: left;
-    cursor: pointer;
+
+  .previewAssetCard {
     min-height: 190px;
-  }
-  .bundleCard.selected {
-    border-color: rgba(245, 166, 35, 0.62);
-    background: rgba(245, 166, 35, 0.08);
-  }
-  .bundleCard strong {
-    display: block;
-    margin: 11px 0 7px;
-    font-size: 14px;
-    line-height: 1.2;
-  }
-  .bundleCard small, .bundleCard em {
-    display: block;
-    color: #999;
-    font-size: 11px;
-    line-height: 1.45;
-    font-style: normal;
-  }
-  .bundleCard em {
-    color: #f5a623;
-    margin-top: 10px;
-    font-weight: 800;
-  }
-  .rowLabel {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-  .packageGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-  .packageCard {
-    min-height: 180px;
-  }
-  .packageCard span {
-    display: inline-flex;
-    color: #f5a623;
-    font-size: 12px;
-    font-weight: 900;
-    margin-bottom: 14px;
-  }
-  .packageCard strong {
-    font-size: 20px;
-  }
-  .packageCard em {
-    color: #1aef22;
-    margin-top: 16px;
-    font-weight: 800;
-  }
-  .advancedToggle {
-    margin-top: 14px;
-  }
-  .advancedGrid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-top: 14px;
-    border-top: 1px solid #181818;
-    padding-top: 14px;
-  }
-  .previewCard {
-    border: 1px solid #202020;
-    background:
-      radial-gradient(circle at 78% 0%, rgba(245, 166, 35, 0.14), transparent 28%),
-      linear-gradient(180deg, #090b14 0%, #080808 100%);
-    border-radius: 24px;
-    padding: 16px;
-    max-width: 560px;
-    margin: 0 auto;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
-  }
-  .previewNav {
-    display: grid;
-    grid-template-columns: 48px 1fr 74px;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 13px;
-  }
-  .previewNav button {
-    border: 1px solid rgba(245, 166, 35, 0.22);
-    background: rgba(255, 255, 255, 0.04);
-    color: #f5a623;
-    border-radius: 12px;
-    height: 38px;
-    font-weight: 900;
-    cursor: pointer;
-  }
-  .previewNav div {
-    text-align: center;
-    min-width: 0;
-  }
-  .previewNav strong {
-    display: block;
-    font-size: 16px;
-    line-height: 1.2;
-  }
-  .previewNav span {
-    display: block;
-    color: #8e8e8e;
-    font-size: 12px;
-    margin-top: 2px;
-  }
-  .readyBanner {
-    border: 1px solid rgba(26, 239, 34, 0.22);
-    background: rgba(26, 239, 34, 0.08);
-    border-radius: 10px;
-    padding: 10px 12px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  .readyBanner strong {
-    display: block;
-    color: #8dfb93;
-    font-size: 13px;
-  }
-  .readyBanner span {
-    color: #93d798;
-    font-size: 12px;
-  }
-  .previewHero {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .campaignBadge {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    display: grid;
-    place-items: center;
-    background: rgba(245, 166, 35, 0.14);
-    flex-shrink: 0;
-  }
-  .previewHero h3 {
-    font-size: clamp(22px, 4vw, 30px);
-    line-height: 1.08;
-    margin: 0;
-  }
-  .previewHero p {
-    color: #f5a623;
-    font-size: 13px;
-    margin-top: 3px;
-  }
-  .goalLine {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 10px;
-    align-items: start;
-    margin-bottom: 14px;
-  }
-  .goalLine span {
-    background: #f5a623;
-    color: #050505;
-    border-radius: 7px;
-    padding: 4px 7px;
-    font-size: 11px;
-    font-weight: 900;
-  }
-  .goalLine p {
-    color: #c9c9c9;
-    font-size: 13px;
-    line-height: 1.45;
-  }
-  .flyerPanel, .previewSection {
-    border: 1px solid #202333;
-    background: rgba(255, 255, 255, 0.035);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 12px;
-  }
-  .panelHeader {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .panelHeader strong {
-    font-size: 13px;
-  }
-  .panelHeader span {
-    color: #f5a623;
-    font-size: 12px;
-    font-weight: 900;
-  }
-  .mockFlyer {
-    min-height: 210px;
-    border-radius: 11px;
-    overflow: hidden;
-    padding: 18px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background:
-      linear-gradient(135deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.68)),
-      radial-gradient(circle at 18% 22%, #f5a623 0 8%, transparent 9%),
-      radial-gradient(circle at 88% 28%, #1aef22 0 7%, transparent 8%),
-      linear-gradient(135deg, #7a1d11, #141414 48%, #3c2104);
-  }
-  .mockFlyer span {
-    color: #f5a623;
-    font-size: 12px;
-    font-weight: 900;
-    text-transform: uppercase;
-  }
-  .mockFlyer strong {
-    display: block;
-    max-width: 320px;
-    color: #fff;
-    font-size: clamp(28px, 9vw, 56px);
-    line-height: 0.95;
-    margin: 8px 0;
-  }
-  .mockFlyer p {
-    color: #f4f4f4;
-    font-size: 13px;
-    max-width: 280px;
-  }
-  .mockFlyer small {
-    align-self: flex-start;
-    background: rgba(0, 0, 0, 0.55);
-    border: 1px solid rgba(245, 166, 35, 0.45);
-    color: #f5a623;
-    border-radius: 999px;
-    padding: 7px 10px;
-    font-size: 11px;
-    font-weight: 900;
-  }
-  .platformCards {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 9px;
-  }
-  .platformCard {
-    border: 1px solid #24283a;
-    background: rgba(0, 0, 0, 0.24);
-    border-radius: 10px;
-    padding: 9px;
-    display: flex;
-    align-items: center;
+    align-content: end;
     gap: 8px;
-    min-width: 0;
+    border: 1px solid rgba(245, 166, 35, .3);
+    border-radius: 8px;
+    background:
+      linear-gradient(160deg, rgba(245, 166, 35, .22), transparent 54%),
+      #111313;
+    padding: 16px;
+    overflow: hidden;
   }
-  .platformCard b {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: #f5a623;
+
+  .previewAssetCard span {
+    width: fit-content;
     color: #050505;
-    font-size: 12px;
-    flex-shrink: 0;
+    background: #f5a623;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 950;
   }
-  .platformCard strong {
-    display: block;
-    font-size: 12px;
-    line-height: 1.2;
+
+  .previewAssetCard img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #282c2a;
+  }
+
+  .previewAssetCard strong {
+    color: #fff;
     overflow-wrap: anywhere;
   }
-  .platformCard span {
+
+  .previewAssetCard small {
+    color: #d0d0d0;
+  }
+
+  .previewAssetButton {
+    width: fit-content;
+    border: 1px solid rgba(245, 166, 35, .42);
+    border-radius: 8px;
+    background: rgba(245, 166, 35, .1);
     color: #f5a623;
-    font-size: 10px;
-  }
-  .actionSection ul {
-    list-style: none;
-    display: grid;
-    gap: 7px;
-  }
-  .actionSection li {
-    display: flex;
-    gap: 8px;
-    color: #e8e8e8;
-    font-size: 13px;
-    line-height: 1.3;
-  }
-  .actionSection li span {
-    width: 24px;
-    height: 18px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    background: #1aef22;
-    color: #050505;
-    font-size: 9px;
-    font-weight: 900;
-  }
-  .audienceRows {
-    display: grid;
-    gap: 8px;
-  }
-  .audienceRows div {
-    display: grid;
-    grid-template-columns: 92px 1fr;
-    gap: 10px;
-    border-top: 1px solid #1e2230;
-    padding-top: 8px;
-  }
-  .audienceRows span {
-    color: #aaa;
-    font-size: 12px;
-    font-weight: 800;
-  }
-  .audienceRows p {
-    color: #f5a623;
-    font-size: 12px;
-    line-height: 1.45;
-  }
-  .previewTop {
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  .previewThumb {
-    width: 72px;
-    height: 72px;
-    border-radius: 18px;
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-  }
-  .previewTop span {
-    color: #f5a623;
-    font-size: 12px;
-    font-weight: 900;
-  }
-  .previewTop h3 {
-    margin: 4px 0;
-    font-size: 22px;
-  }
-  .previewTop p {
-    color: #aaa;
-    font-size: 13px;
-  }
-  .previewStats, .momentumGrid, .readyPanel {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .previewStats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-  .previewStats div, .momentumGrid div, .readyMetric {
-    border: 1px solid #1f1f1f;
-    background: #090909;
-    border-radius: 13px;
-    padding: 12px;
-  }
-  .previewStats strong, .momentumGrid strong, .readyMetric strong {
-    display: block;
-    color: #f5f5f5;
-    font-size: 18px;
-    line-height: 1.15;
-  }
-  .previewStats span, .momentumGrid span, .readyMetric span {
-    display: block;
-    color: #888;
-    font-size: 11px;
-    margin-top: 4px;
-  }
-  .previewTags span {
-    border-radius: 999px;
-    background: rgba(245, 166, 35, 0.1);
-    color: #f5a623;
-    padding: 6px 9px;
-    font-size: 11px;
-    font-weight: 800;
-  }
-  .previewCard pre {
-    margin-top: 16px;
-    white-space: pre-wrap;
-    color: #ccc;
-    background: #080808;
-    border: 1px solid #1a1a1a;
-    border-radius: 14px;
-    padding: 14px;
-    font-family: inherit;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .instructionDetails {
-    border-top: 1px solid #1d2130;
-    padding-top: 4px;
-  }
-  .instructionDetails summary {
-    color: #f5a623;
+    padding: 8px 10px;
+    font-weight: 950;
     cursor: pointer;
-    font-size: 12px;
-    font-weight: 900;
   }
-  .readyPanel {
-    margin-bottom: 0;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .wizardActions {
-    border-top: 1px solid #181818;
-    margin-top: 24px;
-    padding-top: 18px;
+
+  .previewSectionHead {
     display: flex;
     justify-content: space-between;
     gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
   }
-  .primaryButton, .secondaryButton {
-    border: 0;
-    border-radius: 12px;
-    padding: 13px 18px;
-    font-weight: 900;
-    cursor: pointer;
-    min-width: 130px;
+
+  .previewPlatformGrid,
+  .previewAudienceGrid,
+  .previewFooterGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
   }
-  .primaryButton {
-    background: linear-gradient(135deg, #f5a623, #d89420);
-    color: #000;
-    box-shadow: 0 8px 24px rgba(245, 166, 35, 0.24);
+
+  .previewAudienceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .secondaryButton {
-    background: #121212;
-    border: 1px solid #292929;
-    color: #ddd;
+
+  .previewFooterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .primaryButton:disabled, .secondaryButton:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+
+  .previewPlatformCard,
+  .previewAudienceGrid article,
+  .contributorMissionCard {
+    border: 1px solid #202322;
+    border-radius: 8px;
+    background: #101111;
+    padding: 13px;
   }
-  .errorBox {
-    border: 1px solid rgba(229, 62, 62, 0.3);
-    background: rgba(229, 62, 62, 0.1);
-    color: #ff8b8b;
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .launchScreen {
-    min-height: 70vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+
+  .previewPlatformCard {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
     align-items: center;
-    text-align: center;
-    padding: 36px 24px;
+    gap: 10px;
   }
-  .launchIcon {
-    width: 76px;
-    height: 76px;
-    border-radius: 22px;
-    background: rgba(26, 239, 34, 0.12);
+
+  .previewPlatformCard > span {
+    grid-row: span 2;
+    width: 42px;
+    height: 42px;
     display: grid;
     place-items: center;
-    margin-bottom: 18px;
+    border-radius: 50%;
+    background: #f5a623;
+    color: #050505;
+    font-weight: 950;
   }
-  .launchScreen h1 {
-    font-size: clamp(28px, 6vw, 44px);
-    line-height: 1.05;
-    max-width: 620px;
-    margin: 8px auto 12px;
+
+  .previewPlatformCard strong,
+  .previewAudienceGrid strong,
+  .previewSplit strong {
+    color: #f5f5f5;
+    overflow-wrap: anywhere;
   }
-  .launchCopy {
-    max-width: 560px;
-    margin-bottom: 22px;
+
+  .previewActionGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
   }
-  .momentumGrid {
-    width: min(100%, 620px);
+
+  .previewActionItem {
+    display: block;
+    color: #d8d8d8;
+    font-weight: 800;
   }
-  .launchActions {
-    display: flex;
+
+  .previewActionItem p {
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .previewAudienceGrid article,
+  .previewSplit > div {
+    display: grid;
+    gap: 7px;
+  }
+
+  .previewSplit .fundingRequired {
+    border: 1px solid rgba(245, 166, 35, .36);
+    border-radius: 8px;
+    background: rgba(245, 166, 35, .08);
+    padding: 10px;
+  }
+
+  .previewSplit .fundingRequired strong,
+  .previewSplit .fundingRequired span {
+    color: #f5a623;
+  }
+
+  .fundingHint {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     gap: 12px;
-    margin-top: 8px;
+    margin: 14px 0 0;
+    border: 1px solid rgba(245, 166, 35, .32);
+    border-radius: 10px;
+    background:
+      linear-gradient(180deg, rgba(245, 166, 35, .1), rgba(245, 166, 35, .045)),
+      #0b0c0c;
+    padding: 13px 14px;
   }
-  @media (max-width: 980px) {
-    .builderShell {
-      grid-template-columns: 1fr;
-    }
-    .summaryPanel {
-      position: static;
-      order: -1;
-    }
-    .packageGrid, .momentumGrid, .readyPanel {
-      grid-template-columns: 1fr;
-    }
-    .bundleGrid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .platformCards, .choicePlatformGrid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .multiSelectMenu {
-      grid-template-columns: 1fr;
+
+  .fundingHint div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .fundingHint span {
+    color: #f5a623;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .fundingHint strong {
+    color: #f5f5f5;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .fundingHint small {
+    border: 1px solid rgba(245, 166, 35, .26);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .18);
+    color: #d5d5d5;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+
+  .contributorPreviewPanel {
+    background: rgba(245, 166, 35, .06);
+  }
+
+  .contributorMissionCard {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .contributorThumb {
+    min-height: 92px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background:
+      linear-gradient(145deg, rgba(245, 166, 35, .32), transparent),
+      #090a0a;
+    color: #f5a623;
+  }
+
+  .contributorMissionCard h4 {
+    margin: 5px 0 11px;
+    color: #fff;
+    font-size: 17px;
+  }
+
+  .contributorMeta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .contributorMeta strong {
+    color: #1aef22;
+  }
+
+  .contributorMeta small {
+    border-left: 1px solid #303432;
+    padding-left: 10px;
+  }
+
+  .previewSplit {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .previewBudgetBreakdown {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #202322;
+  }
+
+  .previewBudgetBreakdown > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .previewBudgetBreakdown span {
+    color: #a8a8a8;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .previewBudgetBreakdown strong {
+    color: #f5f5f5;
+    font-size: 13px;
+    font-weight: 950;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .previewDots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 13px;
+  }
+
+  .previewDots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #303432;
+  }
+
+  .previewDots span:first-child {
+    width: 18px;
+    background: #f5a623;
+  }
+
+  .previewActionFooter {
+    display: grid;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    gap: 12px;
+  }
+
+  .previewActionFooter button {
+    min-height: 48px;
+    border-radius: 8px;
+    font-weight: 950;
+    cursor: pointer;
+  }
+
+  .previewDraftButton {
+    border: 1px solid rgba(245, 166, 35, .38);
+    background: #101111;
+    color: #f5a623;
+  }
+
+  .previewLaunchButton {
+    border: 0;
+    background: #f5a623;
+    color: #050505;
+    box-shadow: 0 14px 30px rgba(245, 166, 35, .18);
+  }
+
+  .readyItem {
+    align-items: center;
+    justify-content: flex-start;
+    color: #d8d8d8;
+    font-weight: 850;
+  }
+
+  .readyItem span {
+    width: 42px;
+    color: #f5a623;
+    font-size: 12px;
+  }
+
+  .readyItem.good span {
+    color: #1aef22;
+  }
+
+  .actionsBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+    border: 1px solid #202423;
+    border-radius: 10px;
+    background: #090a0a;
+    padding: 12px;
+  }
+
+
+  @media (min-width: 1720px) {
+    .builderLayout {
+      grid-template-columns: 240px minmax(620px, 1fr);
     }
   }
-  @media (max-width: 720px) {
-    .campaignHeader {
-      display: block;
+
+  @media (max-width: 1400px) {
+    .pageShell,
+    .successShell,
+    .loadingShell {
+      padding-left: 18px;
+      padding-right: 18px;
     }
-    .headerStats {
-      margin-top: 14px;
-      text-align: left;
+
+    .heroBand {
+      grid-template-columns: 1fr;
     }
+
+    .walletCard {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+    }
+  }
+
+  .errorText {
+    margin: 16px 0 0;
+    border: 1px solid rgba(229, 62, 62, .4);
+    background: rgba(229, 62, 62, .08);
+    color: #ffb8b8;
+    border-radius: 10px;
+    padding: 12px;
+    font-weight: 800;
+  }
+
+  .errorText.compact {
+    margin: 0;
+  }
+
+  .policyConfirmBox {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    margin-top: 14px;
+    border: 1px solid rgba(245, 166, 35, .25);
+    border-radius: 12px;
+    background: rgba(245, 166, 35, .08);
+    padding: 12px;
+    color: #d8d8d8;
+    font-size: 12px;
+    line-height: 1.55;
+    cursor: pointer;
+  }
+
+  .policyConfirmBox input {
+    width: 17px;
+    height: 17px;
+    margin-top: 2px;
+    accent-color: #f5a623;
+  }
+
+  .policyConfirmBox a {
+    color: #f5a623;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .heroBand > div:first-child,
+    .walletCard,
+    .stepRail,
     .builderPanel {
+      animation: none !important;
+    }
+
+    .choiceCard,
+    .bundleCard,
+    .packageCard,
+    .locationMode,
+    .pill,
+    .checkItem,
+    .pricingCheck {
+      transition: none !important;
+    }
+
+    .choiceCard:hover,
+    .bundleCard:hover,
+    .packageCard:hover,
+    .locationMode:hover,
+    .pill:hover,
+    .checkItem:hover,
+    .pricingCheck:hover {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 1180px) {
+    .pageShell,
+    .successShell,
+    .loadingShell {
+      padding-left: 24px;
+    }
+
+    .builderLayout {
+      grid-template-columns: 190px minmax(0, 1fr);
+    }
+
+  }
+
+  @media (max-width: 820px) {
+    .pageShell,
+    .successShell,
+    .loadingShell {
+      padding: 14px 14px 104px;
+    }
+
+    .heroBand,
+    .builderLayout,
+    .assetPanel,
+    .goalChecklist,
+    .categoryGrid,
+    .bundleGrid,
+    .packageGrid,
+    .locationModeGrid,
+    .locationGrid,
+    .locationSlot,
+    .previewHeroCard,
+    .previewPlatformGrid,
+    .previewAudienceGrid,
+    .previewFooterGrid,
+    .previewActionGrid,
+    .previewActionFooter,
+    .successSummaryGrid,
+    .previewGrid,
+    .launchGrid {
+      grid-template-columns: 1fr;
+    }
+
+    .fundingHint {
+      grid-template-columns: 1fr;
+    }
+
+    .fundingHint small {
+      width: fit-content;
+      white-space: normal;
+    }
+
+    .previewTopbar {
+      grid-template-columns: 64px minmax(0, 1fr) 64px;
+    }
+
+    .locationAddress {
+      grid-column: auto;
+    }
+
+    .contributorMissionCard {
+      grid-template-columns: 1fr;
+    }
+
+    .contributorThumb {
+      min-height: 72px;
+    }
+
+    .heroBand {
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .heroBand > div:first-child,
+    .walletCard,
+    .builderPanel,
+    .stepRail {
+      box-shadow: none;
+    }
+
+    .heroBand > div:first-child {
       padding: 16px;
-      border-radius: 16px;
-      min-height: auto;
     }
-    .categoryGrid, .contentTypeGrid, .splitGrid, .splitGrid.compact, .advancedGrid, .bundleGrid {
-      grid-template-columns: 1fr;
+
+    .successPanel {
+      padding: 22px 16px;
     }
-    .categoryChip {
-      min-width: 170px;
+
+    .successActions {
+      display: grid;
     }
-    .recommendBox {
-      grid-template-columns: 1fr;
+
+    .heroBand h1 {
+      font-size: 25px;
+      line-height: 1.08;
+      margin-bottom: 8px;
     }
-    .recommendIcon {
-      display: none;
+
+    .heroBand p:not(.eyebrow) {
+      font-size: 13px;
+      line-height: 1.48;
     }
-    .previewCard {
-      border-radius: 18px;
+
+    .walletCard {
+      padding: 13px 14px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 4px 12px;
+    }
+
+    .walletCard strong {
+      font-size: 22px;
+      grid-row: span 2;
+    }
+
+    .walletCard small {
+      grid-column: 1;
+    }
+
+    .stepRail {
+      position: static;
+      display: block;
       padding: 12px;
     }
-    .previewNav {
-      grid-template-columns: 40px 1fr 62px;
+
+    .stepRail .step {
+      display: none;
     }
-    .platformCards, .choicePlatformGrid {
+
+    .builderPanel {
+      min-height: auto;
+      padding: 14px;
+    }
+
+    .sectionHeader h2 {
+      font-size: 22px;
+    }
+
+    .interestDropdown summary {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .interestDropdownMeta {
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .interestDropdownPanel {
       grid-template-columns: 1fr;
     }
-    .multiSelectMenu {
-      max-height: 260px;
-    }
-    .previewStats {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .audienceRows div {
-      grid-template-columns: 1fr;
-      gap: 4px;
-    }
-    .uploadBox {
-      min-height: 240px;
-    }
-    .wizardActions, .launchActions {
+
+    .appInstructionTop {
+      align-items: flex-start;
       flex-direction: column;
     }
-    .primaryButton, .secondaryButton {
-      width: 100%;
+
+    .locationTargetingHead {
+      display: grid;
+      gap: 10px;
+    }
+
+    .locationTargetingHead > strong {
+      width: max-content;
+    }
+
+    .locationMode {
+      min-height: auto;
+    }
+
+    .choiceCard,
+    .bundleCard,
+    .packageCard {
+      min-height: 0;
+    }
+
+    .actionsBar {
+      position: static;
+      background: #0d0d0d;
+      border: 1px solid #1b1b1b;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 18px;
+    }
+
+    .primaryButton,
+    .secondaryButton {
+      flex: 1;
     }
   }
 `;

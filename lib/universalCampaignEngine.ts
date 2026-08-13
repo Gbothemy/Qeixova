@@ -63,6 +63,7 @@ type CreateCampaignRecordsInput = {
     interests: string[];
     ageRanges: string[];
     genders: string[];
+    countries: string[];
     states: string[];
   };
   pricing: CampaignPricing;
@@ -379,6 +380,13 @@ export async function ensureUniversalCampaignTaskColumns() {
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_goal TEXT NOT NULL DEFAULT ''`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_pricing JSONB NOT NULL DEFAULT '{}'::jsonb`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_metadata JSONB NOT NULL DEFAULT '{}'::jsonb`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_professions TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_interests TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_platforms TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_age_ranges TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_genders TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_countries TEXT[] NOT NULL DEFAULT '{}'`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_states TEXT[] NOT NULL DEFAULT '{}'`;
   await ensureMissionExpiryColumns();
 }
 
@@ -457,6 +465,7 @@ export async function ensureUniversalCampaignTables() {
       id SERIAL PRIMARY KEY,
       campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
       location JSONB NOT NULL DEFAULT '[]'::jsonb,
+      country JSONB NOT NULL DEFAULT '[]'::jsonb,
       language JSONB NOT NULL DEFAULT '[]'::jsonb,
       interests JSONB NOT NULL DEFAULT '[]'::jsonb,
       contributor_level JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -468,6 +477,7 @@ export async function ensureUniversalCampaignTables() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `;
+  await sql`ALTER TABLE campaign_targeting ADD COLUMN IF NOT EXISTS country JSONB NOT NULL DEFAULT '[]'::jsonb`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS campaign_verification_rules (
@@ -630,6 +640,11 @@ export async function ensureUniversalCampaignTables() {
   `;
 
   await sql`CREATE INDEX IF NOT EXISTS idx_campaigns_business_id ON campaigns(business_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status, end_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_tasks_mission_discovery ON tasks(campaign_status, task_status, expires_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_tasks_target_interests ON tasks USING GIN(target_interests)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_tasks_target_states ON tasks USING GIN(target_states)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_tasks_target_countries ON tasks USING GIN(target_countries)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_campaign_actions_campaign_id ON campaign_actions(campaign_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_campaign_claims_campaign_id ON campaign_claims(campaign_id)`;
@@ -754,9 +769,10 @@ export async function createUniversalCampaignRecords(input: CreateCampaignRecord
 
   await sql`
     INSERT INTO campaign_targeting (
-      campaign_id, location, interests, contributor_level, platform_requirement, age_range
+      campaign_id, country, location, interests, contributor_level, platform_requirement, age_range
     ) VALUES (
-      ${campaignId}, ${JSON.stringify(input.targeting.states)}::jsonb,
+      ${campaignId}, ${JSON.stringify(input.targeting.countries)}::jsonb,
+      ${JSON.stringify(input.targeting.states)}::jsonb,
       ${JSON.stringify(input.targeting.interests)}::jsonb,
       ${JSON.stringify(input.targeting.professions)}::jsonb,
       ${JSON.stringify(platforms)}::jsonb,
@@ -870,6 +886,35 @@ export async function syncCampaignSubmissionFromCompletion(input: {
   const campaignRows = await sql`SELECT id FROM campaigns WHERE task_id = ${input.taskId} LIMIT 1`;
   if (campaignRows.length === 0) return { campaignSubmissionId: null };
   const campaignId = Number(campaignRows[0].id);
+  const existingSubmissionRows = await sql`
+    SELECT cs.id
+    FROM campaign_submissions cs
+    JOIN campaign_proofs cp ON cp.submission_id = cs.id
+    WHERE cs.campaign_id = ${campaignId}
+      AND cs.contributor_id = ${input.contributorId}
+      AND cp.metadata->>'completionId' = ${String(input.completionId)}
+    ORDER BY cs.id DESC
+    LIMIT 1
+  `;
+  if (existingSubmissionRows.length > 0) {
+    const campaignSubmissionId = Number(existingSubmissionRows[0].id);
+    await sql`
+      UPDATE campaign_submissions
+      SET status = 'under_review', reward_amount = ${input.rewardAmount},
+          reviewed_at = NULL, approved_at = NULL, rejected_at = NULL,
+          review_note = '', updated_at = NOW()
+      WHERE id = ${campaignSubmissionId}
+        AND status = 'rejected'
+    `;
+    await sql`
+      INSERT INTO campaign_proofs (submission_id, proof_type, proof_text, metadata, status)
+      VALUES (
+        ${campaignSubmissionId}, 'submission_proof', ${input.proofValue || ""},
+        ${JSON.stringify({ completionId: input.completionId, retry: true })}::jsonb, 'pending'
+      )
+    `;
+    return { campaignSubmissionId, campaignId };
+  }
   const claimRows = await sql`
     SELECT id FROM campaign_claims
     WHERE campaign_id = ${campaignId}

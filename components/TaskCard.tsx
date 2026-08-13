@@ -52,6 +52,9 @@ export interface Task {
   target_completion_count?: number;
   completed?: boolean;
   completion_status?: string;
+  retry_allowed?: boolean;
+  attempt_count?: number;
+  attempts_remaining?: number;
   mission_type?: string;
   xp_reward?: number;
   difficulty?: string;
@@ -99,6 +102,7 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
     : null;
   const statusLabel = task.completed
     ? task.completion_status === "pending" ? "Pending review" : "Submitted"
+    : task.retry_allowed ? "Retry available"
     : locked ? `Level ${task.min_level ?? 1} required` : "Open";
 
   return (
@@ -156,13 +160,15 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
         ) : locked ? (
           <span className="missionLocked">Level {task.min_level} required</span>
         ) : (
-          <button type="button" onClick={() => onStart(task)}>View mission</button>
+          <button type="button" onClick={() => onStart(task)}>{task.retry_allowed ? "Retry mission" : "View mission"}</button>
         )}
       </div>
 
       <style jsx>{`
         .contributorMissionCard {
           position: relative;
+          width: 100%;
+          min-width: 0;
           display: grid;
           gap: 14px;
           border: 1px solid var(--border);
@@ -271,7 +277,7 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
         }
         .missionDetailGrid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 8px;
           margin-top: 12px;
         }
@@ -285,6 +291,12 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
           font-size: 11px;
           line-height: 1.35;
           overflow-wrap: anywhere;
+        }
+        .missionDetailGrid span:last-child {
+          grid-column: 1 / -1;
+          min-height: 0;
+          max-height: 66px;
+          overflow: hidden;
         }
         .missionDetailGrid strong {
           display: block;
@@ -381,6 +393,10 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
           }
           .missionDetailGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .missionDetailGrid span:nth-child(3),
+          .missionDetailGrid span:last-child {
+            grid-column: 1 / -1;
           }
         }
         @media (max-width: 420px) {

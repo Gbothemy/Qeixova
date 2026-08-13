@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { verifyProof } from "@/lib/verifyProof";
 import { checkDailyCap, updateStreak, QLT_PROGRESS_REWARDS } from "@/lib/missionEngine";
-import { checkRateLimit, incrementRateLimit, checkDuplicate, checkTrustScore } from "@/lib/antiFraud";
+import { checkRateLimit, incrementRateLimit, getMissionAttemptState, checkTrustScore } from "@/lib/antiFraud";
 import { log } from "@/lib/auditLog";
 import { syncCampaignSubmissionFromCompletion } from "@/lib/universalCampaignEngine";
 import { createBusinessNotification } from "@/lib/businessNotifications";
@@ -183,10 +183,12 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
 
-    // ── Duplicate check (application layer) ──────────────────────────────
-    const isDuplicate = await checkDuplicate(session.userId, taskId);
-    if (isDuplicate) {
-      return NextResponse.json({ error: "You have already completed this mission." }, { status: 409 });
+    const attemptState = await getMissionAttemptState(session.userId, Number(taskId));
+    if (!attemptState.canSubmit) {
+      const message = attemptState.status === "rejected"
+        ? "You have used both attempts for this mission."
+        : "This mission already has a pending or approved submission.";
+      return NextResponse.json({ error: message }, { status: 409 });
     }
 
     const taskRows = await sql`
@@ -253,7 +255,7 @@ export async function POST(req: NextRequest) {
       LEFT JOIN levels l ON l.id = u.level_id
       WHERE u.id = ${session.userId}
     `;
-    const userLevel = displayLevel(userLevelRows[0]?.level_number);
+    const userLevel = Math.max(1, displayLevel(userLevelRows[0]?.level_number));
     if (userLevel < minLevel) {
       return NextResponse.json({ error: `This mission requires Level ${minLevel}.` }, { status: 403 });
     }
@@ -268,19 +270,33 @@ export async function POST(req: NextRequest) {
 
     // ── Insert completion (DB UNIQUE constraint is final guard) ───────────
     try {
-      const completionRows = await sql`
-        INSERT INTO completions (user_id, task_id, proof_value, status, xp_awarded, qlt_awarded)
-        VALUES (${session.userId}, ${taskId}, ${storedProof}, 'pending', ${qltProgressReward}, ${selectedReward})
-        RETURNING id
-      `;
+      const completionRows = attemptState.isRetry
+        ? await sql`
+            UPDATE completions
+            SET proof_value = ${storedProof}, status = 'pending', rejection_reason = NULL,
+                completed_at = NOW(), xp_awarded = ${qltProgressReward},
+                qlt_awarded = ${selectedReward}, attempt_count = attempt_count + 1
+            WHERE id = ${attemptState.completionId}
+              AND status = 'rejected' AND attempt_count < 2
+            RETURNING id, attempt_count
+          `
+        : await sql`
+            INSERT INTO completions (user_id, task_id, proof_value, status, xp_awarded, qlt_awarded, attempt_count)
+            VALUES (${session.userId}, ${taskId}, ${storedProof}, 'pending', ${qltProgressReward}, ${selectedReward}, 1)
+            RETURNING id, attempt_count
+          `;
+      if (completionRows.length === 0) {
+        return NextResponse.json({ error: "This mission can no longer be resubmitted." }, { status: 409 });
+      }
+      const attemptNumber = Number(completionRows[0].attempt_count ?? 1);
       await createContributorNotification({
         userId: session.userId,
         type: "submission_received",
         title: "Submission received",
         message: `Your proof for ${task.title} is now pending review.`,
         href: "/tasks",
-        dedupeKey: `submission:${completionRows[0].id}:received`,
-        metadata: { taskId: Number(taskId), completionId: Number(completionRows[0].id) },
+        dedupeKey: `submission:${completionRows[0].id}:attempt:${attemptNumber}:received`,
+        metadata: { taskId: Number(taskId), completionId: Number(completionRows[0].id), attemptNumber },
       });
       await syncCampaignSubmissionFromCompletion({
         taskId: Number(taskId),
@@ -299,7 +315,7 @@ export async function POST(req: NextRequest) {
           body: `${userRows[0]?.full_name || "A contributor"} submitted proof for ${task.title}.`,
           status: "Needs review",
           href: `/business/tasks/${taskId}`,
-          metadata: { taskId: Number(taskId), completionId: Number(completionRows[0].id), contributorId: session.userId },
+          metadata: { taskId: Number(taskId), completionId: Number(completionRows[0].id), contributorId: session.userId, attemptNumber },
         });
       }
     } catch (err: unknown) {
@@ -325,6 +341,7 @@ export async function POST(req: NextRequest) {
     // ── Audit log ─────────────────────────────────────────────────────────
     await log(session.userId, "mission_submitted", {
       taskId, missionType, qltProgressReward, reward: selectedReward, selectedPlatforms: selectedPlatformOptions, newStreak,
+      attemptNumber: attemptState.attemptCount + 1,
     }, "task", taskId);
 
     return NextResponse.json({
@@ -336,6 +353,8 @@ export async function POST(req: NextRequest) {
       missionType,
       newStreak,
       message: "Submission received. Your QLT will be credited after review.",
+      attemptNumber: attemptState.attemptCount + 1,
+      attemptsRemaining: Math.max(0, 1 - attemptState.attemptCount),
     });
 
   } catch (err) {

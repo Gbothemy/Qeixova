@@ -23,9 +23,9 @@ export async function POST(req: NextRequest) {
   const { allowed, totalEarned, needed } = await canWithdraw(session.userId);
   if (!allowed) {
     return NextResponse.json({
-      error: `Withdrawals unlock at Bronze level. You need ${needed.toLocaleString()} more QLT lifetime earnings. Currently at ${totalEarned.toLocaleString()} QLT.`,
+      error: `Withdrawals unlock after 50,001 approved mission QLT. You need ${needed.toLocaleString()} more mission QLT. Bonuses do not count. Currently at ${totalEarned.toLocaleString()} mission QLT.`,
       needed,
-      totalEarned,
+      missionEarned: totalEarned,
     }, { status: 403 });
   }
 

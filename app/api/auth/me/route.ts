@@ -12,7 +12,7 @@ export async function GET() {
     SELECT
       u.id, u.email, u.full_name, u.balance, u.streak, u.referral_code,
       u.trust_score, u.daily_earned, u.approved_count, u.rejected_count,
-      u.total_earned_qlt, u.created_at,
+      u.total_earned_qlt, u.bonus_earned_qlt, u.created_at,
       l.level_number, l.name AS level_name, l.badge_color, l.badge_emoji,
       l.daily_cap_qlt, l.min_qlt, l.max_qlt, l.unlock_features
     FROM users u
@@ -61,6 +61,7 @@ export async function GET() {
       approved_count: user.approved_count ?? 0,
       rejected_count: user.rejected_count ?? 0,
       total_earned_qlt: totalEarned,
+      bonus_earned_qlt: Number(user.bonus_earned_qlt ?? 0),
       // Level info
       level: levelNumber,
       levelName: user.level_name ?? "Starter",

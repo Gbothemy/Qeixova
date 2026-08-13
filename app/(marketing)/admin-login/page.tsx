@@ -20,7 +20,10 @@ export default function AdminLoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") ?? "";
+      const data = contentType.includes("application/json")
+        ? await res.json()
+        : { error: "The server returned an unexpected response" };
       if (!res.ok) {
         setError(data.error ?? "Login failed");
       } else {

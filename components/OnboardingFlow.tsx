@@ -94,7 +94,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...bank, referralCode,
-        interests: interests.slice(0, 5), platforms: [], age_range: ageRange, gender, state,
+        interests: interests.slice(0, 5), platforms: [], age_range: ageRange, gender, country, state,
       }),
     });
     setSaving(false);

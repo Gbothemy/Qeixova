@@ -3,10 +3,11 @@ import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "Qeixova — Earn by Doing",
-  description: "Complete tasks, earn real money. Social media, surveys, app testing and more.",
+  title: "Qeixova — Community-Powered Digital Growth",
+  description: "Launch campaigns with verified contributors, grow real visibility, and earn through meaningful digital participation.",
   icons: {
-    icon: "/qeixova-icon.png",
+    icon: [{ url: "/qeixova-icon.png?v=2", type: "image/png" }],
+    shortcut: "/qeixova-icon.png?v=2",
     apple: "/qeixova-icon.png",
   },
 };
@@ -25,8 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   `;
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
+        <link rel="icon" href="/qeixova-icon.png?v=2" type="image/png" />
+        <link rel="shortcut icon" href="/qeixova-icon.png?v=2" type="image/png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <meta name="theme-color" content="#1AEF22" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

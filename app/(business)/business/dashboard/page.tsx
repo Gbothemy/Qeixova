@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
+import BusinessLoading from "@/components/BusinessLoading";
 import BusinessSidebar from "@/components/BusinessSidebar";
 
 interface Stats {
@@ -13,19 +15,26 @@ interface Stats {
 
 function MetricCard({ label, value, sub, icon, accent }: { label: string; value: number; sub: string; icon: string; accent: string }) {
   return (
-    <article className="adsPanel" style={{ padding: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 18 }}>
+    <article className="adsPanel businessMetricCard" style={{ "--metric-accent": accent } as CSSProperties}>
+      <div>
         <div>
-          <p style={{ color: "#6b7280", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</p>
-          <strong style={{ display: "block", color: "#111827", fontSize: 30, marginTop: 7, lineHeight: 1 }}>{value.toLocaleString()}</strong>
+          <p>{label}</p>
+          <strong>{value.toLocaleString()}</strong>
         </div>
-        <span style={{ width: 38, height: 38, borderRadius: 11, background: `${accent}18`, display: "grid", placeItems: "center" }}>
+        <span>
           <Image src={icon} alt="" width={18} height={18} />
         </span>
       </div>
-      <p style={{ color: "#6b7280", fontSize: 12 }}>{sub}</p>
+      <small>{sub}</small>
     </article>
   );
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 export default function BusinessDashboard() {
@@ -51,10 +60,10 @@ export default function BusinessDashboard() {
 
   if (!business) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f3f4f7", display: "grid", placeItems: "center" }}>
-        <div style={{ width: 42, height: 42, border: "3px solid #e5e7eb", borderTopColor: "#F5A623", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
+      <BusinessLoading
+        title="Loading business dashboard"
+        detail="Collecting campaign, submission, and wallet signals for your workspace."
+      />
     );
   }
 
@@ -64,59 +73,53 @@ export default function BusinessDashboard() {
     { label: "Approved", value: stats?.completions.approved ?? 0, sub: "Verified contributor actions", icon: "/icon-check-circle.svg", accent: "#1AEF22" },
     { label: "Rejected", value: stats?.completions.rejected ?? 0, sub: "Did not qualify", icon: "/icon-alert.svg", accent: "#e53e3e" },
   ];
+  const businessDisplayName = business.name?.trim() || "Business";
 
   return (
     <>
       <BusinessSidebar name={business.name} />
       <main className="page-body business-page-pro">
         <div className="businessWorkspace">
-          <div className="businessAdsTopbar">
-            <div className="businessAdsSearch">
-              <Image src="/icon-analytics.svg" alt="" width={16} height={16} />
-              Search campaigns, audiences, billing, reports
-            </div>
-            <div className="businessAdsActions">
-              <Link href="/business/tasks">Campaigns</Link>
-              <Link href="/business/tasks/new" className="primary">Create Campaign</Link>
-            </div>
-          </div>
-
-          <section className="adsPanel" style={{ padding: 20, marginBottom: 16, display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 16, alignItems: "center" }}>
+          <section className="adsPanel businessHeroPanel businessDashboardHero">
             <div>
-              <p style={{ color: "#F5A623", fontSize: 11, fontWeight: 950, textTransform: "uppercase", letterSpacing: 1 }}>Business Manager</p>
-              <h1 style={{ color: "#111827", fontSize: "clamp(30px, 4vw, 46px)", lineHeight: 1.02, marginTop: 5 }}>Campaign overview</h1>
-              <p style={{ color: "#6b7280", marginTop: 8, fontSize: 14 }}>{business.name} · {business.industry || "Business"} · {business.email}</p>
+              <div className="businessGreetingLine">
+                <span />
+                <p>{getGreeting()}</p>
+              </div>
+              <p className="businessEyebrow">Business Manager</p>
+              <h1 className="businessPageTitle">Welcome back, {businessDisplayName}</h1>
+              <p className="businessIdentityLine">{business.name} / {business.industry || "Business"} / {business.email}</p>
             </div>
-            <div style={{ minWidth: 230, border: "1px solid #f1d6a0", background: "#fff8eb", borderRadius: 14, padding: 16 }}>
-              <span style={{ color: "#6b7280", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Available balance</span>
-              <strong style={{ display: "block", color: "#111827", fontSize: 26, marginTop: 6 }}>{Number(business.balance ?? 0).toLocaleString()} QLT</strong>
-              <Link href="/business/wallet" style={{ display: "inline-block", marginTop: 10, color: "#111827", fontSize: 12, fontWeight: 900 }}>Add funds</Link>
+            <div className="businessBalancePanel">
+              <span>Available balance</span>
+              <strong>{Number(business.balance ?? 0).toLocaleString()} QLT</strong>
+              <Link href="/business/wallet">Add funds</Link>
             </div>
           </section>
 
-          <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 16 }}>
+          <section className="businessMetricGrid">
             {cards.map((card) => <MetricCard key={card.label} {...card} />)}
           </section>
 
-          <section className="adsPanel" style={{ padding: 18, marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
+          <section className="adsPanel businessShortcutPanel">
+            <div className="businessSectionHead">
               <div>
                 <p className="adsSectionTitle">Campaign setup shortcuts</p>
-                <p className="adsMuted" style={{ fontSize: 13, marginTop: 3 }}>Pick a common business objective and jump into the guided campaign builder.</p>
+                <p className="adsMuted">Pick a common business objective and jump into the guided campaign builder.</p>
               </div>
-              <Link href="/business/tasks/new" style={{ background: "#F5A623", color: "#050505", borderRadius: 11, padding: "10px 13px", textDecoration: "none", fontSize: 12, fontWeight: 950 }}>Create</Link>
+              <Link href="/business/tasks/new" className="businessPrimaryLink">Create</Link>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10 }}>
+            <div className="businessShortcutGrid">
               {[
                 ["Content Distribution", "Flyers, posts, announcements", "/icon-human-distribution.svg"],
                 ["Business Awareness", "Products, services, offers", "/icon-local-business.svg"],
                 ["Music Promotion", "Songs, snippets, fan buzz", "/icon-music.svg"],
                 ["Creator Campaigns", "Reels, pages, livestreams", "/icon-creator.svg"],
               ].map(([title, sub, icon]) => (
-                <Link key={title} href="/business/tasks/new" className="adsPanel" style={{ padding: 14, textDecoration: "none", boxShadow: "none" }}>
+                <Link key={title} href="/business/tasks/new" className="adsPanel businessShortcutCard">
                   <Image src={icon} alt="" width={24} height={24} />
-                  <strong style={{ display: "block", color: "#111827", marginTop: 10, fontSize: 14 }}>{title}</strong>
-                  <span style={{ color: "#6b7280", fontSize: 12 }}>{sub}</span>
+                  <strong>{title}</strong>
+                  <span>{sub}</span>
                 </Link>
               ))}
             </div>

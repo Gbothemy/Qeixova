@@ -17,7 +17,7 @@ export async function GET() {
           l.name AS level_name,
           l.badge_color,
           u.referral_code, u.created_at, u.trust_level, u.approved_count,
-          u.rejected_count, u.trust_score, u.xp, u.total_earned_qlt
+          u.rejected_count, u.trust_score, u.xp, u.total_earned_qlt, u.bonus_earned_qlt
         FROM users u
         LEFT JOIN levels l ON l.id = u.level_id
         WHERE u.id = ${session.userId}
@@ -27,7 +27,9 @@ export async function GET() {
       sql`SELECT
         COUNT(*)::int AS total,
         COUNT(CASE WHEN DATE(completed_at) = CURRENT_DATE THEN 1 END)::int AS today
-        FROM completions WHERE user_id = ${session.userId}`,
+        FROM completions
+        WHERE user_id = ${session.userId}
+          AND status = 'approved'`,
 
       // Total QLT accumulated (all credits)
       sql`SELECT COALESCE(SUM(amount), 0)::int AS total FROM transactions WHERE user_id = ${session.userId} AND type = 'credit'`,

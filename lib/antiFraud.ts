@@ -1,6 +1,19 @@
 import { sql } from "@/lib/db";
 
 const MAX_SUBMISSIONS_PER_HOUR = 10;
+export const MAX_MISSION_ATTEMPTS = 2;
+
+export async function ensureCompletionAttemptSchema() {
+  await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS attempt_count INTEGER NOT NULL DEFAULT 1`;
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'completions_attempt_count_check') THEN
+        ALTER TABLE completions
+        ADD CONSTRAINT completions_attempt_count_check CHECK (attempt_count BETWEEN 1 AND 2);
+      END IF;
+    END $$
+  `;
+}
 
 /**
  * Check if user has exceeded hourly submission limit.
@@ -50,10 +63,19 @@ export async function checkTrustScore(userId: number): Promise<{ allowed: boolea
   return { allowed: trustScore >= 30, trustScore };
 }
 
-/** Check for duplicate submission (belt + suspenders on top of DB constraint) */
-export async function checkDuplicate(userId: number, taskId: number): Promise<boolean> {
+export async function getMissionAttemptState(userId: number, taskId: number) {
   const rows = await sql`
-    SELECT id FROM completions WHERE user_id = ${userId} AND task_id = ${taskId} LIMIT 1
+    SELECT id, status, attempt_count
+    FROM completions
+    WHERE user_id = ${userId} AND task_id = ${taskId}
+    LIMIT 1
   `;
-  return rows.length > 0;
+  if (rows.length === 0) {
+    return { completionId: null, attemptCount: 0, canSubmit: true, isRetry: false, status: null };
+  }
+
+  const attemptCount = Number(rows[0].attempt_count ?? 1);
+  const status = String(rows[0].status ?? "pending");
+  const isRetry = status === "rejected" && attemptCount < MAX_MISSION_ATTEMPTS;
+  return { completionId: Number(rows[0].id), attemptCount, canSubmit: isRetry, isRetry, status };
 }

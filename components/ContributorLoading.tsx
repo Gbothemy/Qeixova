@@ -35,7 +35,7 @@ export default function ContributorLoading({
         }
 
         .contributorLoadingCard {
-          width: min(260px, 100%);
+          width: min(320px, 100%);
           display: grid;
           justify-items: center;
           gap: 10px;
@@ -43,14 +43,14 @@ export default function ContributorLoading({
         }
 
         .loadingBrand {
-          width: 40px;
-          height: 40px;
+          width: 48px;
+          height: 48px;
           display: grid;
           place-items: center;
-          border-radius: 10px;
+          border-radius: 12px;
           background: linear-gradient(135deg, var(--accent), var(--accent-2));
           color: #050505;
-          font-size: 18px;
+          font-size: 20px;
           font-weight: 950;
         }
 
@@ -62,24 +62,24 @@ export default function ContributorLoading({
         .loadingCopy p {
           margin: 0;
           color: var(--text);
-          font-size: 15px;
+          font-size: 16px;
           font-weight: 950;
           letter-spacing: 0;
         }
 
         .loadingCopy span {
           color: var(--muted);
-          font-size: 12px;
+          font-size: 13px;
           line-height: 1.5;
         }
 
         .loadingTrack {
-          width: 120px;
+          width: 210px;
           height: 3px;
           border-radius: 999px;
           background: var(--card-bg);
           overflow: hidden;
-          margin-top: 3px;
+          margin-top: 6px;
         }
 
         .loadingTrack span {

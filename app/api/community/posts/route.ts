@@ -3,40 +3,9 @@ import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { createContributorNotification } from "@/lib/contributorNotifications";
 
-async function ensureCommunityTables() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS community_posts (
-      id SERIAL PRIMARY KEY,
-      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      body TEXT NOT NULL,
-      topic TEXT NOT NULL DEFAULT 'General',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS community_post_comments (
-      id SERIAL PRIMARY KEY,
-      post_id INT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
-      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      body TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS community_post_reactions (
-      post_id INT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
-      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY (post_id, user_id)
-    )
-  `;
-}
-
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  await ensureCommunityTables();
 
   const posts = await sql`
     SELECT
@@ -87,7 +56,6 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await ensureCommunityTables();
   const body = await req.json().catch(() => ({}));
   const action = typeof body.action === "string" ? body.action : "create_post";
 
@@ -118,6 +86,10 @@ export async function POST(req: NextRequest) {
       WHERE p.id = ${postId}
       LIMIT 1
     `;
+
+    if (postRows.length === 0) {
+      return NextResponse.json({ error: "Post not found." }, { status: 404 });
+    }
 
     await sql`
       INSERT INTO community_post_comments (post_id, user_id, body)
@@ -155,6 +127,9 @@ export async function POST(req: NextRequest) {
         WHERE p.id = ${postId}
         LIMIT 1
       `;
+      if (postRows.length === 0) {
+        return NextResponse.json({ error: "Post not found." }, { status: 404 });
+      }
       await sql`
         INSERT INTO community_post_reactions (post_id, user_id)
         VALUES (${postId}, ${session.userId})

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     total_budget, target_completion_count,
     mission_type, verification_type, difficulty, min_level,
     target_professions, target_interests, target_platforms,
-    target_age_ranges, target_genders, target_states,
+    target_age_ranges, target_genders, target_countries, target_states,
     campaign_goal, campaign_package, campaign_metadata,
   } = await req.json();
 
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
       task_link, total_budget, target_completion_count,
       mission_type, xp_reward, verification_type, difficulty, min_level,
       target_professions, target_interests, target_platforms,
-      target_age_ranges, target_genders, target_states,
+      target_age_ranges, target_genders, target_countries, target_states,
       business_id, is_active, task_status,
       campaign_status, campaign_goal, campaign_pricing, campaign_metadata
     ) VALUES (
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
       ${resolvedMissionType}, ${resolvedXpReward}, ${resolvedVerification},
       ${resolvedDifficulty}, ${resolvedMinLevel},
       ${target_professions || []}, ${resolvedTargetInterests}, ${target_platforms || []},
-      ${target_age_ranges || []}, ${target_genders || []}, ${target_states || []},
+      ${target_age_ranges || []}, ${target_genders || []}, ${target_countries || []}, ${target_states || []},
       ${session.businessId}, ${false}, ${campaignStatus},
       ${campaignStatus}, ${resolvedCampaignGoal}, ${JSON.stringify(enginePricing)}::jsonb, ${JSON.stringify(metadata)}::jsonb
     )
@@ -176,6 +176,7 @@ export async function POST(req: NextRequest) {
       interests: resolvedTargetInterests,
       ageRanges: Array.isArray(target_age_ranges) ? target_age_ranges : [],
       genders: Array.isArray(target_genders) ? target_genders : [],
+      countries: Array.isArray(target_countries) ? target_countries : [],
       states: Array.isArray(target_states) ? target_states : [],
     },
     pricing: enginePricing,

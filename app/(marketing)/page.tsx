@@ -100,6 +100,18 @@ export default function LandingPage() {
     return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", resize); };
   }, []);
 
+  // Automatically cycle through the process steps unless reduced motion is preferred.
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reducedMotion.matches) return;
+
+    const intervalId = window.setInterval(() => {
+      setActiveStep(current => (current + 1) % steps.length);
+    }, 4000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   return (
     <div style={{ background: "#000000", color: "#F5F5F5", overflowX: "hidden" }}>
 
@@ -116,7 +128,7 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section style={{ background: "linear-gradient(160deg, #050505 0%, #0d0d0d 100%)", padding: "90px 5vw 100px", textAlign: "center", borderBottom: "1px solid #1a1a1a", position: "relative", overflow: "hidden" }}>
+      <section style={{ background: "linear-gradient(160deg, #050505 0%, #0d0d0d 100%)", padding: "36px 5vw 52px", textAlign: "center", borderBottom: "1px solid #1a1a1a", position: "relative", overflow: "hidden" }}>
         <canvas ref={canvasRef} id="landing-particles" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(26,239,34,0.06) 0%, transparent 70%)" }} />
         <div className="animate-fade-up" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(26,239,34,0.08)", border: "1px solid rgba(26,239,34,0.2)", borderRadius: 20, padding: "6px 16px", marginBottom: 28 }}>
@@ -157,7 +169,7 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 2 — What Qeixova Does */}
-      <section style={{ padding: "80px 5vw", background: "#000" }}>
+      <section style={{ padding: "32px 5vw 48px", background: "#000" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 2, textTransform: "uppercase", background: "rgba(26,239,34,0.08)", borderRadius: 20, padding: "4px 14px" }}>What We Do</span>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 42px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: -1, marginBottom: 20 }}>More Than Tasks. A Human-Powered Growth Engine.</h2>
@@ -171,25 +183,15 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 3 — How It Works */}
-      <section id="how-it-works" style={{ padding: "80px 5vw", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
+      <section id="how-it-works" style={{ padding: "32px 5vw 48px", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ textAlign: "center", marginBottom: 34 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 2, textTransform: "uppercase", background: "rgba(26,239,34,0.08)", borderRadius: 20, padding: "4px 14px" }}>Simple Process</span>
             <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: -1 }}>How Qeixova Works</h2>
           </div>
 
           {/* Carousel — all screen sizes */}
           <div style={{ position: "relative" }}>
-            {/* Prev / Next buttons */}
-            <button onClick={() => setActiveStep(s => Math.max(0, s - 1))} disabled={activeStep === 0}
-              style={{ position: "absolute", left: -20, top: "50%", transform: "translateY(-50%)", zIndex: 10, width: 40, height: 40, borderRadius: "50%", background: activeStep === 0 ? "#111" : "#1AEF22", border: "none", cursor: activeStep === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: activeStep === 0 ? 0.3 : 1, transition: "all 0.2s" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={activeStep === 0 ? "#bbb" : "#000"} strokeWidth="3" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <button onClick={() => setActiveStep(s => Math.min(steps.length - 1, s + 1))} disabled={activeStep === steps.length - 1}
-              style={{ position: "absolute", right: -20, top: "50%", transform: "translateY(-50%)", zIndex: 10, width: 40, height: 40, borderRadius: "50%", background: activeStep === steps.length - 1 ? "#111" : "#1AEF22", border: "none", cursor: activeStep === steps.length - 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: activeStep === steps.length - 1 ? 0.3 : 1, transition: "all 0.2s" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={activeStep === steps.length - 1 ? "#bbb" : "#000"} strokeWidth="3" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-
             {/* Single card display */}
             <div style={{ overflow: "hidden", borderRadius: 20 }}>
               <div style={{ display: "flex", transition: "transform 0.4s cubic-bezier(0.4,0,0.2,1)", transform: `translateX(-${activeStep * 100}%)` }}>
@@ -205,26 +207,14 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Dot indicators */}
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 24 }}>
-              {steps.map((_, i) => (
-                <button key={i} onClick={() => setActiveStep(i)} style={{
-                  width: i === activeStep ? 28 : 8, height: 8, borderRadius: 4,
-                  background: i === activeStep ? "#1AEF22" : "#222",
-                  border: "none", cursor: "pointer", padding: 0,
-                  transition: "all 0.3s ease",
-                  boxShadow: i === activeStep ? "0 0 8px rgba(26,239,34,0.5)" : "none",
-                }} />
-              ))}
-            </div>
           </div>
         </div>
       </section>
 
       {/* SECTION 4 — For Businesses */}
-      <section id="for-businesses" style={{ padding: "80px 5vw", background: "#000" }}>
+      <section id="for-businesses" style={{ padding: "32px 5vw 48px", background: "#000" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ textAlign: "center", marginBottom: 34 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#F5A623", letterSpacing: 2, textTransform: "uppercase", background: "rgba(245,166,35,0.08)", borderRadius: 20, padding: "4px 14px" }}>For Businesses</span>
             <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: -1 }}>Built for Businesses That Want Visibility</h2>
           </div>
@@ -261,7 +251,7 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 5 — For Contributors */}
-      <section id="contributors" className="contributors-section" style={{ padding: "80px 5vw", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
+      <section id="contributors" className="contributors-section" style={{ padding: "32px 5vw 48px", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div className="contributors-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
             <div className="contributors-copy">
@@ -291,10 +281,10 @@ export default function LandingPage() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
-                  { label: "Starter → Bronze", desc: "Earn 500,000 QLT to unlock withdrawals" },
-                  { label: "Bronze → Silver", desc: "2,000,000 QLT lifetime earned" },
-                  { label: "Silver → Gold", desc: "5,000,000 QLT lifetime earned" },
-                  { label: "Gold → VIP", desc: "10,000,000 QLT lifetime earned" },
+                  { label: "Starter → Bronze", desc: "Earn 50,001 QLT to unlock withdrawals" },
+                  { label: "Bronze → Silver", desc: "200,001 QLT lifetime earned" },
+                  { label: "Silver → Gold", desc: "500,001 QLT lifetime earned" },
+                  { label: "Gold → VIP", desc: "1,000,001 QLT lifetime earned" },
                 ].map(l => (
                   <div className="contributors-level" key={l.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #111" }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "#F5F5F5" }}>{l.label}</span>
@@ -308,9 +298,9 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 6 — Why Qeixova */}
-      <section style={{ padding: "80px 5vw", background: "#000" }}>
+      <section style={{ padding: "32px 5vw 48px", background: "#000" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ textAlign: "center", marginBottom: 34 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 2, textTransform: "uppercase", background: "rgba(26,239,34,0.08)", borderRadius: 20, padding: "4px 14px" }}>Why Qeixova</span>
             <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: -1 }}>Why Businesses Choose Qeixova</h2>
           </div>
@@ -329,9 +319,9 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 7 — Campaign Examples */}
-      <section style={{ padding: "80px 5vw", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
+      <section style={{ padding: "32px 5vw 48px", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ textAlign: "center", marginBottom: 34 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#F5A623", letterSpacing: 2, textTransform: "uppercase", background: "rgba(245,166,35,0.08)", borderRadius: 20, padding: "4px 14px" }}>Campaign Examples</span>
             <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: -1 }}>What You Can Promote</h2>
           </div>
@@ -350,7 +340,7 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 8 — Vision */}
-      <section style={{ padding: "80px 5vw", background: "#000" }}>
+      <section style={{ padding: "32px 5vw 48px", background: "#000" }}>
         <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 2, textTransform: "uppercase", background: "rgba(26,239,34,0.08)", borderRadius: 20, padding: "4px 14px" }}>Our Vision</span>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: -1, marginBottom: 20 }}>Building Africa&apos;s Human Participation Network</h2>
@@ -364,22 +354,22 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section style={{ padding: "80px 5vw", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
+      <section style={{ padding: "32px 5vw 48px", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
         <div style={{ maxWidth: 680, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 44 }}>
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 2, textTransform: "uppercase", background: "rgba(26,239,34,0.08)", borderRadius: 20, padding: "4px 14px" }}>FAQ</span>
             <h2 style={{ fontSize: "clamp(22px, 4vw, 36px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: -1 }}>Common Questions</h2>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {faqs.map((faq, i) => (
               <div key={i} style={{ background: openFaq === i ? "#0d0d0d" : "#050505", border: `1.5px solid ${openFaq === i ? "rgba(26,239,34,0.2)" : "#1a1a1a"}`, borderRadius: 14, overflow: "hidden" }}>
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ width: "100%", padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} aria-expanded={openFaq === i} aria-controls={`faq-answer-${i}`} style={{ width: "100%", padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
                   <span style={{ fontWeight: 700, fontSize: 14, color: "#F5F5F5" }}>{faq.q}</span>
                   <span style={{ width: 26, height: 26, borderRadius: 7, background: openFaq === i ? "#1AEF22" : "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", color: openFaq === i ? "#000" : "#ccc", fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
                     {openFaq === i ? "−" : "+"}
                   </span>
                 </button>
-                {openFaq === i && <p style={{ padding: "0 18px 16px", fontSize: 13, color: "#ccc", lineHeight: 1.7 }}>{faq.a}</p>}
+                {openFaq === i && <p id={`faq-answer-${i}`} style={{ padding: "0 18px 16px", fontSize: 13, color: "#ccc", lineHeight: 1.7 }}>{faq.a}</p>}
               </div>
             ))}
           </div>
@@ -387,7 +377,7 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 9 — Final CTA */}
-      <section style={{ background: "#050505", borderTop: "1px solid #1a1a1a", padding: "80px 5vw", textAlign: "center" }}>
+      <section style={{ background: "#050505", borderTop: "1px solid #1a1a1a", padding: "32px 5vw 48px", textAlign: "center" }}>
         <div style={{ marginBottom: 20 }}>
           <Image src="/qeixova-icon.png" alt="Qeixova" width={64} height={64} className="animate-float" style={{ objectFit: "contain", borderRadius: 18 }} />
         </div>
@@ -410,7 +400,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer style={{ background: "#000", borderTop: "1px solid #111", padding: "52px 5vw 28px" }}>
+      <footer style={{ background: "#000", borderTop: "1px solid #111", padding: "40px 5vw 24px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 36, marginBottom: 44 }}>
             <div>
@@ -423,13 +413,13 @@ export default function LandingPage() {
             </div>
             <div>
               <p style={{ color: "#F5F5F5", fontWeight: 700, fontSize: 12, marginBottom: 14 }}>Platform</p>
-              {[{ label: "How it works", href: "#how-it-works" }, { label: "For businesses", href: "#for-businesses" }, { label: "Campaigns", href: "#" }, { label: "Contributors", href: "/register" }].map(l => (
+              {[{ label: "How it works", href: "#how-it-works" }, { label: "For businesses", href: "#for-businesses" }, { label: "Campaigns", href: "/business/register" }, { label: "Contributors", href: "/register" }].map(l => (
                 <a key={l.label} href={l.href} style={{ display: "block", fontSize: 12, marginBottom: 9, color: "#aaa", textDecoration: "none" }}>{l.label}</a>
               ))}
             </div>
             <div>
               <p style={{ color: "#F5F5F5", fontWeight: 700, fontSize: 12, marginBottom: 14 }}>Support</p>
-              {[{ label: "Help Center", href: "#" }, { label: "Contact", href: "mailto:qeixova@gmail.com" }, { label: "Privacy Policy", href: "#" }, { label: "Terms", href: "#" }].map(l => (
+              {[{ label: "Help Center", href: "mailto:qeixova@gmail.com" }, { label: "Contact", href: "mailto:qeixova@gmail.com" }, { label: "Privacy Policy", href: "/privacy" }, { label: "Terms", href: "/terms" }, { label: "Refund Policy", href: "/refund-policy" }, { label: "Prohibited Campaigns", href: "/prohibited-campaign-policy" }].map(l => (
                 <a key={l.label} href={l.href} style={{ display: "block", fontSize: 12, marginBottom: 9, color: "#aaa", textDecoration: "none" }}>{l.label}</a>
               ))}
             </div>

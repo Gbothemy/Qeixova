@@ -6,8 +6,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import BalanceCard from "@/components/BalanceCard";
 import BottomNav from "@/components/BottomNav";
+import ContributorNotifications from "@/components/ContributorNotifications";
+import ContributorLoading from "@/components/ContributorLoading";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import { useAuth } from "@/lib/useAuth";
+import { WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
 
 interface WalletData {
   balance: number;
@@ -15,68 +18,14 @@ interface WalletData {
   transactions: { type: string; label: string; amount: number; created_at: string }[];
 }
 
-const topMissionCategories = [
-  {
-    icon: "/icon-human-distribution.svg",
-    label: "Content Distribution",
-    summary: "Share flyers, videos, announcements, and promotional content.",
-    examples: "WhatsApp, Instagram, Telegram, X, TikTok",
-    color: "rgba(74,158,255,0.12)",
-    badge: "#4a9eff",
-  },
-  {
-    icon: "/icon-music.svg",
-    label: "Music Promotion",
-    summary: "Support artists, releases, sounds, teasers, and challenges.",
-    examples: "Teasers, sounds, album flyers, reviews",
-    color: "rgba(245,166,35,0.13)",
-    badge: "#F5A623",
-  },
-  {
-    icon: "/icon-local-business.svg",
-    label: "Business Awareness",
-    summary: "Help SMEs and local services become visible to real people.",
-    examples: "Products, stores, promos, local reach",
-    color: "rgba(26,239,34,0.1)",
-    badge: "#1AEF22",
-  },
-  {
-    icon: "/icon-creator.svg",
-    label: "Creator Campaigns",
-    summary: "Grow creators, skit makers, streamers, and personal brands.",
-    examples: "Reposts, livestreams, page awareness",
-    color: "rgba(192,132,252,0.12)",
-    badge: "#c084fc",
-  },
-  {
-    icon: "/icon-app-testing.svg",
-    label: "App Testing",
-    summary: "Download, test, review, and report product experiences.",
-    examples: "Onboarding, bugs, features, reviews",
-    color: "rgba(20,184,166,0.12)",
-    badge: "#14b8a6",
-  },
-  {
-    icon: "/icon-target.svg",
-    label: "Referral Missions",
-    summary: "Join performance-based growth and invite campaigns.",
-    examples: "Signups, ambassadors, user acquisition",
-    color: "rgba(248,113,113,0.12)",
-    badge: "#f87171",
-  },
-];
-
-const moreMissionCategories = [
-  { icon: "/icon-survey.svg", label: "Surveys & Feedback", summary: "Answer polls, forms, opinions, and product experience reviews.", color: "rgba(245,166,35,0.1)", badge: "#F5A623" },
-  { icon: "/icon-events.svg", label: "Event Promotion", summary: "Promote church programs, concerts, conferences, campus events, and gatherings.", color: "rgba(74,158,255,0.1)", badge: "#4a9eff" },
-  { icon: "/icon-community.svg", label: "Community Growth", summary: "Help brands grow Telegram, WhatsApp, Discord, and Facebook communities.", color: "rgba(26,239,34,0.1)", badge: "#1AEF22" },
-  { icon: "/icon-content.svg", label: "Video Engagement", summary: "Support watch, save, repost, and short-form visibility campaigns.", color: "rgba(20,184,166,0.1)", badge: "#14b8a6" },
-  { icon: "/icon-verified.svg", label: "Brand Ambassador Missions", summary: "Take part in longer-term recurring promotions and niche representation.", color: "rgba(192,132,252,0.1)", badge: "#c084fc" },
-  { icon: "/icon-analytics.svg", label: "AI & Digital Work", summary: "Contribute to AI training, labeling, transcription, moderation, and online work.", color: "rgba(59,130,246,0.1)", badge: "#60a5fa" },
-  { icon: "/icon-grassroots.svg", label: "Local Discovery Missions", summary: "Complete store visits, QR scans, neighborhood promotion, and local activation.", color: "rgba(34,197,94,0.1)", badge: "#22c55e" },
-  { icon: "/icon-fire.svg", label: "Trend Missions", summary: "Join time-sensitive hashtag waves, viral challenges, memes, and trending sounds.", color: "rgba(248,113,113,0.1)", badge: "#f87171" },
-  { icon: "/icon-trophy.svg", label: "Premium Missions", summary: "Access higher-quality UGC, testimonials, premium reviews, and collaborations.", color: "rgba(250,204,21,0.1)", badge: "#facc15" },
-];
+interface MatchedMission {
+  id: number;
+  title: string;
+  reward: number;
+  category: string;
+  estimated_time: string;
+  completed: boolean;
+}
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -90,8 +39,9 @@ function timeAgo(dateStr: string) {
 export default function Home() {
   const { user, loading } = useAuth();
   const [wallet, setWallet] = useState<WalletData | null>(null);
+  const [matchedMissions, setMatchedMissions] = useState<MatchedMission[]>([]);
+  const [missionsLoading, setMissionsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showMoreCategories, setShowMoreCategories] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -99,6 +49,12 @@ export default function Home() {
     const load = () => fetch("/api/wallet").then(r => r.ok ? r.json() : null).then(d => { if (d) setWallet(d); }).catch(() => {});
     load();
     window.addEventListener("balanceUpdated", load);
+
+    fetch("/api/tasks", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => setMatchedMissions((data?.tasks ?? []).filter((task: MatchedMission) => !task.completed).slice(0, 3)))
+      .catch(() => setMatchedMissions([]))
+      .finally(() => setMissionsLoading(false));
 
     // Check onboarding status
     fetch("/api/onboarding").then(r => r.ok ? r.json() : null).then(d => {
@@ -108,7 +64,7 @@ export default function Home() {
     return () => window.removeEventListener("balanceUpdated", load);
   }, [user]);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) return <ContributorLoading label="Loading dashboard" detail="Preparing your earnings, missions, and activity." />;
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -135,9 +91,7 @@ export default function Home() {
               {user?.fullName?.split(" ")[0] ?? "Welcome back"}!
             </p>
           </div>
-          <div style={{ width: 42, height: 42, borderRadius: 13, background: "#111111", border: "1px solid #222222", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Image src="/icon-home.svg" alt="notifications" width={22} height={22} style={{ objectFit: "contain", opacity: 0.7 }} />
-          </div>
+          <ContributorNotifications />
         </div>
         {user && user.streak > 0 && (
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(26,239,34,0.08)", border: "1px solid rgba(26,239,34,0.2)", borderRadius: 20, padding: "5px 14px", marginTop: 14 }}>
@@ -203,14 +157,19 @@ export default function Home() {
                 borderRadius: 10, transition: "width 0.4s",
               }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 11, color: "#aaa" }}>
-                {user.total_earned_qlt.toLocaleString()} QLT earned lifetime
-              </span>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, color: "#aaa" }}>
+                  {user.total_earned_qlt.toLocaleString()} mission QLT earned lifetime
+                </span>
+                <span style={{ fontSize: 11, color: "#F5A623" }}>
+                  {user.bonus_earned_qlt.toLocaleString()} bonus QLT
+                </span>
+              </div>
               {!user.canWithdraw && (
                 <span style={{ fontSize: 11, color: "#F5A623", fontWeight: 600 }}>
                   <img src="/icon-lock.svg" width={10} height={10} style={{ opacity:0.7, marginRight:3, verticalAlign:"middle" }} alt="" />
-                  {Math.max(0, 500001 - user.total_earned_qlt).toLocaleString()} QLT to unlock withdrawals
+                  {Math.max(0, WITHDRAWAL_UNLOCK_QLT - user.total_earned_qlt).toLocaleString()} QLT to unlock withdrawals
                 </span>
               )}
             </div>
@@ -230,71 +189,43 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Mission categories */}
+      {/* Profile-matched missions */}
       <div style={{ padding: "28px 16px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
           <div>
-            <p style={{ fontWeight: 800, fontSize: 17, color: "#F5F5F5", marginBottom: 4 }}>Growth Opportunities</p>
-            <p style={{ color: "#bbbbbb", fontSize: 12, lineHeight: 1.5 }}>Choose the kind of contribution you want to make.</p>
+            <p style={{ fontWeight: 800, fontSize: 17, color: "#F5F5F5", marginBottom: 4 }}>New missions for you</p>
+            <p style={{ color: "#bbbbbb", fontSize: 12, lineHeight: 1.5 }}>Matched with your selected interests and state.</p>
           </div>
-          <Link href="/tasks" style={{ fontSize: 13, color: "#1AEF22", fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>Browse all</Link>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="category-grid">
-          {topMissionCategories.map((cat) => (
-            <Link key={cat.label} href="/tasks" style={{ textDecoration: "none" }}>
-              <div style={{ minHeight: 194, background: "#111111", borderRadius: 14, padding: "16px 14px", border: "1px solid #222222", display: "flex", flexDirection: "column" }}>
-                <div style={{ width: 46, height: 46, borderRadius: 12, background: cat.color, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-                  <Image src={cat.icon} alt={cat.label} width={28} height={28} style={{ objectFit: "contain" }} />
-                </div>
-                <p style={{ fontWeight: 800, fontSize: 13, color: "#F5F5F5", marginBottom: 6, lineHeight: 1.25 }}>{cat.label}</p>
-                <p style={{ fontSize: 11, color: "#bbbbbb", lineHeight: 1.45, marginBottom: 10, flex: 1 }}>{cat.summary}</p>
-                <p style={{ fontSize: 10, fontWeight: 800, color: cat.badge, background: cat.color, borderRadius: 6, padding: "5px 7px", lineHeight: 1.35 }}>{cat.examples}</p>
-              </div>
-            </Link>
-          ))}
+          <Link href="/tasks" style={{ fontSize: 13, color: "#1AEF22", fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>View all</Link>
         </div>
 
-        <div style={{ marginTop: 14 }}>
-          <button
-            type="button"
-            onClick={() => setShowMoreCategories(v => !v)}
-            style={{
-              width: "100%",
-              border: "1px solid #222222",
-              borderRadius: 12,
-              background: "#0a0a0a",
-              color: "#F5F5F5",
-              padding: "13px 14px",
-              fontSize: 13,
-              fontWeight: 800,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>{showMoreCategories ? "Hide more opportunities" : "Explore More"}</span>
-            <span style={{ color: "#1AEF22", fontSize: 18, lineHeight: 1 }}>{showMoreCategories ? "-" : "+"}</span>
-          </button>
-
-          {showMoreCategories && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginTop: 12 }} className="mission-more-grid">
-              {moreMissionCategories.map((cat) => (
-                <Link key={cat.label} href="/tasks" style={{ textDecoration: "none" }}>
-                  <div style={{ background: "#111111", border: "1px solid #222222", borderRadius: 12, padding: "13px 14px", display: "flex", gap: 12, alignItems: "center", minHeight: 84 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: cat.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <Image src={cat.icon} alt={cat.label} width={22} height={22} style={{ objectFit: "contain" }} />
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontWeight: 800, color: "#F5F5F5", fontSize: 13, marginBottom: 4 }}>{cat.label}</p>
-                      <p style={{ color: "#bbbbbb", fontSize: 11, lineHeight: 1.45 }}>{cat.summary}</p>
-                    </div>
+        {missionsLoading ? (
+          <div style={{ minHeight: 154, background: "#111111", borderRadius: 16, border: "1px solid #222222", display: "grid", placeItems: "center", color: "#999", fontSize: 13 }}>
+            Finding matched missions...
+          </div>
+        ) : matchedMissions.length > 0 ? (
+          <div style={{ display: "grid", gap: 10 }}>
+            {matchedMissions.map((mission) => (
+              <Link key={mission.id} href="/tasks" style={{ textDecoration: "none" }}>
+                <div style={{ minHeight: 86, background: "#111111", borderRadius: 16, border: "1px solid #222222", padding: "15px 17px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ color: "#F5F5F5", fontSize: 14, fontWeight: 800, marginBottom: 5 }}>{mission.title}</p>
+                    <p style={{ color: "#aaa", fontSize: 11 }}>{mission.category || "Participation mission"} · {mission.estimated_time || "5 min"}</p>
                   </div>
-                </Link>
-              ))}
+                  <span style={{ color: "#F5A623", fontSize: 13, fontWeight: 900, whiteSpace: "nowrap" }}>{Number(mission.reward).toLocaleString()} QLT</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div style={{ minHeight: 154, background: "#111111", borderRadius: 16, padding: "28px 24px", textAlign: "center", border: "1px solid #222222", display: "grid", placeItems: "center" }}>
+            <div>
+              <Image src="/icon-target.svg" width={38} height={38} alt="" style={{ opacity: 0.42, marginBottom: 10 }} />
+              <p style={{ color: "#F5F5F5", fontSize: 14, fontWeight: 800, marginBottom: 7 }}>No matched missions right now</p>
+              <p style={{ color: "#aaa", fontSize: 12, lineHeight: 1.5 }}>New business campaigns will appear here when they match your selected interests and state.</p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Recent Activity */}
@@ -357,7 +288,7 @@ export default function Home() {
   );
 }
 
-function LoadingScreen() {
+function _LoadingScreen() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000000" }}>
       <div style={{ textAlign: "center" }}>

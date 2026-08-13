@@ -97,6 +97,44 @@ export async function GET(req: Request) {
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_type TEXT NOT NULL DEFAULT 'screenshot'`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_label TEXT NOT NULL DEFAULT 'Upload screenshot as proof'`;
     await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS proof_value TEXT`;
+    await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS attempt_count INTEGER NOT NULL DEFAULT 1`;
+    await sql`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'completions_attempt_count_check') THEN
+          ALTER TABLE completions
+          ADD CONSTRAINT completions_attempt_count_check CHECK (attempt_count BETWEEN 1 AND 2);
+        END IF;
+      END $$
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS community_posts (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        topic TEXT NOT NULL DEFAULT 'General',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS community_post_comments (
+        id SERIAL PRIMARY KEY,
+        post_id INT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS community_post_reactions (
+        post_id INT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (post_id, user_id)
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS community_posts_created_idx ON community_posts(created_at DESC)`;
+    await sql`CREATE INDEX IF NOT EXISTS community_comments_post_idx ON community_post_comments(post_id, created_at)`;
     await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS reward_released_at TIMESTAMPTZ`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS max_screenshots INT NOT NULL DEFAULT 1`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS total_budget INT NOT NULL DEFAULT 0`;
@@ -106,6 +144,8 @@ export async function GET(req: Request) {
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_goal TEXT NOT NULL DEFAULT ''`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_pricing JSONB NOT NULL DEFAULT '{}'::jsonb`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_metadata JSONB NOT NULL DEFAULT '{}'::jsonb`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT NOT NULL DEFAULT 'Nigeria'`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_earned_qlt BIGINT NOT NULL DEFAULT 0`;
     await ensureMissionExpiryColumns();
     await ensureUniversalCampaignTables();
     await ensureMilestoneIntegrity();

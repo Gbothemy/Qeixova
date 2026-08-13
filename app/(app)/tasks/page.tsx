@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import BottomNav from "@/components/BottomNav";
+import ContributorLoading from "@/components/ContributorLoading";
 import TaskCard, { Task } from "@/components/TaskCard";
 import TaskModal, { FullTask } from "@/components/TaskModal";
 import { useAuth } from "@/lib/useAuth";
@@ -54,12 +55,10 @@ export default function TasksPage() {
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [activeView, setActiveView] = useState<"recommended" | "trending" | "all">("recommended");
   const [query, setQuery] = useState("");
   const [proofFilter, setProofFilter] = useState("All proof");
   const [rewardFilter, setRewardFilter] = useState("Any reward");
   const [availabilityFilter, setAvailabilityFilter] = useState("Open");
-  const [showMoreCategories, setShowMoreCategories] = useState(false);
   const [selectedTask, setSelectedTask] = useState<FullTask | null>(null);
 
   const loadTasks = useCallback(() => {
@@ -84,7 +83,7 @@ export default function TasksPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: true } : t));
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: true, completion_status: "pending" } : t));
         window.dispatchEvent(new CustomEvent("balanceUpdated", { detail: { newBalance: data.newBalance } }));
         return { ok: true, reward: data.reward, xpReward: data.xpReward };
       }
@@ -94,7 +93,7 @@ export default function TasksPage() {
     }
   };
 
-  if (loading || fetching) return <LoadingScreen />;
+  if (loading || fetching) return <ContributorLoading label="Loading missions" detail="Finding approved campaigns that match your profile." />;
 
   if (fetchError) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000000", flexDirection: "column", gap: 16, padding: 24 }}>
@@ -106,7 +105,23 @@ export default function TasksPage() {
 
   const filtered = tasks
     .filter((task) => {
-      const text = `${task.title} ${task.category} ${task.instructions} ${task.steps?.join(" ") ?? ""}`.toLowerCase();
+      const metadata = task.campaign_metadata ?? {};
+      const text = [
+        task.title,
+        task.category,
+        task.instructions,
+        task.campaign_goal,
+        task.business_name,
+        metadata.objective,
+        metadata.contentType,
+        metadata.selectedPricingLabel,
+        metadata.contentLink,
+        metadata.assetName,
+        metadata.targetLocation?.summary,
+        ...(task.steps ?? []),
+        ...(task.target_platforms ?? []),
+        ...(task.target_interests ?? []),
+      ].filter(Boolean).join(" ").toLowerCase();
       const matchesQuery = query.trim() ? text.includes(query.trim().toLowerCase()) : true;
       const matchesCategory = activeCategory === "All" || normalizeCategory(task.category) === activeCategory;
       const matchesProof = proofFilter === "All proof" || task.proof_type === proofFilter.toLowerCase();
@@ -116,97 +131,63 @@ export default function TasksPage() {
       const matchesAvailability = availabilityFilter === "All"
         || (availabilityFilter === "Open" && !task.completed && !task.lockedByLevel && !task.lockedByType)
         || (availabilityFilter === "Pending" && task.completed);
-      const matchesView = activeView === "all"
-        || (activeView === "recommended" && Number((task as FullTask & { matchScore?: number }).matchScore ?? 100) >= 60)
-        || (activeView === "trending" && (Number(task.reward) >= 1500 || ["premium", "participation"].includes(task.mission_type ?? "")));
-      return matchesQuery && matchesCategory && matchesProof && matchesReward && matchesAvailability && matchesView;
+      return matchesQuery && matchesCategory && matchesProof && matchesReward && matchesAvailability;
     })
     .sort((a, b) => {
-      if (activeView === "trending") return Number(b.reward) - Number(a.reward);
       const aScore = Number((a as FullTask & { matchScore?: number }).matchScore ?? 100);
       const bScore = Number((b as FullTask & { matchScore?: number }).matchScore ?? 100);
       return bScore - aScore || Number(b.reward) - Number(a.reward);
     });
 
   const completedCount = tasks.filter(t => t.completed).length;
-  const dailyPct = meta ? Math.min(100, (meta.dailyEarned / meta.dailyCap) * 100) : 0;
   const activeLabel = allCategoryFilters.find((filter) => filter.val === activeCategory)?.label ?? activeCategory;
 
   return (
-    <div className="page-body" style={{ background: "#000000", minHeight: "100vh" }}>
+    <div className="page-body" style={{ background: "#000000", minHeight: "100vh", paddingBottom: 88 }}>
       {/* Header */}
-      <div className="page-header" style={{ background: "#0a0a0a", borderBottom: "1px solid #222222", padding: "52px 20px 20px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(26,239,34,0.03)" }} />
-        <p style={{ color: "#bbbbbb", fontSize: 13, marginBottom: 4 }}>Participation Missions</p>
-        <p style={{ color: "#F5F5F5", fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>Missions</p>
-        <p style={{ color: "#aaaaaa", fontSize: 13, marginTop: 6, lineHeight: 1.5, maxWidth: 460 }}>Choose a contribution channel and join campaigns that match how you want to participate.</p>
-
-        {/* Level + daily cap bar */}
-        {meta && (
-          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: (meta.badgeColor ?? "#ccc") + "22", color: meta.badgeColor ?? "#ccc" }}>
-                L{meta.userLevel} {meta.levelName}
-              </span>
-              <span style={{ fontSize: 11, color: "#F5A623", fontWeight: 600 }}>{meta.xp.toLocaleString()} QLT progress</span>
-              <span style={{ fontSize: 11, color: "#bbb" }}>Trust: {meta.trustScore}%</span>
-            </div>
+      <div className="page-header" style={{ background: "#080909", borderBottom: "1px solid #222222", padding: "48px 16px 16px", position: "relative", overflow: "hidden" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 16, alignItems: "start" }}>
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 11, color: "#bbb" }}>Daily cap</span>
-                <span style={{ fontSize: 11, color: dailyPct >= 90 ? "#e53e3e" : "#F5A623", fontWeight: 600 }}>
-                  {meta.dailyEarned.toLocaleString()} / {meta.dailyCap.toLocaleString()} QLT
-                </span>
-              </div>
-              <div style={{ height: 4, background: "#1a1a1a", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${dailyPct}%`, background: dailyPct >= 90 ? "#e53e3e" : "linear-gradient(90deg, #1AEF22, #F5A623)", borderRadius: 4, transition: "width 0.4s" }} />
-              </div>
+              <p style={{ color: "#F5A623", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>Matched mission board</p>
+              <h1 style={{ color: "#F5F5F5", fontSize: 28, lineHeight: 1.1, fontWeight: 950, letterSpacing: 0, margin: 0 }}>Missions matching your profile</h1>
+              <p style={{ color: "#aaaaaa", fontSize: 13, marginTop: 8, lineHeight: 1.6, maxWidth: 560 }}>Only campaigns aligned with your selected interests and state are shown here.</p>
             </div>
+            {meta && (
+              <div style={{ minWidth: 190, border: "1px solid #242826", borderRadius: 14, background: "#0d0f0e", padding: 12 }}>
+                <span style={{ display: "inline-flex", fontSize: 11, fontWeight: 900, padding: "4px 9px", borderRadius: 999, background: (meta.badgeColor ?? "#ccc") + "22", color: meta.badgeColor ?? "#ccc" }}>
+                  L{meta.userLevel} {meta.levelName}
+                </span>
+                <p style={{ marginTop: 9, color: "#bbbbbb", fontSize: 12 }}>Trust: <strong style={{ color: "#F5F5F5" }}>{meta.trustScore}%</strong></p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Mission category filters */}
-      <div style={{ padding: "14px 16px", background: "#111111", borderBottom: "1px solid #222222" }}>
-        <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            {[
-              { key: "recommended", label: "For You" },
-              { key: "trending", label: "Trending" },
-              { key: "all", label: "All" },
-            ].map((item) => {
-              const active = activeView === item.key;
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => setActiveView(item.key as typeof activeView)}
-                  style={{ border: active ? "1px solid rgba(26,239,34,0.45)" : "1px solid #242424", borderRadius: 12, background: active ? "rgba(26,239,34,0.1)" : "#0a0a0a", color: active ? "#1AEF22" : "#bbbbbb", padding: "10px 8px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search campaigns, platforms, instructions..."
-            style={{ width: "100%", border: "1px solid #303030", borderRadius: 12, background: "#0a0a0a", color: "#F5F5F5", padding: "12px 14px", fontSize: 13, outline: "none" }}
-          />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
-            <select value={proofFilter} onChange={(event) => setProofFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 10, background: "#0a0a0a", color: "#cccccc", padding: "9px 8px", fontSize: 12 }}>
+      <div style={{ padding: "14px 16px", background: "#0b0c0c", borderBottom: "1px solid #222222" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+        <div style={{ display: "grid", gap: 12, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 1fr) repeat(3, minmax(120px, 160px))", gap: 8 }} className="missionToolbar">
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by title, business, platform, location..."
+              style={{ width: "100%", border: "1px solid #303030", borderRadius: 12, background: "#080909", color: "#F5F5F5", padding: "12px 14px", fontSize: 13, outline: "none" }}
+            />
+            <select value={proofFilter} onChange={(event) => setProofFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 12, background: "#080909", color: "#cccccc", padding: "11px 10px", fontSize: 12 }}>
               <option>All proof</option>
               <option>Screenshot</option>
               <option>Url</option>
               <option>Text</option>
             </select>
-            <select value={rewardFilter} onChange={(event) => setRewardFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 10, background: "#0a0a0a", color: "#cccccc", padding: "9px 8px", fontSize: 12 }}>
+            <select value={rewardFilter} onChange={(event) => setRewardFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 12, background: "#080909", color: "#cccccc", padding: "11px 10px", fontSize: 12 }}>
               <option>Any reward</option>
               <option>High reward</option>
               <option>Quick earn</option>
             </select>
-            <select value={availabilityFilter} onChange={(event) => setAvailabilityFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 10, background: "#0a0a0a", color: "#cccccc", padding: "9px 8px", fontSize: 12 }}>
+            <select value={availabilityFilter} onChange={(event) => setAvailabilityFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 12, background: "#080909", color: "#cccccc", padding: "11px 10px", fontSize: 12 }}>
               <option>Open</option>
               <option>Pending</option>
               <option>All</option>
@@ -227,37 +208,11 @@ export default function TasksPage() {
             );
           })}
         </div>
-        <button
-          type="button"
-          onClick={() => setShowMoreCategories((open) => !open)}
-          style={{ width: "100%", border: "1px solid #242424", borderRadius: 12, background: "#0a0a0a", color: "#F5F5F5", padding: "10px 12px", fontSize: 12, fontWeight: 800, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <span>{showMoreCategories ? "Hide more categories" : "Explore more categories"}</span>
-          <span style={{ color: "#1AEF22", fontSize: 16 }}>{showMoreCategories ? "-" : "+"}</span>
-        </button>
-        {showMoreCategories && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-            {moreCategoryFilters.map((filter) => {
-              const active = activeCategory === filter.val;
-              return (
-                <button key={filter.val} onClick={() => setActiveCategory(filter.val)} style={{
-                  padding: "8px 12px", borderRadius: 12,
-                  border: active ? "none" : "1px solid #303030",
-                  background: active ? filter.accent : "#171717",
-                  color: active ? "#000" : "#cccccc",
-                  fontWeight: 800, fontSize: 12, cursor: "pointer",
-                }}>{filter.label}</button>
-              );
-            })}
-          </div>
-        )}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 12 }}>
-          <p style={{ color: "#bbbbbb", fontSize: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+          <p style={{ color: "#bbbbbb", fontSize: 12, fontWeight: 700 }}>
             {filtered.length.toLocaleString()} {activeCategory === "All" ? "available mission" : activeLabel.toLowerCase() + " mission"}{filtered.length === 1 ? "" : "s"}
           </p>
-          {(activeCategory !== "All" || query || proofFilter !== "All proof" || rewardFilter !== "Any reward" || availabilityFilter !== "Open") && (
-            <button type="button" onClick={() => { setActiveCategory("All"); setQuery(""); setProofFilter("All proof"); setRewardFilter("Any reward"); setAvailabilityFilter("Open"); }} style={{ border: "none", background: "transparent", color: "#1AEF22", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Clear</button>
-          )}
+        </div>
         </div>
       </div>
 
@@ -277,17 +232,21 @@ export default function TasksPage() {
       )}
 
       {/* Mission list */}
-      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }} className="task-grid">
+      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 12 }} className="missionList">
         {tasks.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 24px", background: "#111111", borderRadius: 16, border: "1px solid #222222" }}>
-            <p style={{ fontSize: 40, marginBottom: 12 }}>🎯</p>
-            <p style={{ fontWeight: 700, fontSize: 16, color: "#F5F5F5", marginBottom: 8 }}>No missions available</p>
-            <p style={{ color: "#bbbbbb", fontSize: 13 }}>New missions are added regularly. Check back soon.</p>
+          <div className="missionsEmptyState" style={{ width: "100%", minHeight: 260, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "34px 18px", background: "#0f1110", borderRadius: 18, border: "1px solid #242826" }}>
+            <div style={{ width: "min(100%, 430px)", margin: "0 auto" }}>
+              <p style={{ fontSize: 44, marginBottom: 14 }}>🎯</p>
+              <p style={{ fontWeight: 900, fontSize: 18, color: "#F5F5F5", marginBottom: 10, lineHeight: 1.3 }}>No matched missions are live yet</p>
+              <p style={{ color: "#bbbbbb", fontSize: 14, lineHeight: 1.65, margin: "0 auto" }}>When an approved campaign matches your selected interests and state, it will appear here.</p>
+            </div>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <div style={{ textAlign: "center", padding: "40px 20px", background: "#111111", borderRadius: 16, border: "1px solid #222222" }}>
             <img src="/icon-check-circle.svg" width={40} height={40} style={{ opacity:0.4, filter:"invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)", marginBottom:8 }} alt="" />
-            <p style={{ color: "#bbbbbb", marginTop: 8 }}>No open {activeLabel.toLowerCase()} missions right now.</p>
+            <p style={{ color: "#F5F5F5", fontWeight: 800, marginTop: 8 }}>No missions match the current filters</p>
+            <p style={{ color: "#bbbbbb", fontSize: 13, lineHeight: 1.6, marginTop: 6 }}>Clear the extra filters to return to your matched mission list.</p>
+            <button type="button" onClick={() => { setActiveCategory("All"); setQuery(""); setProofFilter("All proof"); setRewardFilter("Any reward"); setAvailabilityFilter("Open"); }} style={{ marginTop: 14, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #1AEF22, #06B517)", color: "#000", padding: "11px 18px", fontSize: 13, fontWeight: 900, cursor: "pointer" }}>Clear filters</button>
           </div>
         ) : (
           filtered.map(task => (
@@ -300,17 +259,25 @@ export default function TasksPage() {
         <TaskModal task={selectedTask} onClose={() => setSelectedTask(null)} onComplete={handleComplete} />
       )}
       <BottomNav />
-    </div>
-  );
-}
-
-function LoadingScreen() {
-  return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000000" }}>
-      <div style={{ textAlign: "center" }}>
-        <img src="/icon-target.svg" width={48} height={48} style={{ opacity:0.4, filter:"invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)", marginBottom:12 }} alt="" />
-        <p style={{ color: "#1AEF22", fontWeight: 700 }}>Loading missions...</p>
-      </div>
+      <style jsx>{`
+        @media (max-width: 780px) {
+          .missionToolbar {
+            grid-template-columns: 1fr !important;
+          }
+          .missionsEmptyState {
+            grid-column: 1 / -1;
+          }
+          .page-header > div > div:first-child {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        .missionsEmptyState {
+          grid-column: 1 / -1;
+        }
+        .missionList {
+          width: 100%;
+        }
+      `}</style>
     </div>
   );
 }

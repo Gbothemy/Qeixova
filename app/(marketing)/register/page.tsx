@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,10 +8,10 @@ import { INTEREST_OPTIONS } from "@/lib/interestTaxonomy";
 // ── Constants ────────────────────────────────────────────────────────────────
 const BUSINESS_CATEGORIES = ["Content Distribution","Music Promotion","Community Growth","App Testing & Reviews","Surveys & Feedback","Local Business","Creator Brand","Event Promotion","E-commerce","Other"];
 const BUSINESS_GOALS = ["Brand awareness","Event awareness","Product promotion","Creator content promotion","Local visibility","New song awareness","Increase members","Signup/onboarding test","Bug discovery","Product feedback","Market research"];
-const BUSINESS_CAMPAIGN_TYPES = ["Story & Status Awareness","Short-Form Video Boost","Community Distribution","Streaming Awareness","User Feedback","App Growth","Community Expansion"];
+const _BUSINESS_CAMPAIGN_TYPES = ["Story & Status Awareness","Short-Form Video Boost","Community Distribution","Streaming Awareness","User Feedback","App Growth","Community Expansion"];
 const BUSINESS_ALERTS = ["Admin verification","Contributor proof submitted","Wallet and funding updates","Campaign approval or rejection","Unread alert details"];
 const CONTRIBUTOR_INTERESTS = [...INTEREST_OPTIONS];
-const TARGET_INTERESTS = [...INTEREST_OPTIONS];
+const _TARGET_INTERESTS = [...INTEREST_OPTIONS];
 const PLATFORMS = ["WhatsApp Status","Facebook Story","Instagram Story","TikTok","Instagram Reels","Facebook Groups","Telegram Communities","Streaming Platform","Feedback Form","Android","iOS","Web App"];
 const NIGERIAN_STATES = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT - Abuja","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
 
@@ -50,6 +50,8 @@ function StepBar({ current, total, color="#1AEF22" }: { current:number; total:nu
   );
 }
 
+// Reserved for the state-targeting step when that onboarding screen is enabled.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function StateSearch({ value, onChange, color="#F5A623" }: { value:string; onChange:(v:string)=>void; color?:string }) {
   const [focused, setFocused] = useState(false);
   const query = value.trim().toLowerCase();
@@ -88,11 +90,11 @@ export default function RegisterPage() {
   const [onboardStep, setOnboardStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [verifyNotice, setVerifyNotice] = useState("");
-  const [resendingVerification, setResendingVerification] = useState(false);
+  const [_verifyNotice, setVerifyNotice] = useState("");
+  const [_resendingVerification, setResendingVerification] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [_showPassword, _setShowPassword] = useState(false);
+  const [_showConfirmPassword, _setShowConfirmPassword] = useState(false);
 
   // Signup fields
   const [form, setForm] = useState({ fullName:"", email:"", password:"", confirmPassword:"", country:"Nigeria", state:"" });
@@ -100,16 +102,17 @@ export default function RegisterPage() {
   // Business onboarding
   const [bizCategory, setBizCategory] = useState("");
   const [bizDescription, setBizDescription] = useState("");
-  const [bizWebsite, setBizWebsite] = useState("");
+  const [bizWebsite, _setBizWebsite] = useState("");
   const [bizGoals, setBizGoals] = useState<string[]>([]);
-  const [bizCampaignTypes, setBizCampaignTypes] = useState<string[]>([]);
-  const [bizPlatforms, setBizPlatforms] = useState<string[]>([]);
-  const [bizTargetInterests, setBizTargetInterests] = useState<string[]>([]);
-  const [bizCity, setBizCity] = useState("");
+  const [bizCampaignTypes, _setBizCampaignTypes] = useState<string[]>([]);
+  const [bizPlatforms, _setBizPlatforms] = useState<string[]>([]);
+  const [bizTargetInterests, _setBizTargetInterests] = useState<string[]>([]);
+  const [bizCity, _setBizCity] = useState("");
   const [bizAlerts] = useState<string[]>(BUSINESS_ALERTS);
 
   // Contributor onboarding
   const [interests, setInterests] = useState<string[]>([]);
+  const [platforms, setPlatforms] = useState<string[]>([]);
 
   const accentColor = accountType === "business" ? "#F5A623" : "#1AEF22";
 
@@ -141,7 +144,7 @@ export default function RegisterPage() {
     setLoading(false);
   };
 
-  const handleResendVerification = async () => {
+  const _handleResendVerification = async () => {
     if (!form.email || !accountType) return;
     setResendingVerification(true);
     setVerifyNotice("");
@@ -182,7 +185,7 @@ export default function RegisterPage() {
     } else if (accountType === "contributor") {
       await fetch("/api/onboarding", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ interests: interests.slice(0, 5), platforms: [], state:form.state }),
+        body: JSON.stringify({ interests: interests.slice(0, 5), platforms: platforms.slice(0, 4), state:form.state }),
       });
     }
     setLoading(false);

@@ -114,6 +114,7 @@ export async function seedContributorTaskNotifications(userId: number) {
       AND NOT EXISTS (
         SELECT 1 FROM completions c
         WHERE c.task_id = tasks.id AND c.user_id = ${userId}
+          AND NOT (c.status = 'rejected' AND COALESCE(c.attempt_count, 1) < 2)
       )
       AND (
         CARDINALITY(COALESCE(target_states, '{}')) = 0

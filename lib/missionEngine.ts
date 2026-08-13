@@ -1,7 +1,7 @@
 /**
  * Mission Engine — QLT-based level progression
- * Levels are determined by total_earned_qlt (lifetime), not wallet balance.
- * Withdrawals unlock at Bronze (level 1, 50,001+ QLT lifetime).
+ * Levels and withdrawals use approved mission QLT only.
+ * Bonus QLT is tracked separately and never advances mission progression.
  */
 import { sql } from "@/lib/db";
 import { WITHDRAWAL_UNLOCK_LEVEL, WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
@@ -111,19 +111,19 @@ export async function checkDailyCap(userId: number, rewardAmount: number): Promi
 
 // ── Update streak ─────────────────────────────────────────────────────────────
 export async function updateStreak(userId: number): Promise<{ newStreak: number }> {
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const rows = await sql`
+    UPDATE users
+    SET streak = CASE
+          WHEN last_active = CURRENT_DATE THEN streak
+          WHEN last_active = CURRENT_DATE - 1 THEN streak + 1
+          ELSE 1
+        END,
+        last_active = CURRENT_DATE
+    WHERE id = ${userId}
+    RETURNING streak
+  `;
 
-  const rows = await sql`SELECT streak, last_active FROM users WHERE id = ${userId}`;
-  const user = rows[0];
-  const lastActive = user.last_active ? new Date(user.last_active).toISOString().split("T")[0] : null;
-
-  const newStreak = lastActive === yesterday ? user.streak + 1
-    : lastActive === today ? user.streak
-    : 1;
-
-  await sql`UPDATE users SET streak = ${newStreak}, last_active = ${today} WHERE id = ${userId}`;
-  return { newStreak };
+  return { newStreak: Number(rows[0]?.streak ?? 1) };
 }
 
 // ── Milestone schema/integrity ────────────────────────────────────────────────
@@ -251,7 +251,12 @@ export async function checkMilestones(userId: number): Promise<{ awarded: Array<
       if (claimed.length === 0) continue;
 
       if (m.bonus_qlt > 0) {
-        await sql`UPDATE users SET balance = balance + ${m.bonus_qlt}, total_earned_qlt = total_earned_qlt + ${m.bonus_qlt} WHERE id = ${userId}`;
+        await sql`
+          UPDATE users
+          SET balance = balance + ${m.bonus_qlt},
+              bonus_earned_qlt = bonus_earned_qlt + ${m.bonus_qlt}
+          WHERE id = ${userId}
+        `;
         await sql`INSERT INTO transactions (user_id, type, amount, label) VALUES (${userId}, 'credit', ${m.bonus_qlt}, ${'Milestone: ' + m.name})`;
       }
 
@@ -283,4 +288,3 @@ export async function awardXP(userId: number): Promise<{ newXP: number; newLevel
   const levelRows = await sql`SELECT level_number FROM levels WHERE id = ${rows[0]?.level_id ?? 1} LIMIT 1`;
   return { newXP: 0, newLevel: levelRows[0]?.level_number ?? 0, leveledUp: false };
 }
-

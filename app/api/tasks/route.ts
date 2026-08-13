@@ -5,6 +5,7 @@ import { canonicalizeInterests, interestMatches } from "@/lib/interestTaxonomy";
 import { ensureUniversalCampaignTables } from "@/lib/universalCampaignEngine";
 import { displayLevel } from "@/lib/levels";
 import { expireElapsedMissions } from "@/lib/missionExpiry";
+import { MAX_MISSION_ATTEMPTS } from "@/lib/antiFraud";
 
 type TargetLocationMetadata = {
   targetLocation?: {
@@ -40,6 +41,10 @@ function normalizeState(value: unknown) {
   return normalized;
 }
 
+function normalizeCountry(value: unknown) {
+  return normalizeValue(value).replace(/\bthe\b/g, "").replace(/\s+/g, " ").trim();
+}
+
 function normalizeList(values: unknown) {
   return Array.isArray(values) ? values.filter((value): value is string => typeof value === "string" && value.trim().length > 0) : [];
 }
@@ -53,7 +58,16 @@ function deriveStateTargets(task: Record<string, unknown>) {
     location.name,
   ]) ?? [];
 
-  return [...new Set([...directTargets, ...locationTargets].map(normalizeState).filter((value) => value && value !== "nigeria"))];
+  return [...new Set([...directTargets, ...locationTargets]
+    .map(normalizeState)
+    .filter((value) => value && !["nigeria", "all", "all states", "nationwide", "countrywide"].includes(value)))];
+}
+
+function deriveCountryTargets(task: Record<string, unknown>) {
+  const directTargets = normalizeList(task.target_countries);
+  const metadata = task.campaign_metadata as TargetLocationMetadata | null;
+  const locationTargets = metadata?.targetLocation?.locations?.flatMap((location) => [location.country]) ?? [];
+  return [...new Set([...directTargets, ...locationTargets].map(normalizeCountry).filter(Boolean))];
 }
 
 function singleValueMatches(targets: string[], userValue: unknown) {
@@ -84,11 +98,13 @@ export async function GET() {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await ensureUniversalCampaignTables();
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT NOT NULL DEFAULT 'Nigeria'`;
     await expireElapsedMissions();
 
     // Get user profile + level info for targeting and cap enforcement
     const userRows = await sql`
-      SELECT u.profession, u.interests, u.platforms, u.age_range, u.gender, u.state,
+      SELECT u.profession, u.interests, u.platforms, u.age_range, u.gender,
+             COALESCE(u.country, 'Nigeria') AS country, u.state,
              u.xp, u.trust_score, u.daily_earned, u.daily_reset_at,
              l.level_number, l.daily_cap_qlt, l.name AS level_name, l.badge_color,
              l.unlock_features
@@ -105,7 +121,7 @@ export async function GET() {
       user.daily_earned = 0;
     }
 
-    const userLevelNum = displayLevel(user.level_number);
+    const userLevelNum = Math.max(1, displayLevel(user.level_number));
     const allowedMissionTypes = getAllowedMissionTypes(user.unlock_features);
 
     // Fetch active missions with completion status
@@ -140,11 +156,23 @@ export async function GET() {
         COALESCE(t.target_platforms, '{}') AS target_platforms,
         COALESCE(t.target_age_ranges, '{}') AS target_age_ranges,
         COALESCE(t.target_genders, '{}') AS target_genders,
+        COALESCE(t.target_countries, '{}') AS target_countries,
         COALESCE(t.target_states, '{}') AS target_states,
         cpg.id AS campaign_id,
         COALESCE(cpg.status, '') AS universal_campaign_status,
-        CASE WHEN c.id IS NOT NULL THEN true ELSE false END AS completed,
-        c.status AS completion_status
+        CASE
+          WHEN c.id IS NULL THEN false
+          WHEN c.status = 'rejected' AND c.attempt_count < ${MAX_MISSION_ATTEMPTS} THEN false
+          ELSE true
+        END AS completed,
+        c.status AS completion_status,
+        COALESCE(c.attempt_count, 0) AS attempt_count,
+        CASE
+          WHEN c.id IS NULL THEN ${MAX_MISSION_ATTEMPTS}
+          WHEN c.status = 'rejected' THEN GREATEST(${MAX_MISSION_ATTEMPTS} - c.attempt_count, 0)
+          ELSE 0
+        END AS attempts_remaining,
+        CASE WHEN c.status = 'rejected' AND c.attempt_count < ${MAX_MISSION_ATTEMPTS} THEN true ELSE false END AS retry_allowed
       FROM tasks t
       LEFT JOIN businesses b ON b.id = t.business_id
       LEFT JOIN campaigns cpg ON cpg.task_id = t.id
@@ -167,6 +195,7 @@ export async function GET() {
     const dailyCap = Number(user.daily_cap_qlt ?? 5000);
     const dailyRemaining = Math.max(0, dailyCap - dailyEarned);
     const userState = normalizeState(user.state);
+    const userCountry = normalizeCountry(user.country || "Nigeria");
     const normalizedInterests = canonicalizeInterests(user.interests);
 
     // Score + filter tasks
@@ -181,7 +210,9 @@ export async function GET() {
 
       // Targeting score
       const stateTargets = deriveStateTargets(task);
+      const countryTargets = deriveCountryTargets(task);
       const targetInterests = canonicalizeInterests(task.target_interests);
+      const countryMatched = countryTargets.length === 0 || (Boolean(userCountry) && countryTargets.includes(userCountry));
       const hasUserState = Boolean(userState);
       const hasUserInterests = normalizedInterests.length > 0;
       const stateMatched = stateTargets.length === 0 || (hasUserState && stateTargets.includes(userState));
@@ -189,9 +220,9 @@ export async function GET() {
       const stateScoreMatched = stateTargets.length === 0 || (hasUserState && stateTargets.includes(userState));
       const interestsScoreMatched = targetInterests.length === 0 || (hasUserInterests && interestMatches(targetInterests, normalizedInterests));
       const criteria = [
-        { targets: normalizeList(task.target_professions), userVal: user.profession },
-        { targets: normalizeList(task.target_age_ranges),  userVal: user.age_range },
-        { targets: normalizeList(task.target_genders),     userVal: user.gender },
+        { key: "profession", targets: normalizeList(task.target_professions), userVal: user.profession },
+        { key: "age", targets: normalizeList(task.target_age_ranges),  userVal: user.age_range },
+        { key: "gender", targets: normalizeList(task.target_genders), userVal: user.gender },
       ];
       const arrayMatches = [
         { targets: targetInterests, matched: interestsScoreMatched },
@@ -215,11 +246,26 @@ export async function GET() {
 
       const matchScore = totalCriteria === 0 ? 100 : Math.round((matchedCriteria / totalCriteria) * 100);
       const blockedByLocation = stateTargets.length > 0 && !stateMatched;
+      const blockedByCountry = countryTargets.length > 0 && !countryMatched;
       const blockedByInterests = targetInterests.length > 0 && !interestsMatched;
-      const blockedByKnownProfileMismatch = criteria.some(({ targets, userVal }) => targets.length > 0 && Boolean(userVal) && !singleValueMatches(targets, userVal));
-      const hidden = blockedByLocation || blockedByInterests || blockedByKnownProfileMismatch;
+      const blockedByProfileMismatch = criteria.some(({ targets, userVal }) => targets.length > 0 && !singleValueMatches(targets, userVal));
+      // A contributor who already participated must retain access to their one
+      // allowed retry even if their profile was later edited or incomplete.
+      const eligibleRetry = task.retry_allowed === true;
+      const hidden = eligibleRetry
+        ? false
+        : blockedByCountry || blockedByLocation || blockedByInterests || blockedByProfileMismatch;
 
-      return { ...task, matchScore, hidden, lockedByLevel, lockedByType, minLevel };
+      const matchReasons = [
+        ...(countryTargets.length > 0 && countryMatched ? ["country"] : []),
+        ...(stateTargets.length > 0 && stateMatched ? ["state"] : []),
+        ...(targetInterests.length > 0 && interestsMatched ? ["interests"] : []),
+        ...criteria
+          .filter(({ targets, userVal }) => targets.length > 0 && singleValueMatches(targets, userVal))
+          .map(({ key }) => key),
+      ];
+
+      return { ...task, matchScore, matchReasons, hidden, lockedByLevel, lockedByType, minLevel };
     });
 
     const visible = scored
@@ -241,6 +287,9 @@ export async function GET() {
         return (b.reward as number) - (a.reward as number);
       });
 
+    const availableCount = visible.filter((task: Record<string, unknown>) => !task.completed && !task.lockedByLevel && !task.lockedByType).length;
+    const submittedCount = visible.filter((task: Record<string, unknown>) => Boolean(task.completed)).length;
+
     return NextResponse.json({
       tasks: visible,
       meta: {
@@ -253,7 +302,11 @@ export async function GET() {
         dailyRemaining,
         trustScore: user.trust_score ?? 100,
         state: user.state ?? "",
+        country: user.country ?? "Nigeria",
         interests: normalizedInterests,
+        matchedCount: visible.length,
+        availableCount,
+        submittedCount,
       },
     });
   } catch (err) {
