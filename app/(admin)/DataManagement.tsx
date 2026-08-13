@@ -12,8 +12,8 @@ interface ClearOption {
 const OPTIONS: ClearOption[] = [
   {
     scope: "completions",
-    label: "Clear Mission Submissions",
-    description: "Removes all submission records and resets campaign usage counters. User balances are not affected.",
+    label: "Clear Task Completions",
+    description: "Removes all task completion records and resets task budgets. User balances are NOT affected.",
     danger: "medium",
     icon: "📋",
   },
@@ -26,15 +26,15 @@ const OPTIONS: ClearOption[] = [
   },
   {
     scope: "tasks",
-    label: "Deactivate All Missions",
-    description: "Soft-disables all missions so contributors cannot discover them. They can be reactivated later.",
+    label: "Deactivate All Tasks",
+    description: "Soft-disables all tasks so users can't see them. Tasks can be re-activated individually.",
     danger: "medium",
     icon: "🔒",
   },
   {
     scope: "tasks_hard",
-    label: "Delete All Missions",
-    description: "Permanently deletes all missions and their submission records. This cannot be undone.",
+    label: "Delete All Tasks",
+    description: "Permanently deletes all tasks and their completion records. This cannot be undone.",
     danger: "high",
     icon: "🗑️",
   },
@@ -48,7 +48,7 @@ const OPTIONS: ClearOption[] = [
   {
     scope: "all",
     label: "Wipe All App Data",
-    description: "Deletes users, missions, submissions, and transactions. Use only when resetting a test environment.",
+    description: "Nuclear option. Deletes ALL users, tasks, completions, and transactions. The database will be empty.",
     danger: "critical",
     icon: "☢️",
   },
@@ -87,15 +87,15 @@ export default function DataManagement() {
   };
 
   return (
-    <section className="dataManagement">
+    <div style={{ marginTop: 48 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#1A1A1A" }}>Data Management</h2>
         <span style={{ background: "#ffebeb", color: "#cc0000", fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, letterSpacing: 0.5 }}>
-          RESTRICTED
+          DANGER ZONE
         </span>
       </div>
       <p style={{ margin: "0 0 24px", color: "#ccc", fontSize: 14 }}>
-        Controlled reset tools for test data and operational recovery.
+        These actions are irreversible. Use with extreme caution.
       </p>
 
       {result && (
@@ -113,7 +113,7 @@ export default function DataManagement() {
         </div>
       )}
 
-      <div className="dataManagementGrid">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
         {OPTIONS.map((opt) => {
           const s = DANGER_STYLES[opt.danger];
           const isConfirming = confirming === opt.scope;
@@ -148,7 +148,7 @@ export default function DataManagement() {
                     fontSize: 13, fontWeight: 600,
                   }}
                 >
-                  Start confirmation
+                  {opt.icon} {opt.label}
                 </button>
               ) : (
                 <div style={{ background: "#f9f9f9", borderRadius: 8, padding: 14, border: "1px solid #eee" }}>
@@ -193,7 +193,7 @@ export default function DataManagement() {
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }
 

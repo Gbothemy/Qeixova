@@ -5,15 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", detail: "Operations overview", icon: "OV" },
-  { href: "/admin/users", label: "Users", detail: "Contributor accounts", icon: "US" },
-  { href: "/admin/businesses", label: "Businesses", detail: "Registered business accounts", icon: "BZ" },
-  { href: "/admin/tasks?status=pending_review", label: "Campaign Review", detail: "Approve or reject business campaigns", icon: "AP" },
-  { href: "/admin/tasks", label: "Missions", detail: "Campaign inventory", icon: "MS" },
-  { href: "/admin/completions", label: "Mission Proof", detail: "Approve completed user missions", icon: "RV" },
-  { href: "/admin/withdrawals", label: "Withdrawals", detail: "Payout operations", icon: "WD" },
-  { href: "/admin/logs", label: "Audit Logs", detail: "System activity", icon: "LG" },
-  { href: "/admin/config", label: "Economy", detail: "Reward controls", icon: "EC" },
+  { href: "/admin", label: "Dashboard", icon: "OV" },
+  { href: "/admin/users", label: "Users", icon: "US" },
+  { href: "/admin/tasks", label: "Missions", icon: "MS" },
+  { href: "/admin/withdrawals", label: "Withdrawals", icon: "WD" },
+  { href: "/admin/completions", label: "Submissions", icon: "RV" },
+  { href: "/admin/logs", label: "Audit Logs", icon: "LG" },
+  { href: "/admin/config", label: "Economy", icon: "EC" },
 ];
 
 function SidebarContent({
@@ -27,11 +25,11 @@ function SidebarContent({
 }) {
   return (
     <>
-      <div className="admin-brand">
+      <div style={{ padding: "28px 24px 22px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div className="admin-brand-lockup">
-            <span className="admin-brand-mark">Q</span>
-            <div><strong>Qeixova</strong><small>Admin Control</small></div>
+          <div>
+            <div style={{ color: "#F8FAFC", fontWeight: 800, fontSize: 20 }}>Qeixova</div>
+            <div style={{ color: "#F5A623", fontSize: 11, marginTop: 2, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase" }}>Admin Portal</div>
           </div>
           <button
             onClick={onClose}
@@ -44,8 +42,7 @@ function SidebarContent({
         </div>
       </div>
 
-      <nav className="admin-nav" aria-label="Admin navigation">
-        <span className="admin-nav-label">Operate</span>
+      <nav style={{ flex: 1, padding: "18px 12px" }} aria-label="Admin navigation">
         {NAV.map((item) => {
           const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
           return (
@@ -72,14 +69,13 @@ function SidebarContent({
                 background: active ? "#F5A623" : "rgba(255,255,255,0.06)",
                 flexShrink: 0,
               }}>{item.icon}</span>
-              <span className="admin-nav-copy"><strong>{item.label}</strong><small>{item.detail}</small></span>
+              {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="admin-account">
-        <small>Signed in as</small><strong>Platform admin</strong>
+      <div style={{ padding: "16px 18px 22px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         <button
           onClick={onLogout}
           style={{

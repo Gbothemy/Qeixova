@@ -116,7 +116,7 @@ export async function PATCH(req: NextRequest) {
       if (completion.referred_by) {
         const bonus = Math.floor(reward * 0.1);
         if (bonus > 0) {
-          await sql`UPDATE users SET balance = balance + ${bonus}, bonus_earned_qlt = bonus_earned_qlt + ${bonus} WHERE id = ${completion.referred_by}`;
+          await sql`UPDATE users SET balance = balance + ${bonus} WHERE id = ${completion.referred_by}`;
           await sql`
             INSERT INTO transactions (user_id, type, amount, label)
             VALUES (${completion.referred_by}, 'credit', ${bonus}, 'Referral Earnings (10%)')
@@ -241,7 +241,7 @@ export async function PATCH(req: NextRequest) {
       title: "Submission rejected",
       message: `Your submission for ${completion.task_title} was rejected. Reason: ${reason}`,
       href: "/tasks",
-      dedupeKey: `submission:${completionId}:attempt:${Number(completion.attempt_count ?? 1)}:rejected`,
+      dedupeKey: `submission:${completionId}:rejected`,
       metadata: { completionId, taskId: completion.task_id, reason },
     });
 

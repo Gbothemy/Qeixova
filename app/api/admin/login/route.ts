@@ -13,12 +13,6 @@ function getAdminCredentials() {
   };
 }
 
-function matchesDevelopmentAdmin(email: string, password: string) {
-  return process.env.NODE_ENV !== "production"
-    && email === "admin@qeixova.com"
-    && password === "Qeixovaadmin";
-}
-
 async function ensureAdminUsersTable() {
   await sql`
     CREATE TABLE IF NOT EXISTS admin_users (
@@ -35,66 +29,44 @@ async function ensureAdminUsersTable() {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const { email, password } = await req.json();
-    const admin = getAdminCredentials();
-    const normalizedEmail = String(email ?? "").trim().toLowerCase();
-    const normalizedPassword = String(password ?? "");
+  const { email, password } = await req.json();
+  const admin = getAdminCredentials();
+  const normalizedEmail = String(email ?? "").trim().toLowerCase();
 
-    if (!normalizedEmail || !normalizedPassword) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
-    }
+  await ensureAdminUsersTable();
+  const rows = await sql`
+    SELECT id, password
+    FROM admin_users
+    WHERE lower(email) = ${normalizedEmail} AND active = TRUE
+    LIMIT 1
+  `;
 
-    // Environment credentials remain available when the database is temporarily offline.
-    const matchesConfiguredAdmin = admin.email
-      && admin.password
-      && normalizedEmail === admin.email.toLowerCase()
-      && normalizedPassword === admin.password;
-
-    if (matchesConfiguredAdmin || matchesDevelopmentAdmin(normalizedEmail, normalizedPassword)) {
-      const res = NextResponse.json({ ok: true });
-      res.cookies.set("admin_token", getAdminToken(), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 8,
-        path: "/",
-      });
-      return res;
-    }
-
-    try {
-      await ensureAdminUsersTable();
-      const rows = await sql`
-        SELECT id, password
-        FROM admin_users
-        WHERE lower(email) = ${normalizedEmail} AND active = TRUE
-        LIMIT 1
-      `;
-
-      if (rows[0] && await bcrypt.compare(normalizedPassword, rows[0].password)) {
-        await sql`UPDATE admin_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ${rows[0].id}`;
-        const res = NextResponse.json({ ok: true });
-        res.cookies.set("admin_token", getAdminToken(), {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 60 * 60 * 8,
-          path: "/",
-        });
-        return res;
-      }
-    } catch (error) {
-      console.error("[api/admin/login] database lookup failed", error);
-    }
-
-    if (!admin.email || !admin.password) {
-      return NextResponse.json({ error: "Admin login is not configured" }, { status: 503 });
-    }
-
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  } catch (error) {
-    console.error("[api/admin/login] request failed", error);
-    return NextResponse.json({ error: "Unable to sign in right now" }, { status: 500 });
+  if (rows[0] && await bcrypt.compare(password, rows[0].password)) {
+    await sql`UPDATE admin_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ${rows[0].id}`;
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set("admin_token", getAdminToken(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 8,
+      path: "/",
+    });
+    return res;
   }
+
+  if (!admin.email || !admin.password) {
+    return NextResponse.json({ error: "Admin login is not configured" }, { status: 503 });
+  }
+  if (normalizedEmail === admin.email.toLowerCase() && password === admin.password) {
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set("admin_token", getAdminToken(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 8, // 8 hours
+      path: "/",
+    });
+    return res;
+  }
+  return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 }
