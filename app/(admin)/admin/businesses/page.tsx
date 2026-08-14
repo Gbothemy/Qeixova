@@ -8,6 +8,9 @@ interface Business {
   email: string;
   industry?: string | null;
   website?: string | null;
+  country?: string;
+  state?: string | null;
+  city?: string | null;
   balance: number;
   status: string;
   email_verified: boolean;
@@ -18,6 +21,8 @@ interface Business {
   live_campaigns: number;
   reserved_budget: number;
 }
+
+interface LocationGroup { country: string; region: string; count: number; }
 
 interface BusinessStats {
   total: number;
@@ -89,6 +94,7 @@ export default function AdminBusinessesPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [locationGroups, setLocationGroups] = useState<LocationGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -103,6 +109,7 @@ export default function AdminBusinessesPage() {
       setBusinesses(data.businesses ?? []);
       setStats(data.stats ?? { total: 0, active: 0, suspended: 0, total_balance: 0 });
       setTotal(data.total ?? 0);
+      setLocationGroups(data.locationGroups ?? []);
     } catch (error) {
       setBusinesses([]);
       setTotal(0);
@@ -153,10 +160,26 @@ export default function AdminBusinessesPage() {
         <StatCard label="Wallets" value={`${Number(stats.total_balance).toLocaleString()} QLT`} detail="Combined available balance" />
       </div>
 
+      <section className="adminLocationPanel" style={{ marginBottom: 22 }}>
+        <div className="adminLocationPanelHead">
+          <div><strong>Business locations</strong><span>Grouped by country and state/region</span></div>
+          <small>{locationGroups.reduce((sum, group) => sum + Number(group.count), 0).toLocaleString()} registered</small>
+        </div>
+        <div className="adminLocationGroups">
+          {locationGroups.slice(0, 8).map((group) => (
+            <div className="adminLocationGroup" key={`${group.country}-${group.region}`}>
+              <span>{group.country}</span><strong>{group.region}</strong>
+              <small>{Number(group.count).toLocaleString()} business{Number(group.count) === 1 ? "" : "es"}</small>
+            </div>
+          ))}
+          {!locationGroups.length && <span className="adminLocationEmpty">No business location data yet</span>}
+        </div>
+      </section>
+
       <div style={{ marginBottom: 20 }}>
         <input
           type="text"
-          placeholder="Search business name, email, industry, or website..."
+          placeholder="Search name, email, industry, website, country, state, or city..."
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
@@ -190,6 +213,7 @@ export default function AdminBusinessesPage() {
               <th style={TH}>Email</th>
               <th style={TH}>Wallet</th>
               <th style={TH}>Campaigns</th>
+              <th style={TH}>Location</th>
               <th style={TH}>Profile</th>
               <th style={TH}>Verification</th>
               <th style={TH}>Joined</th>
@@ -200,11 +224,11 @@ export default function AdminBusinessesPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>Loading businesses...</td>
+                <td colSpan={11} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>Loading businesses...</td>
               </tr>
             ) : businesses.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>No registered businesses found</td>
+                <td colSpan={11} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>No registered businesses found</td>
               </tr>
             ) : (
               businesses.map((business) => {
@@ -225,6 +249,13 @@ export default function AdminBusinessesPage() {
                         <span><strong style={{ color: "#555" }}>{business.campaign_count}</strong> total</span>
                         <span><strong style={{ color: "#b56d00" }}>{business.pending_campaigns}</strong> pending review</span>
                         <span><strong style={{ color: "#2e7d32" }}>{business.live_campaigns}</strong> live</span>
+                      </div>
+                    </td>
+                    <td style={{ ...TD, minWidth: 180 }}>
+                      <div style={{ display: "grid", gap: 4, fontSize: 12, lineHeight: 1.35 }}>
+                        <strong style={{ color: "#222" }}>{business.country || "Not specified"}</strong>
+                        <span>{[business.city, business.state].filter(Boolean).join(", ") || "State/region not specified"}</span>
+                        <small style={{ color: business.state ? "#2e7d32" : "#b56d00", fontWeight: 700 }}>{business.state ? "Classified" : "Incomplete location"}</small>
                       </div>
                     </td>
                     <td style={{ ...TD, minWidth: 210 }}>

@@ -16,13 +16,22 @@ interface User {
   industry?: string;
   website?: string;
   interests?: string[];
+  country?: string;
   state?: string;
+  city?: string;
   age_range?: string;
   gender?: string;
   onboarding_completed?: boolean;
   trust_score?: number;
   level_number?: number;
   level_name?: string;
+}
+
+interface LocationGroup {
+  account_type: "contributor" | "business";
+  country: string;
+  region: string;
+  count: number;
 }
 
 const TH: React.CSSProperties = {
@@ -51,11 +60,36 @@ function compactList(values: string[] | undefined, fallback = "Not set") {
   return `${values.slice(0, 3).join(", ")} +${values.length - 3}`;
 }
 
+function LocationBreakdown({ title, groups }: { title: string; groups: LocationGroup[] }) {
+  const visible = groups.slice(0, 6);
+  const classified = groups.filter((group) => group.region !== "Not specified").reduce((sum, group) => sum + Number(group.count), 0);
+  const unclassified = groups.filter((group) => group.region === "Not specified").reduce((sum, group) => sum + Number(group.count), 0);
+
+  return (
+    <section className="adminLocationPanel">
+      <div className="adminLocationPanelHead">
+        <div><strong>{title}</strong><span>Grouped by country and state/region</span></div>
+        <small>{classified.toLocaleString()} classified · {unclassified.toLocaleString()} incomplete</small>
+      </div>
+      <div className="adminLocationGroups">
+        {visible.length ? visible.map((group) => (
+          <div className="adminLocationGroup" key={`${group.country}-${group.region}`}>
+            <span>{group.country}</span>
+            <strong>{group.region}</strong>
+            <small>{Number(group.count).toLocaleString()} account{Number(group.count) === 1 ? "" : "s"}</small>
+          </div>
+        )) : <span className="adminLocationEmpty">No location data yet</span>}
+      </div>
+    </section>
+  );
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [locationGroups, setLocationGroups] = useState<LocationGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -69,6 +103,7 @@ export default function UsersPage() {
       if (!res.ok) throw new Error(data.error || "Unable to load users");
       setUsers(data.users ?? []);
       setTotal(data.total ?? 0);
+      setLocationGroups(data.locationGroups ?? []);
     } catch (error) {
       setUsers([]);
       setTotal(0);
@@ -124,7 +159,7 @@ export default function UsersPage() {
       <div style={{ marginBottom: 20 }}>
         <input
           type="text"
-          placeholder="Search by name, email, or business industry..."
+          placeholder="Search name, email, industry, country, state, or city..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -140,6 +175,11 @@ export default function UsersPage() {
             outline: "none",
           }}
         />
+      </div>
+
+      <div className="adminLocationOverview">
+        <LocationBreakdown title="Contributors by location" groups={locationGroups.filter((group) => group.account_type === "contributor")} />
+        <LocationBreakdown title="Businesses by location" groups={locationGroups.filter((group) => group.account_type === "business")} />
       </div>
 
       {notice && (
@@ -158,6 +198,7 @@ export default function UsersPage() {
               <th style={TH}>Email</th>
               <th style={TH}>Balance (QLT)</th>
               <th style={TH}>Activity</th>
+              <th style={TH}>Location</th>
               <th style={TH}>Profile</th>
               <th style={TH}>Quality</th>
               <th style={TH}>Joined</th>
@@ -168,13 +209,13 @@ export default function UsersPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>
+                <td colSpan={11} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>
                   Loading...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>
+                <td colSpan={11} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>
                   No accounts found
                 </td>
               </tr>
@@ -210,6 +251,13 @@ export default function UsersPage() {
                     <td style={TD}>{Number(u.balance).toLocaleString()}</td>
                     <td style={{ ...TD, textAlign: "center" }}>
                       {isBusiness ? `${u.campaign_count ?? 0} campaigns` : `${u.tasks_completed} tasks`}
+                    </td>
+                    <td style={{ ...TD, minWidth: 170 }}>
+                      <div style={{ display: "grid", gap: 4, fontSize: 12, lineHeight: 1.35 }}>
+                        <strong style={{ color: "#222" }}>{u.country || "Not specified"}</strong>
+                        <span>{[u.city, u.state].filter(Boolean).join(", ") || "State/region not specified"}</span>
+                        <small style={{ color: u.state ? "#2e7d32" : "#b56d00", fontWeight: 700 }}>{u.state ? "Classified" : "Incomplete location"}</small>
+                      </div>
                     </td>
                     <td style={{ ...TD, minWidth: 220 }}>
                       {isBusiness ? (

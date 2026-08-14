@@ -102,7 +102,7 @@ export default function Home() {
       </div>
 
       {/* Balance card */}
-      <div style={{ marginTop: -64, position: "relative", zIndex: 10 }}>
+      <div style={{ marginTop: -64, position: "relative", zIndex: 30 }}>
         <BalanceCard
           balance={wallet?.balance ?? user?.balance ?? 0}
           todayEarned={wallet?.stats?.today_earned ?? 0}

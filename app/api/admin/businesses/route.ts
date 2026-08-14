@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const offset = (page - 1) * limit;
   const q = `%${search}%`;
 
-  const [businesses, countRows, statsRows] = await Promise.all([
+  const [businesses, countRows, statsRows, locationRows] = await Promise.all([
     search
       ? sql`
           SELECT
@@ -21,6 +21,9 @@ export async function GET(req: NextRequest) {
             b.email,
             b.industry,
             b.website,
+            COALESCE(NULLIF(b.profile #>> '{location,country}', ''), 'Not specified') AS country,
+            NULLIF(b.profile #>> '{location,state}', '') AS state,
+            NULLIF(b.profile #>> '{location,city}', '') AS city,
             b.balance,
             COALESCE(b.status, 'active') AS status,
             COALESCE(b.email_verified, TRUE) AS email_verified,
@@ -36,6 +39,9 @@ export async function GET(req: NextRequest) {
             OR b.email ILIKE ${q}
             OR COALESCE(b.industry, '') ILIKE ${q}
             OR COALESCE(b.website, '') ILIKE ${q}
+            OR COALESCE(b.profile #>> '{location,country}', '') ILIKE ${q}
+            OR COALESCE(b.profile #>> '{location,state}', '') ILIKE ${q}
+            OR COALESCE(b.profile #>> '{location,city}', '') ILIKE ${q}
           GROUP BY b.id
           ORDER BY b.created_at DESC
           LIMIT ${limit} OFFSET ${offset}
@@ -47,6 +53,9 @@ export async function GET(req: NextRequest) {
             b.email,
             b.industry,
             b.website,
+            COALESCE(NULLIF(b.profile #>> '{location,country}', ''), 'Not specified') AS country,
+            NULLIF(b.profile #>> '{location,state}', '') AS state,
+            NULLIF(b.profile #>> '{location,city}', '') AS city,
             b.balance,
             COALESCE(b.status, 'active') AS status,
             COALESCE(b.email_verified, TRUE) AS email_verified,
@@ -70,6 +79,9 @@ export async function GET(req: NextRequest) {
             OR email ILIKE ${q}
             OR COALESCE(industry, '') ILIKE ${q}
             OR COALESCE(website, '') ILIKE ${q}
+            OR COALESCE(profile #>> '{location,country}', '') ILIKE ${q}
+            OR COALESCE(profile #>> '{location,state}', '') ILIKE ${q}
+            OR COALESCE(profile #>> '{location,city}', '') ILIKE ${q}
         `
       : sql`SELECT COUNT(*)::int AS total FROM businesses`,
     sql`
@@ -80,12 +92,22 @@ export async function GET(req: NextRequest) {
         COALESCE(SUM(balance), 0)::bigint AS total_balance
       FROM businesses
     `,
+    sql`
+      SELECT
+        COALESCE(NULLIF(profile #>> '{location,country}', ''), 'Not specified') AS country,
+        COALESCE(NULLIF(profile #>> '{location,state}', ''), 'Not specified') AS region,
+        COUNT(*)::int AS count
+      FROM businesses
+      GROUP BY country, region
+      ORDER BY count DESC, country, region
+    `,
   ]);
 
   return NextResponse.json({
     businesses,
     total: countRows[0]?.total ?? 0,
     stats: statsRows[0] ?? { total: 0, active: 0, suspended: 0, total_balance: 0 },
+    locationGroups: locationRows,
   });
 }
 

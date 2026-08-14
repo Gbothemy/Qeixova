@@ -12,33 +12,41 @@ export async function GET(req: NextRequest) {
   const offset = (page - 1) * limit;
   const q = "%" + search + "%";
 
-  const [users, countRows] = await Promise.all([
+  const [users, countRows, locationRows] = await Promise.all([
     search
       ? sql`
           WITH accounts AS (
             SELECT 'contributor' AS account_type, u.id, u.full_name, u.email, u.balance, u.created_at, u.banned,
               NULL::text AS status, NULL::text AS industry, NULL::text AS website,
               u.xp, u.trust_score, u.streak, u.approved_count, u.rejected_count,
-              u.interests, u.platforms, u.state, u.age_range, u.gender, u.onboarding_completed,
+              u.interests, u.platforms, COALESCE(u.country, 'Nigeria') AS country, u.state, NULL::text AS city,
+              u.age_range, u.gender, u.onboarding_completed,
               l.level_number, l.name AS level_name, l.badge_color,
               COUNT(c.id)::int AS tasks_completed, 0::int AS campaign_count
             FROM users u
             LEFT JOIN completions c ON c.user_id = u.id AND c.status = 'approved'
             LEFT JOIN levels l ON l.id = u.level_id
             WHERE u.full_name ILIKE ${q} OR u.email ILIKE ${q}
+              OR COALESCE(u.country, '') ILIKE ${q} OR COALESCE(u.state, '') ILIKE ${q}
             GROUP BY u.id, l.level_number, l.name, l.badge_color
             UNION ALL
             SELECT 'business' AS account_type, b.id, b.name AS full_name, b.email, b.balance, b.created_at,
               (COALESCE(b.status, 'active') <> 'active') AS banned,
               COALESCE(b.status, 'active') AS status, b.industry, b.website,
               0::int AS xp, NULL::int AS trust_score, 0::int AS streak, 0::int AS approved_count, 0::int AS rejected_count,
-              ARRAY[]::text[] AS interests, ARRAY[]::text[] AS platforms, NULL::text AS state,
+              ARRAY[]::text[] AS interests, ARRAY[]::text[] AS platforms,
+              COALESCE(NULLIF(b.profile #>> '{location,country}', ''), 'Not specified') AS country,
+              NULLIF(b.profile #>> '{location,state}', '') AS state,
+              NULLIF(b.profile #>> '{location,city}', '') AS city,
               NULL::text AS age_range, NULL::text AS gender, NULL::boolean AS onboarding_completed,
               NULL::int AS level_number, NULL::text AS level_name, NULL::text AS badge_color,
               0::int AS tasks_completed, COUNT(t.id)::int AS campaign_count
             FROM businesses b
             LEFT JOIN tasks t ON t.business_id = b.id
             WHERE b.name ILIKE ${q} OR b.email ILIKE ${q} OR COALESCE(b.industry, '') ILIKE ${q}
+              OR COALESCE(b.profile #>> '{location,country}', '') ILIKE ${q}
+              OR COALESCE(b.profile #>> '{location,state}', '') ILIKE ${q}
+              OR COALESCE(b.profile #>> '{location,city}', '') ILIKE ${q}
             GROUP BY b.id
           )
           SELECT * FROM accounts
@@ -50,7 +58,8 @@ export async function GET(req: NextRequest) {
             SELECT 'contributor' AS account_type, u.id, u.full_name, u.email, u.balance, u.created_at, u.banned,
               NULL::text AS status, NULL::text AS industry, NULL::text AS website,
               u.xp, u.trust_score, u.streak, u.approved_count, u.rejected_count,
-              u.interests, u.platforms, u.state, u.age_range, u.gender, u.onboarding_completed,
+              u.interests, u.platforms, COALESCE(u.country, 'Nigeria') AS country, u.state, NULL::text AS city,
+              u.age_range, u.gender, u.onboarding_completed,
               l.level_number, l.name AS level_name, l.badge_color,
               COUNT(c.id)::int AS tasks_completed, 0::int AS campaign_count
             FROM users u
@@ -62,7 +71,10 @@ export async function GET(req: NextRequest) {
               (COALESCE(b.status, 'active') <> 'active') AS banned,
               COALESCE(b.status, 'active') AS status, b.industry, b.website,
               0::int AS xp, NULL::int AS trust_score, 0::int AS streak, 0::int AS approved_count, 0::int AS rejected_count,
-              ARRAY[]::text[] AS interests, ARRAY[]::text[] AS platforms, NULL::text AS state,
+              ARRAY[]::text[] AS interests, ARRAY[]::text[] AS platforms,
+              COALESCE(NULLIF(b.profile #>> '{location,country}', ''), 'Not specified') AS country,
+              NULLIF(b.profile #>> '{location,state}', '') AS state,
+              NULLIF(b.profile #>> '{location,city}', '') AS city,
               NULL::text AS age_range, NULL::text AS gender, NULL::boolean AS onboarding_completed,
               NULL::int AS level_number, NULL::text AS level_name, NULL::text AS badge_color,
               0::int AS tasks_completed, COUNT(t.id)::int AS campaign_count
@@ -77,14 +89,35 @@ export async function GET(req: NextRequest) {
     search
       ? sql`
           SELECT (
-            (SELECT COUNT(*)::int FROM users WHERE full_name ILIKE ${q} OR email ILIKE ${q}) +
-            (SELECT COUNT(*)::int FROM businesses WHERE name ILIKE ${q} OR email ILIKE ${q} OR COALESCE(industry, '') ILIKE ${q})
+            (SELECT COUNT(*)::int FROM users WHERE full_name ILIKE ${q} OR email ILIKE ${q}
+              OR COALESCE(country, '') ILIKE ${q} OR COALESCE(state, '') ILIKE ${q}) +
+            (SELECT COUNT(*)::int FROM businesses WHERE name ILIKE ${q} OR email ILIKE ${q} OR COALESCE(industry, '') ILIKE ${q}
+              OR COALESCE(profile #>> '{location,country}', '') ILIKE ${q}
+              OR COALESCE(profile #>> '{location,state}', '') ILIKE ${q}
+              OR COALESCE(profile #>> '{location,city}', '') ILIKE ${q})
           )::int AS total
         `
       : sql`SELECT ((SELECT COUNT(*)::int FROM users) + (SELECT COUNT(*)::int FROM businesses))::int AS total`,
+    sql`
+      WITH account_locations AS (
+        SELECT 'contributor'::text AS account_type,
+          COALESCE(NULLIF(country, ''), 'Not specified') AS country,
+          COALESCE(NULLIF(state, ''), 'Not specified') AS region
+        FROM users
+        UNION ALL
+        SELECT 'business'::text AS account_type,
+          COALESCE(NULLIF(profile #>> '{location,country}', ''), 'Not specified') AS country,
+          COALESCE(NULLIF(profile #>> '{location,state}', ''), 'Not specified') AS region
+        FROM businesses
+      )
+      SELECT account_type, country, region, COUNT(*)::int AS count
+      FROM account_locations
+      GROUP BY account_type, country, region
+      ORDER BY account_type, count DESC, country, region
+    `,
   ]);
 
-  return NextResponse.json({ users, total: countRows[0].total });
+  return NextResponse.json({ users, total: countRows[0].total, locationGroups: locationRows });
 }
 
 export async function PATCH(req: NextRequest) {
