@@ -79,7 +79,7 @@ export default function Home() {
         <OnboardingFlow userName={user.fullName} onComplete={() => { setShowOnboarding(false); router.push("/tasks"); }} />
       )}
       {/* Header */}
-      <div className="page-header" style={{ background: "#0a0a0a", borderBottom: "1px solid #222222", padding: "52px 20px 90px", position: "relative", overflow: "visible", zIndex: 20 }}>
+      <div className="page-header" style={{ background: "#0a0a0a", borderBottom: "1px solid #222222", padding: "52px 20px 90px", position: "relative", overflow: "visible" }}>
         <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(26,239,34,0.03)" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
           <div>

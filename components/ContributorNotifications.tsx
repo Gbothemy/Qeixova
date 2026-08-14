@@ -202,13 +202,12 @@ export default function ContributorNotifications() {
           right: 0;
           top: calc(100% + 12px);
           width: min(390px, calc(100vw - 28px));
-          background: var(--card-bg);
+          background: #111411;
           border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: 20px;
           box-shadow: 0 26px 80px rgba(0, 0, 0, 0.45);
           z-index: 210;
           overflow: hidden;
-          backdrop-filter: blur(18px);
           isolation: isolate;
         }
         .notifHead {
