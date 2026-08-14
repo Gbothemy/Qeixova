@@ -42,11 +42,13 @@ export async function activateMissionExpiryByTask(taskId: number) {
   const rows = await sql`SELECT id, duration, approved_at, expires_at FROM tasks WHERE id = ${taskId} LIMIT 1`;
   if (rows.length === 0) return null;
 
-  const hasExistingExpiry = Boolean(rows[0].expires_at);
-  const startedAt = hasExistingExpiry ? new Date(rows[0].approved_at || Date.now()) : new Date();
-  const expiresAt = hasExistingExpiry ? new Date(rows[0].expires_at) : calculateMissionExpiry(rows[0].duration, startedAt);
+  const now = new Date();
+  const existingExpiry = rows[0].expires_at ? new Date(rows[0].expires_at) : null;
+  const hasUsableExpiry = Boolean(existingExpiry && !Number.isNaN(existingExpiry.getTime()) && existingExpiry > now);
+  const startedAt = hasUsableExpiry ? new Date(rows[0].approved_at || now) : now;
+  const expiresAt = hasUsableExpiry && existingExpiry ? existingExpiry : calculateMissionExpiry(rows[0].duration, startedAt);
 
-  if (!hasExistingExpiry) {
+  if (!hasUsableExpiry) {
     await sql`
       UPDATE tasks
       SET approved_at = ${startedAt.toISOString()}::timestamptz,
@@ -56,6 +58,7 @@ export async function activateMissionExpiryByTask(taskId: number) {
               approvedAt: startedAt.toISOString(),
               expiresAt: expiresAt.toISOString(),
               durationSource: rows[0].duration,
+              renewedAfterExpiry: Boolean(existingExpiry),
             })}::jsonb
       WHERE id = ${taskId}
     `;

@@ -146,7 +146,8 @@ export default function TasksPage() {
       const res = await fetch("/api/admin/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: t.id, is_active: !t.is_active }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Mission status update failed");
-      setNotice({ type: "success", message: `Mission ${t.is_active ? "paused" : "activated"} successfully.` });
+      const activatingLabel = t.campaign_status === "expired" || t.task_status === "expired" ? "renewed" : "activated";
+      setNotice({ type: "success", message: `Mission ${t.is_active ? "paused" : activatingLabel} successfully.` });
       fetchTasks();
     } catch (error) {
       setNotice({ type: "error", message: error instanceof Error ? error.message : "Mission status update failed" });
@@ -240,7 +241,7 @@ export default function TasksPage() {
                       <button onClick={() => openEdit(t)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #1AEF22", background: "transparent", color: "#1AEF22", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Edit</button>
                       <button onClick={() => toggleActive(t)} disabled={actionLoading === t.id}
                         style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: t.is_active ? "#e67e22" : "#1AEF22", color: "#fff", cursor: "pointer", fontSize: 11, fontWeight: 700, opacity: actionLoading === t.id ? 0.6 : 1 }}>
-                        {t.is_active ? "Pause" : "Activate"}
+                        {t.is_active ? "Pause" : (t.campaign_status === "expired" || t.task_status === "expired") ? "Renew" : "Activate"}
                       </button>
                     </div>
                   </td>
