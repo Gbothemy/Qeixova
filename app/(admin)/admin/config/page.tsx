@@ -66,13 +66,13 @@ export default function ConfigPage() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {loading ? <div className="adminPanel">Loading economy settings…</div> : configs.length === 0 ? <div className="adminPanel">No economy settings are available.</div> : configs.map(c => (
-          <div key={c.key} style={{ background: "#fff", borderRadius: 12, padding: "18px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div key={c.key} className="adminConfigCard" style={{ background: "#fff", borderRadius: 12, padding: "18px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 200 }}>
               <p style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", marginBottom: 3 }}>{LABELS[c.key] ?? c.key}</p>
               <p style={{ fontSize: 12, color: "#4b5563" }}>{c.description}</p>
               <p style={{ fontSize: 10, color: "#5f6876", marginTop: 3 }}>Updated: {new Date(c.updated_at).toLocaleString()}</p>
             </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div className="adminConfigControls" style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input type="text" value={editing[c.key] ?? c.value} onChange={e => setEditing(v => ({ ...v, [c.key]: e.target.value }))}
                 style={{ padding: "8px 12px", border: "1.5px solid #e0e0e0", borderRadius: 8, fontSize: 14, width: 120, outline: "none", textAlign: "right", fontWeight: 700 }} />
               <button onClick={() => save(c.key)} disabled={saving === c.key}

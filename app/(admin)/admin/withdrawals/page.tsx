@@ -77,7 +77,7 @@ export default function WithdrawalsPage() {
       <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 700, color: "#1A1A1A" }}>Withdrawals</h1>
       <p style={{ margin: "0 0 24px", color: "#5f6876", fontSize: 14 }}>Manage withdrawal requests</p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div className="adminFilterBar" style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {(["all", "pending", "processing", "completed", "failed"] as StatusFilter[]).map((f) => (
           <button key={f} onClick={() => setFilter(f)} style={{ padding: "8px 18px", borderRadius: 20, border: "1.5px solid", borderColor: filter === f ? "#1AEF22" : "#d8dde5", background: filter === f ? "#1AEF22" : "#fff", color: filter === f ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 13, fontWeight: 700, textTransform: "capitalize" }}>
             {f}
@@ -92,7 +92,7 @@ export default function WithdrawalsPage() {
         </div>
       )}
 
-      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
           <thead>
             <tr style={{ background: "#fafafa" }}>

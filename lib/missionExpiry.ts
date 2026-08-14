@@ -168,6 +168,20 @@ export async function expireElapsedMissions() {
 
   if (await tableExists("campaigns")) {
     await sql`
+      UPDATE campaigns c
+      SET status = 'live',
+          start_date = COALESCE(c.start_date, t.approved_at),
+          end_date = t.expires_at,
+          updated_at = NOW()
+      FROM tasks t
+      WHERE c.task_id = t.id
+        AND t.is_active = TRUE
+        AND COALESCE(t.task_status, '') = 'active'
+        AND t.expires_at IS NOT NULL
+        AND t.expires_at > NOW()
+        AND COALESCE(c.status, '') = 'expired'
+    `;
+    await sql`
       UPDATE campaigns
       SET status = 'expired',
           updated_at = NOW()

@@ -268,7 +268,7 @@ export default function CompletionsPage() {
         </div>
       )}
 
-      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1000 }}>
           <thead>
             <tr style={{ background: "#fafafa" }}>
@@ -351,8 +351,8 @@ export default function CompletionsPage() {
 
       {/* Reject Modal */}
       {rejectModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div style={{ background: "#fff", borderRadius: 16, padding: 28, maxWidth: 460, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div className="adminModalBackdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div className="adminModalCard" style={{ background: "#fff", borderRadius: 16, padding: 28, maxWidth: 460, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <h3 style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 700 }}>Reject completed mission proof</h3>
             <p style={{ margin: "0 0 20px", fontSize: 13, color: "#5f6876" }}>{rejectModal.title}</p>
             <label style={{ fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5 }}>Reason</label>
@@ -374,8 +374,8 @@ export default function CompletionsPage() {
       )}
 
       {previewShots && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 1200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setPreviewShots(null)}>
-          <div style={{ width: "min(980px, 100%)", maxHeight: "92vh", overflow: "auto", background: "#fff", borderRadius: 18, padding: 20, boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }} onClick={(event) => event.stopPropagation()}>
+        <div className="adminModalBackdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 1200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setPreviewShots(null)}>
+          <div className="adminModalCard adminPreviewModal" style={{ width: "min(980px, 100%)", maxHeight: "92vh", overflow: "auto", background: "#fff", borderRadius: 18, padding: 20, boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }} onClick={(event) => event.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 18, color: "#111827" }}>Proof screenshots</h3>

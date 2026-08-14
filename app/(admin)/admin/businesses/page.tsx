@@ -146,7 +146,7 @@ export default function AdminBusinessesPage() {
         View and manage registered business accounts on Qeixova.
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14, marginBottom: 22 }}>
+      <div className="adminSummaryGrid adminSummaryGridFour" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14, marginBottom: 22 }}>
         <StatCard label="Registered" value={Number(stats.total).toLocaleString()} detail="Total business accounts" />
         <StatCard label="Active" value={Number(stats.active).toLocaleString()} detail="Can create and manage campaigns" />
         <StatCard label="Suspended" value={Number(stats.suspended).toLocaleString()} detail="Temporarily restricted accounts" />

@@ -158,7 +158,7 @@ export default function TasksPage() {
 
   return (
     <div className="adminPage">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+      <div className="adminActionHeader" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
           <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "#1A1A1A" }}>Missions</h1>
           <p style={{ margin: 0, color: "#5f6876", fontSize: 13 }}>{tasks.length} missions total</p>
@@ -175,7 +175,7 @@ export default function TasksPage() {
         </div>
       )}
 
-      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1180 }}>
           <thead>
             <tr style={{ background: "#fafafa" }}>
@@ -230,7 +230,7 @@ export default function TasksPage() {
                   <td style={TD}>
                     <div style={{ display: "grid", gap: 4 }}>
                       <span style={{ display: "inline-block", width: "fit-content", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: t.is_active ? "#e8f5e9" : "#f3f4f6", color: t.is_active ? "#2e7d32" : "#4b5563" }}>
-                        {t.campaign_status ?? t.task_status ?? (t.is_active ? "active" : "inactive")}
+                        {(t.campaign_status === "live" ? "active" : t.campaign_status) ?? t.task_status ?? (t.is_active ? "active" : "inactive")}
                       </span>
                       <span style={{ fontSize: 11, color: "#5f6876" }}>{t.pending_count ?? 0} pending proof</span>
                     </div>
@@ -252,12 +252,12 @@ export default function TasksPage() {
       </div>
 
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}
+        <div className="adminModalBackdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}>
+          <div className="adminModalCard" style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}>
             <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700 }}>{editTask ? "Edit Mission" : "Add New Mission"}</h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div className="adminFormGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               {/* Mission type */}
               <div>
                 <label style={lbl}>Mission Type *</label>

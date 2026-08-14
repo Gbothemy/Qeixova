@@ -119,11 +119,18 @@ export async function PATCH(req: NextRequest) {
                 ELSE COALESCE(task_status, 'active')
               END,
               campaign_status = CASE
-                WHEN business_id IS NOT NULL AND ${fields[key]} = true THEN 'active'
+                WHEN business_id IS NOT NULL AND ${fields[key]} = true THEN 'live'
                 WHEN business_id IS NOT NULL AND ${fields[key]} = false THEN 'paused'
                 ELSE COALESCE(campaign_status, task_status, 'active')
               END
           WHERE id = ${id}
+        `;
+        await sql`
+          UPDATE campaigns
+          SET status = ${fields[key] === true ? "live" : "paused"},
+              updated_at = NOW()
+          WHERE task_id = ${id}
+            AND COALESCE(status, '') NOT IN ('closed', 'rejected')
         `;
         // If activating a business task, notify the business
         if (fields[key] === true) {

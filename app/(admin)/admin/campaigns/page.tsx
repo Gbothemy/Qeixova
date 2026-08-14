@@ -219,7 +219,7 @@ export default function AdminCampaignsPage() {
         </div>
       </section>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
+      <div className="adminFilterBar" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
         {FILTERS.map((filter) => (
           <button
             key={filter.label}
@@ -340,8 +340,8 @@ export default function AdminCampaignsPage() {
       )}
 
       {rejecting && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }} onClick={(event) => { if (event.target === event.currentTarget) setRejecting(null); }}>
-          <div style={{ width: "min(460px, calc(100vw - 32px))", background: "#fff", borderRadius: 16, padding: 22 }}>
+        <div className="adminModalBackdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }} onClick={(event) => { if (event.target === event.currentTarget) setRejecting(null); }}>
+          <div className="adminModalCard" style={{ width: "min(460px, calc(100vw - 32px))", background: "#fff", borderRadius: 16, padding: 22 }}>
             <h2 style={{ margin: "0 0 6px", color: "#111" }}>Reject business campaign</h2>
             <p style={{ margin: "0 0 16px", color: "#5f6876", fontSize: 13 }}>{rejecting.title}</p>
             <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", marginBottom: 6 }}>Message to business</label>

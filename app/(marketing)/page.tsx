@@ -54,6 +54,7 @@ export default function LandingPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const carouselScrollTimerRef = useRef<number | null>(null);
+  const carouselDragRef = useRef<{ pointerId: number; startX: number; scrollLeft: number } | null>(null);
 
   // Scroll reveal
   useEffect(() => {
@@ -225,13 +226,41 @@ export default function LandingPage() {
             onBlurCapture={event => {
               if (!event.currentTarget.contains(event.relatedTarget)) setIsCarouselInteracting(false);
             }}
-            onTouchStart={() => setIsCarouselInteracting(true)}
-            onTouchEnd={() => setIsCarouselInteracting(false)}
           >
             {/* Swipe, trackpad, or keyboard-scrollable card display */}
             <div
               ref={carouselRef}
               onScroll={syncActiveStep}
+              onPointerDown={(event) => {
+                if (event.button !== 0) return;
+                carouselDragRef.current = {
+                  pointerId: event.pointerId,
+                  startX: event.clientX,
+                  scrollLeft: event.currentTarget.scrollLeft,
+                };
+                event.currentTarget.setPointerCapture(event.pointerId);
+                setIsCarouselInteracting(true);
+              }}
+              onPointerMove={(event) => {
+                const drag = carouselDragRef.current;
+                if (!drag || drag.pointerId !== event.pointerId) return;
+                event.currentTarget.scrollLeft = drag.scrollLeft - (event.clientX - drag.startX);
+              }}
+              onPointerUp={(event) => {
+                if (carouselDragRef.current?.pointerId !== event.pointerId) return;
+                carouselDragRef.current = null;
+                if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                  event.currentTarget.releasePointerCapture(event.pointerId);
+                }
+                setIsCarouselInteracting(false);
+                syncActiveStep();
+              }}
+              onPointerCancel={(event) => {
+                if (carouselDragRef.current?.pointerId !== event.pointerId) return;
+                carouselDragRef.current = null;
+                setIsCarouselInteracting(false);
+                syncActiveStep();
+              }}
               aria-label="How Qeixova works"
               tabIndex={0}
               style={{
@@ -240,10 +269,13 @@ export default function LandingPage() {
                 overflowY: "hidden",
                 borderRadius: 20,
                 scrollSnapType: "x mandatory",
-                scrollBehavior: "smooth",
+                scrollBehavior: isCarouselInteracting ? "auto" : "smooth",
                 WebkitOverflowScrolling: "touch",
                 scrollbarWidth: "thin",
                 scrollbarColor: "#1AEF22 #111",
+                touchAction: "pan-y",
+                cursor: isCarouselInteracting ? "grabbing" : "grab",
+                userSelect: "none",
               }}
             >
                 {steps.map(s => (

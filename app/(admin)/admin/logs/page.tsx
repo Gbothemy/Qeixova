@@ -64,7 +64,7 @@ export default function AuditLogsPage() {
 
       {error && <div className="adminResult error"><span>{error}</span><button type="button" onClick={() => void fetchLogs()}>Retry</button></div>}
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="adminFilterBar" style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {EVENT_TYPES.map(e => (
           <button key={e} onClick={() => { setEventFilter(e); setPage(1); }}
             style={{ padding: "6px 12px", borderRadius: 20, border: "1.5px solid", borderColor: eventFilter === e ? "#1AEF22" : "#d8dde5", background: eventFilter === e ? "#1AEF22" : "#fff", color: eventFilter === e ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
@@ -73,7 +73,7 @@ export default function AuditLogsPage() {
         ))}
       </div>
 
-      <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
           <thead>
             <tr style={{ background: "#fafafa" }}>
