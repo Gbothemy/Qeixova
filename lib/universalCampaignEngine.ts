@@ -2,6 +2,7 @@ import { sql } from "@/lib/db";
 import { QLT_PER_NAIRA } from "@/lib/currency";
 import { getBusinessPlatformRewardQlt } from "@/lib/campaignPlatformPricing";
 import { activateMissionExpiryByTask, ensureMissionExpiryColumns } from "@/lib/missionExpiry";
+export { refundUnusedCampaignBudget } from "@/lib/campaignBudgetRefund";
 
 export const MIN_REWARD_NAIRA = 30;
 export const QEIXOVA_COMMISSION_RATE = 0.2;
@@ -1110,36 +1111,6 @@ export async function transitionCampaignStatus(input: { campaignId: number; next
     await activateMissionExpiryByTask(Number(rows[0].task_id));
   }
   return { ok: true, status: input.nextStatus };
-}
-
-export async function refundUnusedCampaignBudget(input: { campaignId: number; businessId?: number; reason?: string }) {
-  await ensureUniversalCampaignTables();
-  const rows = await sql`
-    SELECT c.id, c.business_id, c.total_budget, c.spent_budget, c.platform_commission, c.verification_fee,
-           cw.refunded_amount
-    FROM campaigns c
-    LEFT JOIN campaign_wallets cw ON cw.campaign_id = c.id
-    WHERE c.id = ${input.campaignId}
-  `;
-  if (rows.length === 0) return { ok: false, error: "Campaign not found", status: 404 };
-  const campaign = rows[0];
-  if (input.businessId && Number(campaign.business_id) !== input.businessId) return { ok: false, error: "Forbidden", status: 403 };
-  const refundable = Math.max(0, Number(campaign.total_budget) - Number(campaign.spent_budget) - Number(campaign.platform_commission) - Number(campaign.verification_fee) - Number(campaign.refunded_amount ?? 0));
-  if (refundable <= 0) return { ok: true, refunded: 0 };
-
-  await sql`UPDATE businesses SET balance = balance + ${refundable} WHERE id = ${campaign.business_id}`;
-  await sql`
-    UPDATE campaign_wallets
-    SET refunded_amount = refunded_amount + ${refundable},
-        available_balance = GREATEST(0, available_balance - ${refundable}),
-        updated_at = NOW()
-    WHERE campaign_id = ${input.campaignId}
-  `;
-  await sql`
-    INSERT INTO campaign_transactions (campaign_id, user_id, transaction_type, amount, status, reference, metadata)
-    VALUES (${input.campaignId}, ${campaign.business_id}, 'refund_unused', ${refundable}, 'completed', ${"QXF-" + input.campaignId + "-" + Date.now()}, ${JSON.stringify({ reason: input.reason || "unused_campaign_budget" })}::jsonb)
-  `;
-  return { ok: true, refunded: refundable };
 }
 
 export async function getCampaignAnalytics(campaignId: number): Promise<CampaignAnalytics | null> {

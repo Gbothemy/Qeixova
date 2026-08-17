@@ -1,4 +1,6 @@
 import { sql } from "@/lib/db";
+import { refundUnusedCampaignBudget } from "@/lib/campaignBudgetRefund";
+import { createBusinessNotification } from "@/lib/businessNotifications";
 
 const DEFAULT_CAMPAIGN_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
 
@@ -191,6 +193,35 @@ export async function expireElapsedMissions() {
       WHERE task_id IN (SELECT id FROM tasks WHERE COALESCE(task_status, '') = 'expired')
         AND COALESCE(status, '') NOT IN ('expired', 'closed', 'rejected')
     `;
+
+    const expiredCampaigns = await sql`
+      SELECT c.id, c.business_id, c.task_id, c.title
+      FROM campaigns c
+      JOIN tasks t ON t.id = c.task_id
+      WHERE COALESCE(c.status, '') = 'expired'
+        AND COALESCE(t.task_status, '') = 'expired'
+      ORDER BY c.updated_at DESC
+      LIMIT 200
+    `;
+    for (const campaign of expiredCampaigns) {
+      const refund = await refundUnusedCampaignBudget({
+        campaignId: Number(campaign.id),
+        businessId: Number(campaign.business_id),
+        reason: "campaign_expired",
+      });
+      if (refund.refunded > 0) {
+        await createBusinessNotification({
+          businessId: Number(campaign.business_id),
+          type: "wallet",
+          tone: "green",
+          title: "Unused campaign reserve returned",
+          body: `${refund.refunded.toLocaleString()} QLT from ${campaign.title} was returned to your available balance after the campaign expired.`,
+          status: "Refunded",
+          href: "/business/wallet",
+          metadata: { campaignId: campaign.id, taskId: campaign.task_id, amount: refund.refunded },
+        });
+      }
+    }
   }
 
   return expired.length;
