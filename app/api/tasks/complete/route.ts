@@ -11,6 +11,7 @@ import { createContributorNotification } from "@/lib/contributorNotifications";
 import { displayLevel } from "@/lib/levels";
 import { getBusinessPlatformRewardQlt } from "@/lib/campaignPlatformPricing";
 import { expireElapsedMissions } from "@/lib/missionExpiry";
+import { AWARENESS_MISSION_KEY, ensureAwarenessMission, hasApprovedAwarenessMission } from "@/lib/awarenessMission";
 
 function getAllowedMissionTypes(features: unknown) {
   const unlocks = Array.isArray(features) ? features.filter((item): item is string => typeof item === "string") : [];
@@ -158,6 +159,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    await ensureAwarenessMission();
     await expireElapsedMissions();
 
     const body = await req.json().catch(() => ({}));
@@ -202,6 +204,9 @@ export async function POST(req: NextRequest) {
     if (taskRows.length === 0) return NextResponse.json({ error: "Mission not found or no longer active." }, { status: 404 });
 
     const task = taskRows[0];
+    if (task.mission_key !== AWARENESS_MISSION_KEY && !await hasApprovedAwarenessMission(session.userId)) {
+      return NextResponse.json({ error: "Complete and receive approval for the Qeixova Awareness & Verification mission before submitting other missions." }, { status: 403 });
+    }
     const proofType = task.proof_type ?? "none";
     const parsedProof = parseProofSubmission(proofValue);
     const platformOptions = getCampaignPlatformOptions(task);

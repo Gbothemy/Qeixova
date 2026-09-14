@@ -377,6 +377,13 @@ export function buildCampaignEngineMetadata(input: EngineInput) {
 }
 
 export async function ensureUniversalCampaignTaskColumns() {
+  // These columns are used by contributor mission discovery as well as
+  // business campaigns. Keep this migration here so a new registration never
+  // depends on an administrator having run a separate legacy migration.
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_status TEXT NOT NULL DEFAULT 'active'`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS mission_type TEXT NOT NULL DEFAULT 'engagement'`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS min_level INTEGER NOT NULL DEFAULT 1`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS xp_reward INTEGER NOT NULL DEFAULT 0`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_status TEXT NOT NULL DEFAULT 'pending_review'`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_goal TEXT NOT NULL DEFAULT ''`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_pricing JSONB NOT NULL DEFAULT '{}'::jsonb`;
@@ -391,7 +398,9 @@ export async function ensureUniversalCampaignTaskColumns() {
   await ensureMissionExpiryColumns();
 }
 
-export async function ensureUniversalCampaignTables() {
+let universalCampaignSetupPromise:Promise<void>|null=null;
+
+async function setupUniversalCampaignTables() {
   await ensureUniversalCampaignTaskColumns();
 
   await sql`
@@ -685,6 +694,11 @@ export async function ensureUniversalCampaignTables() {
   }
 }
 
+export async function ensureUniversalCampaignTables(){
+  universalCampaignSetupPromise??=setupUniversalCampaignTables();
+  try{await universalCampaignSetupPromise}catch(error){universalCampaignSetupPromise=null;throw error}
+}
+
 export async function createUniversalCampaignRecords(input: CreateCampaignRecordsInput) {
   await ensureUniversalCampaignTables();
   const verification = input.engine.verification;
@@ -813,12 +827,12 @@ export async function createUniversalCampaignRecords(input: CreateCampaignRecord
     ) VALUES (
       ${campaignId}, ${input.businessId}, ${input.pricing.totalCostQlt},
       ${input.pricing.contributorRewardsQlt}, 0, 0,
-      ${input.pricing.commissionAmountQlt}, 0
+      0, 0
     )
     ON CONFLICT (campaign_id) DO UPDATE SET
       funded_amount = EXCLUDED.funded_amount,
       reserved_rewards = EXCLUDED.reserved_rewards,
-      platform_earned = EXCLUDED.platform_earned,
+      platform_earned = 0,
       updated_at = NOW()
   `;
 
@@ -978,7 +992,7 @@ export async function reviewCampaignSubmission(input: {
 
   const submission = submissionRows[0];
   const status = input.action === "approve" ? "approved" : input.action === "reject" ? "rejected" : input.action === "needs_correction" ? "needs_correction" : "disputed";
-  await sql`
+  const reviewed = await sql`
     UPDATE campaign_submissions
     SET status = ${status},
         reviewed_at = NOW(),
@@ -987,9 +1001,30 @@ export async function reviewCampaignSubmission(input: {
         review_note = ${input.reviewNote || ""},
         updated_at = NOW()
     WHERE id = ${submission.id}
+      AND status <> ${status}
+    RETURNING id
   `;
 
+  // Prevent repeated reviews or dispute resolutions from releasing rewards or
+  // collecting fees more than once.
+  if (reviewed.length === 0) return { ok: true, campaignSubmissionId: Number(submission.id), status, unchanged: true };
+
   if (status === "approved") {
+    const campaignRows = await sql`
+      SELECT total_slots, approved_slots, platform_commission, verification_fee
+      FROM campaigns WHERE id = ${submission.campaign_id}
+    `;
+    const campaign = campaignRows[0];
+    const totalSlots = Math.max(1, Number(campaign?.total_slots ?? 1));
+    const approvedSlots = Number(campaign?.approved_slots ?? 0) + 1;
+    // Cumulative rounding spreads a fee across actual approved targets while
+    // ensuring the sum exactly equals the quoted fee at the final target.
+    const feeSlice = (fee: unknown) => Math.max(0,
+      Math.round(Number(fee ?? 0) * approvedSlots / totalSlots)
+      - Math.round(Number(fee ?? 0) * (approvedSlots - 1) / totalSlots));
+    const commissionForSubmission = feeSlice(campaign?.platform_commission);
+    const verificationForSubmission = feeSlice(campaign?.verification_fee);
+    const feeForSubmission = commissionForSubmission + verificationForSubmission;
     await sql`
       UPDATE campaigns
       SET approved_slots = approved_slots + 1,
@@ -1002,12 +1037,23 @@ export async function reviewCampaignSubmission(input: {
       UPDATE campaign_wallets
       SET released_rewards = released_rewards + ${Number(submission.reward_amount)},
           reserved_rewards = GREATEST(0, reserved_rewards - ${Number(submission.reward_amount)}),
+          platform_earned = platform_earned + ${feeForSubmission},
           updated_at = NOW()
       WHERE campaign_id = ${submission.campaign_id}
     `;
     await sql`
       INSERT INTO campaign_transactions (campaign_id, user_id, transaction_type, amount, status, reference, metadata)
       VALUES (${submission.campaign_id}, ${submission.contributor_id}, 'release_reward', ${Number(submission.reward_amount)}, 'completed', ${"QXR-" + submission.id}, ${JSON.stringify({ submissionId: submission.id })}::jsonb)
+      ON CONFLICT (reference) DO NOTHING
+    `;
+    await sql`
+      INSERT INTO campaign_transactions (campaign_id, user_id, transaction_type, amount, status, reference, metadata)
+      VALUES (${submission.campaign_id}, NULL, 'platform_commission', ${commissionForSubmission}, 'completed', ${"QXF-" + submission.campaign_id + "-COMMISSION-" + submission.id}, ${JSON.stringify({ submissionId: submission.id, approvedSlots, totalSlots })}::jsonb)
+      ON CONFLICT (reference) DO NOTHING
+    `;
+    await sql`
+      INSERT INTO campaign_transactions (campaign_id, user_id, transaction_type, amount, status, reference, metadata)
+      VALUES (${submission.campaign_id}, NULL, 'verification_fee', ${verificationForSubmission}, 'completed', ${"QXF-" + submission.campaign_id + "-VERIFY-" + submission.id}, ${JSON.stringify({ submissionId: submission.id, approvedSlots, totalSlots })}::jsonb)
       ON CONFLICT (reference) DO NOTHING
     `;
   } else if (status === "rejected") {

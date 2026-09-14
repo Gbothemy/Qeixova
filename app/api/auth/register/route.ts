@@ -49,6 +49,9 @@ export async function POST(req: NextRequest) {
     `;
 
     const user = result[0];
+    // The required awareness mission is provisioned by mission discovery.
+    // Keep signup independent from campaign/task writes: registration must not
+    // fail or remain loading when that separate provisioning work is delayed.
 
     const verificationToken = await createEmailVerification("contributor", user.id, user.email);
     const emailSent = await sendEmailVerificationEmail(user.email, user.full_name, verificationToken);

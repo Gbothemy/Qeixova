@@ -6,6 +6,7 @@ import { ensureUniversalCampaignTables } from "@/lib/universalCampaignEngine";
 import { displayLevel } from "@/lib/levels";
 import { expireElapsedMissions } from "@/lib/missionExpiry";
 import { MAX_MISSION_ATTEMPTS } from "@/lib/antiFraud";
+import { AWARENESS_MISSION_KEY, ensureAwarenessMission, hasApprovedAwarenessMission } from "@/lib/awarenessMission";
 
 type TargetLocationMetadata = {
   targetLocation?: {
@@ -98,6 +99,7 @@ export async function GET() {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await ensureUniversalCampaignTables();
+    await ensureAwarenessMission();
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT NOT NULL DEFAULT 'Nigeria'`;
     await expireElapsedMissions();
 
@@ -113,6 +115,7 @@ export async function GET() {
       WHERE u.id = ${session.userId}
     `;
     const user = userRows[0] ?? {};
+    const awarenessApproved = await hasApprovedAwarenessMission(session.userId);
 
     // Reset daily cap if new day
     const today = new Date().toISOString().split("T")[0];
@@ -127,7 +130,7 @@ export async function GET() {
     // Fetch active missions with completion status
     const tasks = await sql`
       SELECT
-        t.id, t.title, t.category, t.reward, t.duration,
+        t.id, t.title, t.category, t.reward, t.duration, t.mission_key,
         t.icon, t.color,
         COALESCE(t.instructions, '') AS instructions,
         COALESCE(t.steps, '{}') AS steps,
@@ -270,7 +273,9 @@ export async function GET() {
 
     const visible = scored
       .filter((t: Record<string, unknown>) => !t.hidden)
+      .filter((t: Record<string, unknown>) => awarenessApproved || t.mission_key === AWARENESS_MISSION_KEY)
       .sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+        if (a.mission_key === AWARENESS_MISSION_KEY || b.mission_key === AWARENESS_MISSION_KEY) return a.mission_key === AWARENESS_MISSION_KEY ? -1 : 1;
         // Completed last
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
         // Locked last
@@ -307,6 +312,7 @@ export async function GET() {
         matchedCount: visible.length,
         availableCount,
         submittedCount,
+        verificationRequired: !awarenessApproved,
       },
     });
   } catch (err) {

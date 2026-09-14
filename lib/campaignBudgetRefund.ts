@@ -14,7 +14,13 @@ export async function refundUnusedCampaignBudget(input: { campaignId: number; bu
         c.title,
         GREATEST(
           0,
-          c.total_budget - c.spent_budget - c.platform_commission - c.verification_fee
+          c.total_budget - c.spent_budget
+            - COALESCE((
+              SELECT SUM(ct.amount) FROM campaign_transactions ct
+              WHERE ct.campaign_id = c.id
+                AND ct.transaction_type IN ('platform_commission', 'verification_fee')
+                AND ct.status = 'completed'
+            ), 0)
             - COALESCE(cw.refunded_amount, 0)
         )::int AS refundable
       FROM campaigns c

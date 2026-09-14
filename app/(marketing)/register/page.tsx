@@ -90,8 +90,8 @@ export default function RegisterPage() {
   const [onboardStep, setOnboardStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [_verifyNotice, setVerifyNotice] = useState("");
-  const [_resendingVerification, setResendingVerification] = useState(false);
+  const [verifyNotice, setVerifyNotice] = useState("");
+  const [resendingVerification, setResendingVerification] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [_showPassword, _setShowPassword] = useState(false);
   const [_showConfirmPassword, _setShowConfirmPassword] = useState(false);
@@ -122,29 +122,34 @@ export default function RegisterPage() {
     if (!termsAccepted) { setError("Please accept the Terms of Service."); return; }
     setError(""); setLoading(true);
 
-    if (accountType === "business") {
-      const res = await fetch("/api/business/register", {
+    try {
+      if (accountType === "business") {
+        const res = await fetch("/api/business/register", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ name:form.fullName, email:form.email, password:form.password, industry:bizCategory }),
-      });
-      const data = await res.json();
-      if (res.ok) { setScreen(data.requiresVerification ? "verify" : "onboard"); setOnboardStep(1); }
-      else if (data.requiresVerification) { setError(data.error || "Verification email could not be sent."); setScreen("verify"); }
-      else setError(data.error || "Registration failed");
-    } else {
-      const res = await fetch("/api/auth/register", {
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) { setVerifyNotice("Verification email sent. Check your inbox and spam folder, then verify your email before signing in."); setScreen(data.requiresVerification ? "verify" : "onboard"); setOnboardStep(1); }
+        else if (data.requiresVerification) { setError(data.error || "Verification email could not be sent."); setScreen("verify"); }
+        else setError(data.error || "Registration failed");
+      } else {
+        const res = await fetch("/api/auth/register", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ fullName:form.fullName, email:form.email, password:form.password }),
-      });
-      const data = await res.json();
-      if (res.ok) { setScreen(data.requiresVerification ? "verify" : "onboard"); setOnboardStep(1); }
-      else if (data.requiresVerification) { setError(data.error || "Verification email could not be sent."); setScreen("verify"); }
-      else setError(data.error || "Registration failed");
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) { setVerifyNotice("Verification email sent. Check your inbox and spam folder, then verify your email before signing in."); setScreen(data.requiresVerification ? "verify" : "onboard"); setOnboardStep(1); }
+        else if (data.requiresVerification) { setError(data.error || "Verification email could not be sent."); setScreen("verify"); }
+        else setError(data.error || "Registration failed");
+      }
+    } catch {
+      setError("We could not reach the registration service. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const _handleResendVerification = async () => {
+  const handleResendVerification = async () => {
     if (!form.email || !accountType) return;
     setResendingVerification(true);
     setVerifyNotice("");
@@ -441,6 +446,27 @@ export default function RegisterPage() {
                 Already have an account? <Link href="/login" style={{ color:"#1AEF22", fontWeight:700, textDecoration:"none" }}>Login</Link>
               </p>
             </div>
+          )}
+
+          {/* ── EMAIL VERIFICATION ── */}
+          {screen === "verify" && accountType && (
+            <section style={{ textAlign:"center", maxWidth:420, margin:"0 auto" }} aria-live="polite">
+              <div style={{ width:72, height:72, display:"grid", placeItems:"center", margin:"0 auto 20px", borderRadius:22, background:`${accentColor}18`, border:`1px solid ${accentColor}44`, color:accentColor, fontSize:34, fontWeight:900 }} aria-hidden="true">✉</div>
+              <p style={{ color:accentColor, fontSize:11, fontWeight:900, letterSpacing:1.1, textTransform:"uppercase", marginBottom:9 }}>One last step</p>
+              <h2 style={{ color:"#F5F5F5", fontSize:24, fontWeight:900, letterSpacing:-0.5, marginBottom:12 }}>Verify your email</h2>
+              <p style={{ color:"#c4c4c4", fontSize:14, lineHeight:1.7, marginBottom:12 }}>
+                {verifyNotice || "We sent a verification link to your email address."}
+              </p>
+              <p style={{ color:"#F5F5F5", fontSize:14, fontWeight:800, wordBreak:"break-word", marginBottom:22 }}>{form.email}</p>
+              {error && <p role="alert" style={{ color:"#ff8a8a", background:"rgba(255,80,80,.08)", border:"1px solid rgba(255,80,80,.18)", borderRadius:12, padding:"11px 13px", fontSize:12, lineHeight:1.5, marginBottom:14 }}>{error}</p>}
+              <button type="button" onClick={()=>void handleResendVerification()} disabled={resendingVerification} style={{ width:"100%", border:`1px solid ${accentColor}77`, borderRadius:13, background:"transparent", color:accentColor, padding:"13px 16px", fontWeight:900, fontSize:14, cursor:resendingVerification ? "not-allowed" : "pointer", opacity:resendingVerification ? .7 : 1 }}>
+                {resendingVerification ? "Sending verification email..." : "Resend verification email"}
+              </button>
+              <Link href="/login" style={{ display:"block", width:"100%", boxSizing:"border-box", marginTop:10, borderRadius:13, background:`linear-gradient(135deg, ${accentColor}, ${accountType === "business" ? "#d89420" : "#06B517"})`, color:"#000", padding:"14px 16px", textDecoration:"none", fontWeight:900, fontSize:14 }}>
+                Go to Login →
+              </Link>
+              <p style={{ color:"#888", fontSize:12, lineHeight:1.55, marginTop:18 }}>After you verify your email, return to Login to access your account.</p>
+            </section>
           )}
 
           {/* ── ONBOARDING ── */}
