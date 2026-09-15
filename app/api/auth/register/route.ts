@@ -11,7 +11,16 @@ function makeReferralCode(name: string): string {
   return `${prefix}-${suffix}`;
 }
 
+async function removeUnverifiedRegistration(userId: number) {
+  // A contributor cannot sign in before email verification. If delivery fails,
+  // remove this incomplete account so the email can be registered again.
+  await sql`DELETE FROM email_verifications WHERE account_type = 'contributor' AND account_id = ${userId}`;
+  await sql`UPDATE users SET referred_by = NULL WHERE referred_by = ${userId}`;
+  await sql`DELETE FROM users WHERE id = ${userId} AND email_verified = FALSE`;
+}
+
 export async function POST(req: NextRequest) {
+  let createdUserId: number | null = null;
   try {
     const { email, phone, fullName, password, referralCode } = await req.json();
 
@@ -22,6 +31,17 @@ export async function POST(req: NextRequest) {
     const cleanEmail = String(email).trim().toLowerCase();
     await ensureEmailVerificationSchema();
 
+    // A prior attempt may have created an account before the email provider
+    // failed. Clear only unverified records so this address can register again.
+    const existing = await sql`SELECT id, email_verified FROM users WHERE email = ${cleanEmail}`;
+    if (existing.length > 0) {
+      if (existing[0].email_verified === false) {
+        await removeUnverifiedRegistration(Number(existing[0].id));
+      } else {
+        return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+      }
+    }
+
     // Referral code is optional
     let referrerId: number | null = null;
     if (referralCode && referralCode.trim()) {
@@ -30,12 +50,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid referral code. Please check and try again." }, { status: 400 });
       }
       referrerId = refRows[0].id;
-    }
-
-    // Check existing user
-    const existing = await sql`SELECT id FROM users WHERE email = ${cleanEmail}`;
-    if (existing.length > 0) {
-      return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -49,6 +63,7 @@ export async function POST(req: NextRequest) {
     `;
 
     const user = result[0];
+    createdUserId = Number(user.id);
     // The required awareness mission is provisioned by mission discovery.
     // Keep signup independent from campaign/task writes: registration must not
     // fail or remain loading when that separate provisioning work is delayed.
@@ -56,10 +71,10 @@ export async function POST(req: NextRequest) {
     const verificationToken = await createEmailVerification("contributor", user.id, user.email);
     const emailSent = await sendEmailVerificationEmail(user.email, user.full_name, verificationToken);
     if (!emailSent) {
+      await removeUnverifiedRegistration(createdUserId);
+      createdUserId = null;
       return NextResponse.json({
-        error: "Account created, but the verification email could not be sent. Please use resend verification or contact support.",
-        requiresVerification: true,
-        email: user.email,
+        error: "Verification email could not be sent, so your account was not saved. Please register again after email service is available.",
       }, { status: 503 });
     }
 
@@ -69,6 +84,13 @@ export async function POST(req: NextRequest) {
       user: { id: user.id, email: user.email, fullName: user.full_name },
     });
   } catch (err) {
+    if (createdUserId) {
+      try {
+        await removeUnverifiedRegistration(createdUserId);
+      } catch (cleanupError) {
+        console.error("Could not remove incomplete contributor registration", cleanupError);
+      }
+    }
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
