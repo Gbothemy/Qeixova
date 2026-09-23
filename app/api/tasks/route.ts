@@ -183,19 +183,24 @@ export async function GET() {
         END AS retry_allowed
       FROM tasks t
       LEFT JOIN businesses b ON b.id = t.business_id
-      LEFT JOIN campaigns cpg ON cpg.task_id = t.id
+      LEFT JOIN campaigns cpg
+        ON cpg.task_id = t.id
+        AND t.mission_key IS DISTINCT FROM ${AWARENESS_MISSION_KEY}
       LEFT JOIN completions c ON c.task_id = t.id AND c.user_id = ${session.userId}
-      WHERE (
-          (t.is_active = true AND COALESCE(t.task_status, 'active') = 'active')
-          OR COALESCE(cpg.status, '') = 'live'
-          OR COALESCE(t.campaign_status, '') = 'live'
+      WHERE t.mission_key = ${AWARENESS_MISSION_KEY}
+        OR (
+          (
+            (t.is_active = true AND COALESCE(t.task_status, 'active') = 'active')
+            OR COALESCE(cpg.status, '') = 'live'
+            OR COALESCE(t.campaign_status, '') = 'live'
+          )
+          AND COALESCE(t.task_status, '') NOT IN ('rejected', 'closed', 'deleted')
+          AND COALESCE(t.campaign_status, '') NOT IN ('rejected', 'closed')
+          AND COALESCE(cpg.status, '') NOT IN ('rejected', 'closed')
+          AND (t.expires_at IS NULL OR t.expires_at > NOW())
+          AND (cpg.end_date IS NULL OR cpg.end_date > NOW())
+          AND (t.total_budget = 0 OR t.budget_used < t.total_budget)
         )
-        AND COALESCE(t.task_status, '') NOT IN ('rejected', 'closed', 'deleted')
-        AND COALESCE(t.campaign_status, '') NOT IN ('rejected', 'closed')
-        AND COALESCE(cpg.status, '') NOT IN ('rejected', 'closed')
-        AND (t.expires_at IS NULL OR t.expires_at > NOW())
-        AND (cpg.end_date IS NULL OR cpg.end_date > NOW())
-        AND (t.total_budget = 0 OR t.budget_used < t.total_budget)
       ORDER BY t.reward DESC
     `;
 

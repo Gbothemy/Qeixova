@@ -31,6 +31,7 @@ export function calculateMissionExpiry(duration: unknown, start = new Date()) {
 export async function ensureMissionExpiryColumns() {
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS mission_key TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS tasks_expires_at_idx ON tasks (expires_at)`;
 }
 
@@ -41,8 +42,9 @@ async function tableExists(tableName: string) {
 
 export async function activateMissionExpiryByTask(taskId: number) {
   await ensureMissionExpiryColumns();
-  const rows = await sql`SELECT id, duration, approved_at, expires_at FROM tasks WHERE id = ${taskId} LIMIT 1`;
+  const rows = await sql`SELECT id, duration, approved_at, expires_at, mission_key FROM tasks WHERE id = ${taskId} LIMIT 1`;
   if (rows.length === 0) return null;
+  if (rows[0].mission_key === "qeixova-awareness-verification") return null;
 
   const now = new Date();
   const existingExpiry = rows[0].expires_at ? new Date(rows[0].expires_at) : null;
@@ -108,6 +110,7 @@ async function backfillMissingMissionExpiries() {
     FROM tasks t
     LEFT JOIN campaigns c ON c.task_id = t.id
     WHERE t.expires_at IS NULL
+      AND t.mission_key IS DISTINCT FROM 'qeixova-awareness-verification'
       AND (
         (t.is_active = TRUE AND COALESCE(t.task_status, 'active') = 'active')
         OR COALESCE(t.campaign_status, '') = 'live'
@@ -157,7 +160,7 @@ async function backfillMissingMissionExpiries() {
 export async function expireElapsedMissions() {
   await ensureMissionExpiryColumns();
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_start_at TIMESTAMPTZ`;
-  const due = await sql`UPDATE tasks SET is_active=TRUE, task_status='active', campaign_status='live', approved_at=COALESCE(approved_at,NOW()) WHERE task_status='scheduled' AND scheduled_start_at<=NOW() RETURNING id`;
+  const due = await sql`UPDATE tasks SET is_active=TRUE, task_status='active', campaign_status='live', approved_at=COALESCE(approved_at,NOW()) WHERE task_status='scheduled' AND scheduled_start_at<=NOW() AND mission_key IS DISTINCT FROM 'qeixova-awareness-verification' RETURNING id`;
   for (const row of due) await activateMissionExpiryByTask(Number(row.id));
   await backfillMissingMissionExpiries();
 
@@ -170,6 +173,7 @@ export async function expireElapsedMissions() {
           || jsonb_build_object('expiredAt', NOW())
     WHERE expires_at IS NOT NULL
       AND expires_at <= NOW()
+      AND mission_key IS DISTINCT FROM 'qeixova-awareness-verification'
       AND COALESCE(task_status, 'active') NOT IN ('expired', 'closed', 'deleted', 'rejected')
     RETURNING id
   `;
