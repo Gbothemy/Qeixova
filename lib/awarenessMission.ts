@@ -109,6 +109,12 @@ export async function ensureAwarenessMission() {
       max_screenshots = EXCLUDED.max_screenshots,
       target_platforms = EXCLUDED.target_platforms,
       campaign_metadata = EXCLUDED.campaign_metadata,
+      target_professions = ARRAY[]::text[],
+      target_interests = ARRAY[]::text[],
+      target_age_ranges = ARRAY[]::text[],
+      target_genders = ARRAY[]::text[],
+      target_countries = ARRAY[]::text[],
+      target_states = ARRAY[]::text[],
       expires_at = NULL,
       is_active = TRUE, task_status = 'active', campaign_status = 'live'
     RETURNING id

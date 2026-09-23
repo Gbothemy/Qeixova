@@ -261,9 +261,11 @@ export async function GET() {
       // A contributor who already participated must retain access to their one
       // allowed retry even if their profile was later edited or incomplete.
       const eligibleRetry = task.retry_allowed === true;
-      const hidden = eligibleRetry
+      const hidden = isAwarenessMission
         ? false
-        : blockedByCountry || blockedByLocation || blockedByInterests || blockedByProfileMismatch;
+        : eligibleRetry
+          ? false
+          : blockedByCountry || blockedByLocation || blockedByInterests || blockedByProfileMismatch;
 
       const matchReasons = [
         ...(countryTargets.length > 0 && countryMatched ? ["country"] : []),
