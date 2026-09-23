@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { ensureUniversalCampaignTaskColumns } from "@/lib/universalCampaignEngine";
+import { ensureCompletionAttemptSchema } from "@/lib/antiFraud";
 
 export const AWARENESS_MISSION_KEY = "qeixova-awareness-verification";
 export const AWARENESS_MISSION_REWARD_QLT = 1_000;
@@ -55,6 +56,7 @@ export async function ensureAwarenessMission() {
   // Registration is often the first path through the application. Ensure the
   // fields used by this platform-owned mission exist before inserting it.
   await ensureUniversalCampaignTaskColumns();
+  await ensureCompletionAttemptSchema();
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS mission_key TEXT`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS tasks_mission_key_unique_idx ON tasks (mission_key) WHERE mission_key IS NOT NULL`;
   const rows = await sql`

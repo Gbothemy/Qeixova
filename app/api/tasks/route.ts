@@ -165,6 +165,7 @@ export async function GET() {
         COALESCE(cpg.status, '') AS universal_campaign_status,
         CASE
           WHEN c.id IS NULL THEN false
+          WHEN t.mission_key = ${AWARENESS_MISSION_KEY} AND c.status = 'rejected' THEN false
           WHEN c.status = 'rejected' AND c.attempt_count < ${MAX_MISSION_ATTEMPTS} THEN false
           ELSE true
         END AS completed,
@@ -175,7 +176,11 @@ export async function GET() {
           WHEN c.status = 'rejected' THEN GREATEST(${MAX_MISSION_ATTEMPTS} - c.attempt_count, 0)
           ELSE 0
         END AS attempts_remaining,
-        CASE WHEN c.status = 'rejected' AND c.attempt_count < ${MAX_MISSION_ATTEMPTS} THEN true ELSE false END AS retry_allowed
+        CASE
+          WHEN t.mission_key = ${AWARENESS_MISSION_KEY} AND c.status = 'rejected' THEN true
+          WHEN c.status = 'rejected' AND c.attempt_count < ${MAX_MISSION_ATTEMPTS} THEN true
+          ELSE false
+        END AS retry_allowed
       FROM tasks t
       LEFT JOIN businesses b ON b.id = t.business_id
       LEFT JOIN campaigns cpg ON cpg.task_id = t.id
@@ -274,7 +279,11 @@ export async function GET() {
 
     const visible = scored
       .filter((t: Record<string, unknown>) => !t.hidden)
-      .filter((t: Record<string, unknown>) => awarenessApproved || t.mission_key === AWARENESS_MISSION_KEY)
+      // The platform-owned welcome mission is a one-time onboarding step. Hide
+      // it completely after approval so the member sees only regular missions.
+      .filter((t: Record<string, unknown>) => awarenessApproved
+        ? t.mission_key !== AWARENESS_MISSION_KEY
+        : t.mission_key === AWARENESS_MISSION_KEY)
       .sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
         if (a.mission_key === AWARENESS_MISSION_KEY || b.mission_key === AWARENESS_MISSION_KEY) return a.mission_key === AWARENESS_MISSION_KEY ? -1 : 1;
         // Completed last

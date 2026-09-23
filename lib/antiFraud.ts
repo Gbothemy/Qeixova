@@ -5,11 +5,26 @@ export const MAX_MISSION_ATTEMPTS = 2;
 
 export async function ensureCompletionAttemptSchema() {
   await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS attempt_count INTEGER NOT NULL DEFAULT 1`;
+  // Rejected welcome-mission submissions can be retried until approved. Keep
+  // every attempt count while limiting normal missions in the submission flow.
   await sql`
-    DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'completions_attempt_count_check') THEN
+    DO $$
+    DECLARE constraint_definition TEXT;
+    BEGIN
+      PERFORM pg_advisory_xact_lock(hashtext('completions_attempt_count_migration'));
+      SELECT pg_get_constraintdef(oid) INTO constraint_definition
+      FROM pg_constraint
+      WHERE conname = 'completions_attempt_count_check'
+        AND conrelid = 'completions'::regclass;
+
+      IF constraint_definition IS NULL THEN
         ALTER TABLE completions
-        ADD CONSTRAINT completions_attempt_count_check CHECK (attempt_count BETWEEN 1 AND 2);
+        ADD CONSTRAINT completions_attempt_count_check CHECK (attempt_count >= 1);
+      ELSIF constraint_definition ILIKE '%BETWEEN 1 AND 2%'
+         OR constraint_definition ILIKE '%attempt_count <= 2%' THEN
+        ALTER TABLE completions DROP CONSTRAINT completions_attempt_count_check;
+        ALTER TABLE completions
+        ADD CONSTRAINT completions_attempt_count_check CHECK (attempt_count >= 1);
       END IF;
     END $$
   `;
@@ -65,9 +80,10 @@ export async function checkTrustScore(userId: number): Promise<{ allowed: boolea
 
 export async function getMissionAttemptState(userId: number, taskId: number) {
   const rows = await sql`
-    SELECT id, status, attempt_count
-    FROM completions
-    WHERE user_id = ${userId} AND task_id = ${taskId}
+    SELECT c.id, c.status, c.attempt_count, t.mission_key
+    FROM completions c
+    JOIN tasks t ON t.id = c.task_id
+    WHERE c.user_id = ${userId} AND c.task_id = ${taskId}
     LIMIT 1
   `;
   if (rows.length === 0) {
@@ -76,6 +92,7 @@ export async function getMissionAttemptState(userId: number, taskId: number) {
 
   const attemptCount = Number(rows[0].attempt_count ?? 1);
   const status = String(rows[0].status ?? "pending");
-  const isRetry = status === "rejected" && attemptCount < MAX_MISSION_ATTEMPTS;
+  const isWelcomeMission = rows[0].mission_key === "qeixova-awareness-verification";
+  const isRetry = status === "rejected" && (isWelcomeMission || attemptCount < MAX_MISSION_ATTEMPTS);
   return { completionId: Number(rows[0].id), attemptCount, canSubmit: isRetry, isRetry, status };
 }

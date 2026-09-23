@@ -102,7 +102,7 @@ export async function GET(req: Request) {
       DO $$ BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'completions_attempt_count_check') THEN
           ALTER TABLE completions
-          ADD CONSTRAINT completions_attempt_count_check CHECK (attempt_count BETWEEN 1 AND 2);
+          ADD CONSTRAINT completions_attempt_count_check CHECK (attempt_count >= 1);
         END IF;
       END $$
     `;

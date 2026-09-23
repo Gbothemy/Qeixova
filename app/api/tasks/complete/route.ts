@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { verifyProof } from "@/lib/verifyProof";
 import { checkDailyCap, updateStreak, QLT_PROGRESS_REWARDS } from "@/lib/missionEngine";
-import { checkRateLimit, incrementRateLimit, getMissionAttemptState, checkTrustScore } from "@/lib/antiFraud";
+import { checkRateLimit, incrementRateLimit, getMissionAttemptState, checkTrustScore, MAX_MISSION_ATTEMPTS } from "@/lib/antiFraud";
 import { log } from "@/lib/auditLog";
 import { syncCampaignSubmissionFromCompletion } from "@/lib/universalCampaignEngine";
 import { createBusinessNotification } from "@/lib/businessNotifications";
@@ -179,23 +179,6 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    // ── Anti-fraud: trust score ───────────────────────────────────────────
-    const { allowed: trustOk, trustScore } = await checkTrustScore(session.userId);
-    if (!trustOk) {
-      await log(session.userId, "fraud_flagged", { taskId, trustScore }, "task", taskId);
-      return NextResponse.json({
-        error: `Your account has been flagged due to a high rejection rate (trust score: ${trustScore}%). Please contact support.`,
-      }, { status: 403 });
-    }
-
-    const attemptState = await getMissionAttemptState(session.userId, Number(taskId));
-    if (!attemptState.canSubmit) {
-      const message = attemptState.status === "rejected"
-        ? "You have used both attempts for this mission."
-        : "This mission already has a pending or approved submission.";
-      return NextResponse.json({ error: message }, { status: 409 });
-    }
-
     const taskRows = await sql`
       SELECT *
       FROM tasks
@@ -207,6 +190,29 @@ export async function POST(req: NextRequest) {
     if (taskRows.length === 0) return NextResponse.json({ error: "Mission not found or no longer active." }, { status: 404 });
 
     const task = taskRows[0];
+    const isWelcomeMission = task.mission_key === AWARENESS_MISSION_KEY;
+
+    // ── Anti-fraud: trust score ───────────────────────────────────────────
+    // Rejections still lower trust, but a low score must not permanently trap a
+    // member outside the compulsory onboarding mission.
+    if (!isWelcomeMission) {
+      const { allowed: trustOk, trustScore } = await checkTrustScore(session.userId);
+      if (!trustOk) {
+        await log(session.userId, "fraud_flagged", { taskId, trustScore }, "task", taskId);
+        return NextResponse.json({
+          error: `Your account has been flagged due to a high rejection rate (trust score: ${trustScore}%). Please contact support.`,
+        }, { status: 403 });
+      }
+    }
+
+    const attemptState = await getMissionAttemptState(session.userId, Number(taskId));
+    if (!attemptState.canSubmit) {
+      const message = attemptState.status === "rejected"
+        ? "You have used both attempts for this mission."
+        : "This mission already has a pending or approved submission.";
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
+
     if (task.mission_key !== AWARENESS_MISSION_KEY && !await hasApprovedAwarenessMission(session.userId)) {
       return NextResponse.json({ error: "Complete and receive approval for the Qeixova Awareness & Verification mission before submitting other missions." }, { status: 403 });
     }
@@ -291,7 +297,8 @@ export async function POST(req: NextRequest) {
                 completed_at = NOW(), xp_awarded = ${qltProgressReward},
                 qlt_awarded = ${selectedReward}, attempt_count = attempt_count + 1
             WHERE id = ${attemptState.completionId}
-              AND status = 'rejected' AND attempt_count < 2
+              AND status = 'rejected'
+              AND (${isWelcomeMission} OR attempt_count < ${MAX_MISSION_ATTEMPTS})
             RETURNING id, attempt_count
           `
         : await sql`
