@@ -17,7 +17,7 @@ async function ensureAuditLogsTable() {
 }
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"audit.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await ensureAuditLogsTable();
 
   const { searchParams } = new URL(req.url);

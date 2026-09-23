@@ -156,6 +156,9 @@ async function backfillMissingMissionExpiries() {
 
 export async function expireElapsedMissions() {
   await ensureMissionExpiryColumns();
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_start_at TIMESTAMPTZ`;
+  const due = await sql`UPDATE tasks SET is_active=TRUE, task_status='active', campaign_status='live', approved_at=COALESCE(approved_at,NOW()) WHERE task_status='scheduled' AND scheduled_start_at<=NOW() RETURNING id`;
+  for (const row of due) await activateMissionExpiryByTask(Number(row.id));
   await backfillMissingMissionExpiries();
 
   const expired = await sql`

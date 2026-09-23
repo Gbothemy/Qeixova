@@ -383,7 +383,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
 
             <section className="missionSection">
               <div className="sectionHead">
-                <span>Contributor actions</span>
+                <span>Growth Partner actions</span>
                 <strong>{actionSteps.length} step{actionSteps.length === 1 ? "" : "s"}</strong>
               </div>
               <ol className="stepList">

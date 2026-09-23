@@ -132,7 +132,7 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
       </div>
 
       <div className="missionBody">
-        <p>{metadata.objective || task.instructions || "Review the mission details and complete the requested contributor action."}</p>
+        <p>{metadata.objective || task.instructions || "Review the mission details and complete the requested growth partner action."}</p>
 
         <div className="missionDetailGrid">
           <span><strong>Goal</strong>{task.campaign_goal || task.category}</span>

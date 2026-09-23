@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     });
     return res;
   } catch (err) {
-    console.error("Contributor login failed", { stage, error: err });
+    console.error("Growth Partner login failed", { stage, error: err });
     return NextResponse.json({
       error: process.env.NODE_ENV === "production" ? "Server error" : `Server error (${stage})`,
     }, { status: 500 });

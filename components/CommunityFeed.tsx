@@ -110,7 +110,7 @@ export default function CommunityFeed() {
         <div>
           <p>Growth</p>
           <h1>Community Feed</h1>
-          <span>Share progress, ask questions, and help contributors grow together.</span>
+          <span>Share progress, ask questions, and help growth partners grow together.</span>
         </div>
         <div className="feedSignal"><strong>{posts.length}</strong><span>posts</span><strong>{totalActivity}</strong><span>interactions</span></div>
       </header>
@@ -132,14 +132,14 @@ export default function CommunityFeed() {
 
       <section className="feedList" aria-label="Community posts">
         {posts.length === 0 ? (
-          <div className="emptyFeed"><strong>Start the conversation</strong><span>Share the first update with the contributor community.</span></div>
+          <div className="emptyFeed"><strong>Start the conversation</strong><span>Share the first update with the growth partner community.</span></div>
         ) : posts.map((post) => {
           const showComments = expanded.has(post.id);
           return (
             <article className="postCard" key={post.id}>
               <header>
                 <div className="avatar" style={{ borderColor: post.badge_color }}>{initials(post.author_name)}</div>
-                <div><h2>{post.author_name}</h2><p>{post.author_level} contributor · {relativeTime(post.created_at)}</p></div>
+                <div><h2>{post.author_name}</h2><p>{post.author_level} growth partner · {relativeTime(post.created_at)}</p></div>
                 <span className="topic">{post.topic}</span>
               </header>
               <p className="postBody">{post.body}</p>

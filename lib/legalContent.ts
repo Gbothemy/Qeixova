@@ -15,17 +15,17 @@ export const legalDocuments = {
     title: "Terms of Service",
     updatedAt: "June 21, 2026",
     summary:
-      "These terms explain the rules for using Qeixova as a contributor, business campaign owner, visitor, or account holder.",
+      "These terms explain the rules for using Qeixova as a growth partner, business campaign owner, visitor, or account holder.",
     sections: [
       {
         heading: "1. About Qeixova",
         body:
-          "Qeixova is a community-powered digital growth platform that connects businesses, creators, musicians, events, startups, and communities with contributors who complete approved missions. Missions may include content distribution, local visibility, campaign awareness, app testing, user feedback, referrals, and related growth activities.",
+          "Qeixova is a community-powered digital growth platform that connects businesses, creators, musicians, events, startups, and communities with growth partners who complete approved missions. Missions may include content distribution, local visibility, campaign awareness, app testing, user feedback, referrals, and related growth activities.",
       },
       {
         heading: "2. Acceptance of Terms",
         body:
-          "By creating an account, browsing the platform, funding a campaign, completing a mission, submitting proof, requesting withdrawal, or using any Qeixova service, you agree to these Terms of Service, the Privacy Policy, Refund Policy, campaign rules, contributor rules, and any instructions shown inside the platform. If you do not agree, do not use Qeixova.",
+          "By creating an account, browsing the platform, funding a campaign, completing a mission, submitting proof, requesting withdrawal, or using any Qeixova service, you agree to these Terms of Service, the Privacy Policy, Refund Policy, campaign rules, growth partner rules, and any instructions shown inside the platform. If you do not agree, do not use Qeixova.",
       },
       {
         heading: "3. Account Eligibility",
@@ -33,9 +33,9 @@ export const legalDocuments = {
           "You must provide accurate registration information and keep your account secure. You must not create duplicate accounts, share accounts, impersonate another person or business, bypass verification, or use Qeixova if your account has been suspended or banned. Qeixova may restrict accounts that create fraud, risk, abuse, or policy violations.",
       },
       {
-        heading: "4. Contributor Responsibilities",
+        heading: "4. Growth Partner Responsibilities",
         body:
-          "Contributors must complete missions honestly, follow all campaign instructions, choose only platforms they actually used, submit clear proof, keep required content visible for the required duration, and avoid fake engagement, bots, automated actions, manipulated screenshots, reused proof, spam, harassment, or misleading activity. Rewards are only earned after approval.",
+          "Growth Partners must complete missions honestly, follow all campaign instructions, choose only platforms they actually used, submit clear proof, keep required content visible for the required duration, and avoid fake engagement, bots, automated actions, manipulated screenshots, reused proof, spam, harassment, or misleading activity. Rewards are only earned after approval.",
       },
       {
         heading: "5. Business and Campaign Owner Responsibilities",
@@ -45,7 +45,7 @@ export const legalDocuments = {
       {
         heading: "6. Campaign Matching and Targeting",
         body:
-          "Qeixova may match contributors to missions using interests, location, state, selected platforms, quality score, level, trust score, completion history, campaign availability, and business targeting settings. Matching is not guaranteed, and campaign availability can change at any time.",
+          "Qeixova may match growth partners to missions using interests, location, state, selected platforms, quality score, level, trust score, completion history, campaign availability, and business targeting settings. Matching is not guaranteed, and campaign availability can change at any time.",
       },
       {
         heading: "7. Proof Review and Approval",
@@ -60,12 +60,12 @@ export const legalDocuments = {
       {
         heading: "9. Campaign Payments, Fees, and Refunds",
         body:
-          "Businesses may need to fund campaigns before activation. Qeixova may charge service fees, payment processing fees, commissions, or platform fees. Refund eligibility depends on campaign status, contributor activity, approvals, disputes, payment errors, and platform policy. Refunds are handled under the Refund Policy.",
+          "Businesses may need to fund campaigns before activation. Qeixova may charge service fees, payment processing fees, commissions, or platform fees. Refund eligibility depends on campaign status, growth partner activity, approvals, disputes, payment errors, and platform policy. Refunds are handled under the Refund Policy.",
       },
       {
         heading: "10. Uploaded Content and Intellectual Property",
         body:
-          "Campaign owners are responsible for the rights to any uploaded images, videos, music, captions, logos, links, or brand materials. Contributors and businesses grant Qeixova permission to store, display, review, process, and use submitted materials as needed for campaign operation, proof review, support, fraud prevention, dispute handling, analytics, and compliance.",
+          "Campaign owners are responsible for the rights to any uploaded images, videos, music, captions, logos, links, or brand materials. Growth Partners and businesses grant Qeixova permission to store, display, review, process, and use submitted materials as needed for campaign operation, proof review, support, fraud prevention, dispute handling, analytics, and compliance.",
       },
       {
         heading: "11. Third-Party Platforms",
@@ -85,7 +85,7 @@ export const legalDocuments = {
       {
         heading: "14. No Guaranteed Results",
         body:
-          "Qeixova does not guarantee sales, customers, followers, views, viral growth, permanent engagement, conversion rates, contributor availability, platform reach, or campaign profitability. Results may vary based on targeting, content quality, audience behavior, contributor availability, and third-party platform behavior.",
+          "Qeixova does not guarantee sales, customers, followers, views, viral growth, permanent engagement, conversion rates, growth partner availability, platform reach, or campaign profitability. Results may vary based on targeting, content quality, audience behavior, growth partner availability, and third-party platform behavior.",
       },
       {
         heading: "15. Liability and Indemnity",
@@ -108,7 +108,7 @@ export const legalDocuments = {
     title: "Privacy Policy",
     updatedAt: "June 21, 2026",
     summary:
-      "This policy explains how Qeixova collects, uses, stores, shares, and protects user, contributor, and business information.",
+      "This policy explains how Qeixova collects, uses, stores, shares, and protects user, growth partner, and business information.",
     sections: [
       {
         heading: "1. Information We Collect",
@@ -123,22 +123,22 @@ export const legalDocuments = {
       {
         heading: "3. Proof and Verification Data",
         body:
-          "Contributors may submit screenshots, links, text, profile references, platform evidence, uploaded files, and other proof. Qeixova uses this data to verify completion, prevent fraud, resolve disputes, approve or reject rewards, report campaign activity, and maintain platform trust.",
+          "Growth Partners may submit screenshots, links, text, profile references, platform evidence, uploaded files, and other proof. Qeixova uses this data to verify completion, prevent fraud, resolve disputes, approve or reject rewards, report campaign activity, and maintain platform trust.",
       },
       {
         heading: "4. How We Use Information",
         body:
-          "We use information to create accounts, authenticate users, match contributors with campaigns, operate campaign targeting, process proof review, calculate QLT, process withdrawals, handle payments and refunds, provide support, send notifications, prevent fraud, improve the platform, enforce policies, and comply with legal obligations.",
+          "We use information to create accounts, authenticate users, match growth partners with campaigns, operate campaign targeting, process proof review, calculate QLT, process withdrawals, handle payments and refunds, provide support, send notifications, prevent fraud, improve the platform, enforce policies, and comply with legal obligations.",
       },
       {
         heading: "5. Location and Interest Matching",
         body:
-          "Qeixova may use selected state, city, address, service area, contributor location, interests, and platform availability to match contributors with relevant missions. Users must not provide false location or interest information to manipulate mission access or rewards.",
+          "Qeixova may use selected state, city, address, service area, growth partner location, interests, and platform availability to match growth partners with relevant missions. Users must not provide false location or interest information to manipulate mission access or rewards.",
       },
       {
         heading: "6. Sharing Information",
         body:
-          "We do not sell personal information. We may share necessary information with campaign owners, contributors, payment processors, banks, hosting providers, email providers, analytics tools, security providers, support tools, legal authorities, or service providers that help operate Qeixova. Campaign owners may see proof and selected platform data needed for review.",
+          "We do not sell personal information. We may share necessary information with campaign owners, growth partners, payment processors, banks, hosting providers, email providers, analytics tools, security providers, support tools, legal authorities, or service providers that help operate Qeixova. Campaign owners may see proof and selected platform data needed for review.",
       },
       {
         heading: "7. Cookies and Technical Data",
@@ -181,22 +181,22 @@ export const legalDocuments = {
     title: "Refund Policy",
     updatedAt: "June 21, 2026",
     summary:
-      "This policy explains when campaign owners may receive refunds or credits, and how contributor reward and withdrawal disputes are handled.",
+      "This policy explains when campaign owners may receive refunds or credits, and how growth partner reward and withdrawal disputes are handled.",
     sections: [
       {
         heading: "1. Campaign Funding",
         body:
-          "Businesses may fund campaigns before activation. Campaign funds may be used for contributor rewards, platform fees, payment processing, campaign review, verification, and operational costs depending on campaign status.",
+          "Businesses may fund campaigns before activation. Campaign funds may be used for growth partner rewards, platform fees, payment processing, campaign review, verification, and operational costs depending on campaign status.",
       },
       {
         heading: "2. Eligible Refunds",
         body:
-          "A campaign owner may be eligible for a full or partial refund where a payment error occurred, a campaign was not activated, contributors were not assigned, no mission activity started, Qeixova cancelled the campaign before execution, or duplicate payment was verified.",
+          "A campaign owner may be eligible for a full or partial refund where a payment error occurred, a campaign was not activated, growth partners were not assigned, no mission activity started, Qeixova cancelled the campaign before execution, or duplicate payment was verified.",
       },
       {
         heading: "3. Non-Refundable Cases",
         body:
-          "Refunds may be unavailable or reduced where contributors have already completed missions, rewards were approved, proof has entered review, campaign resources were used, the campaign owner provided incorrect information, the campaign violated policy, or a third-party payment provider has already charged non-refundable fees.",
+          "Refunds may be unavailable or reduced where growth partners have already completed missions, rewards were approved, proof has entered review, campaign resources were used, the campaign owner provided incorrect information, the campaign violated policy, or a third-party payment provider has already charged non-refundable fees.",
       },
       {
         heading: "4. Campaign Credits",
@@ -204,9 +204,9 @@ export const legalDocuments = {
           "Qeixova may issue campaign credits instead of cash refunds where appropriate. Credits may be used for future campaigns and may be subject to review, expiry, or platform rules.",
       },
       {
-        heading: "5. Contributor Reward Disputes",
+        heading: "5. Growth Partner Reward Disputes",
         body:
-          "Contributors do not earn rewards until proof is approved. If proof is rejected, QLT may not be credited. Contributors may contact support where they believe a rejection or reward calculation was incorrect, but Qeixova may rely on available proof, platform records, and admin review.",
+          "Growth Partners do not earn rewards until proof is approved. If proof is rejected, QLT may not be credited. Growth Partners may contact support where they believe a rejection or reward calculation was incorrect, but Qeixova may rely on available proof, platform records, and admin review.",
       },
       {
         heading: "6. Withdrawal Issues",
@@ -234,7 +234,7 @@ export const legalDocuments = {
       {
         heading: "1. Purpose of This Policy",
         body:
-          "Qeixova is built for real human participation, structured promotion, awareness, feedback, testing, referrals, and digital growth. This policy protects contributors, campaign owners, users, the public, platform trust, legal compliance, brand safety, payment integrity, and community safety.",
+          "Qeixova is built for real human participation, structured promotion, awareness, feedback, testing, referrals, and digital growth. This policy protects growth partners, campaign owners, users, the public, platform trust, legal compliance, brand safety, payment integrity, and community safety.",
       },
       {
         heading: "2. General Rule",
@@ -254,12 +254,12 @@ export const legalDocuments = {
       {
         heading: "5. Spam and Forced Mass Messaging",
         body:
-          "Campaigns must not encourage spam. Contributors must not be asked to send unsolicited bulk messages, spam WhatsApp or Telegram groups, flood comment sections, spam email or SMS contacts, use scraped phone numbers, harass people with repeated promotions, or advertise in places where they do not have permission.",
+          "Campaigns must not encourage spam. Growth Partners must not be asked to send unsolicited bulk messages, spam WhatsApp or Telegram groups, flood comment sections, spam email or SMS contacts, use scraped phone numbers, harass people with repeated promotions, or advertise in places where they do not have permission.",
       },
       {
         heading: "6. Harassment, Bullying, Threats, and Abuse",
         body:
-          "Campaigns that ask contributors to attack, insult, threaten, shame, mock, abuse, spread rumors, cyberbully, review-bomb, mass-report without valid safety reason, dox, expose private information, or pressure a person are prohibited.",
+          "Campaigns that ask growth partners to attack, insult, threaten, shame, mock, abuse, spread rumors, cyberbully, review-bomb, mass-report without valid safety reason, dox, expose private information, or pressure a person are prohibited.",
       },
       {
         heading: "7. Hate Speech and Discrimination",
@@ -319,7 +319,7 @@ export const legalDocuments = {
       {
         heading: "18. Privacy Violations and Data Misuse",
         body:
-          "Campaigns must not ask contributors to collect private phone numbers, scrape emails, share private chats, expose addresses, reveal financial data, share passwords, post private images without consent, track people without consent, harvest data from private groups, or submit another person's personal data without permission.",
+          "Campaigns must not ask growth partners to collect private phone numbers, scrape emails, share private chats, expose addresses, reveal financial data, share passwords, post private images without consent, track people without consent, harvest data from private groups, or submit another person's personal data without permission.",
       },
       {
         heading: "19. Intellectual Property Violations",
@@ -339,7 +339,7 @@ export const legalDocuments = {
       {
         heading: "22. Unsafe Physical Activity",
         body:
-          "Campaigns must not require dangerous stunts, unsafe public challenges, physical confrontations, trespassing, blocking roads, entering restricted areas, unsafe travel, unsafe meetings with strangers, public disorder, or activities that expose contributors to harm.",
+          "Campaigns must not require dangerous stunts, unsafe public challenges, physical confrontations, trespassing, blocking roads, entering restricted areas, unsafe travel, unsafe meetings with strangers, public disorder, or activities that expose growth partners to harm.",
       },
       {
         heading: "23. Malware, Hacking, and Cyber Abuse",
@@ -362,14 +362,14 @@ export const legalDocuments = {
           "Qeixova may reject campaigns that cannot be verified fairly, have unclear proof requirements, cannot be measured, depend on unavailable third-party data, expose private information, require private actions that cannot be confirmed, or have no reasonable approval standard.",
       },
       {
-        heading: "27. Campaigns That Exploit Contributors",
+        heading: "27. Campaigns That Exploit Growth Partners",
         body:
-          "Campaign owners must not ask for unpaid extra work, hide important requirements, change requirements after contributors start, move work outside Qeixova without payment protection, require contributors to pay fees, request personal favors, demand excessive time for low reward, or use confusing instructions to reject valid work.",
+          "Campaign owners must not ask for unpaid extra work, hide important requirements, change requirements after growth partners start, move work outside Qeixova without payment protection, require growth partners to pay fees, request personal favors, demand excessive time for low reward, or use confusing instructions to reject valid work.",
       },
       {
         heading: "28. Bypassing Qeixova Systems",
         body:
-          "Users must not privately negotiate payment outside Qeixova, take contributors off-platform to avoid fees, ask for proof outside approved channels, hide campaign activity from Qeixova, create fake records, manipulate campaign status, avoid commission, abuse referrals, or use Qeixova to recruit for another task platform without approval.",
+          "Users must not privately negotiate payment outside Qeixova, take growth partners off-platform to avoid fees, ask for proof outside approved channels, hide campaign activity from Qeixova, create fake records, manipulate campaign status, avoid commission, abuse referrals, or use Qeixova to recruit for another task platform without approval.",
       },
       {
         heading: "29. Restricted Campaigns Requiring Extra Review",
@@ -384,12 +384,12 @@ export const legalDocuments = {
       {
         heading: "31. Refunds for Prohibited Campaigns",
         body:
-          "Refund eligibility for prohibited campaigns is handled under the Refund Policy. A campaign owner may not receive a full refund if the campaign violated policy, used misleading information, had already been reviewed or processed, had valid contributor work completed, involved fraud, or caused payment processing or administrative costs.",
+          "Refund eligibility for prohibited campaigns is handled under the Refund Policy. A campaign owner may not receive a full refund if the campaign violated policy, used misleading information, had already been reviewed or processed, had valid growth partner work completed, involved fraud, or caused payment processing or administrative costs.",
       },
       {
         heading: "32. Reporting, Responsibility, and Appeals",
         body:
-          "Contributors should report suspicious, illegal, unsafe, deceptive, or prohibited campaigns. Campaign owners are responsible for ensuring campaigns are lawful, truthful, safe, properly licensed, non-spammy, non-harassing, and compliant. Rejected campaign owners may contact support with campaign details, corrected materials, and supporting evidence for review.",
+          "Growth Partners should report suspicious, illegal, unsafe, deceptive, or prohibited campaigns. Campaign owners are responsible for ensuring campaigns are lawful, truthful, safe, properly licensed, non-spammy, non-harassing, and compliant. Rejected campaign owners may contact support with campaign details, corrected materials, and supporting evidence for review.",
       },
       {
         heading: "33. Final Agreement",

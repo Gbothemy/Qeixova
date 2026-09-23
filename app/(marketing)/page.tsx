@@ -27,23 +27,23 @@ const whyFeatures = [
   { icon: "/icon-affordable.svg",         title: "Affordable Awareness",    desc: "Launch flexible campaigns that fit your budget and goals." },
   { icon: "/icon-grassroots.svg",         title: "Grassroots Reach",        desc: "Expand visibility organically through community-driven promotion." },
   { icon: "/icon-flexible.svg",           title: "Flexible Campaign Types", desc: "Run awareness, engagement, testing, referral, and distribution campaigns from one platform." },
-  { icon: "/icon-verified.svg",           title: "Verified Participation",  desc: "Campaigns are completed by real contributors with verification and quality checks." },
+  { icon: "/icon-verified.svg",           title: "Verified Participation",  desc: "Campaigns are completed by real growth partners with verification and quality checks." },
   { icon: "/icon-creator-friendly.svg",   title: "Creator-Friendly",        desc: "Perfect for creators, musicians, startups, local businesses, and growing brands." },
 ];
 
 const steps = [
   { num: "01", icon: "/icon-create-mission.svg", title: "Create a Campaign",           desc: "Upload your flyer, video, product, music, event, app, or promotional content." },
   { num: "02", icon: "/icon-target-audience.svg",title: "Choose Your Goal",            desc: "Select content distribution, reposts, community awareness, app testing, surveys, or referral campaigns." },
-  { num: "03", icon: "/icon-profile.svg",         title: "Activate Real Participants", desc: "Qeixova contributors complete tasks and help spread your content across real communities." },
-  { num: "04", icon: "/icon-analytics.svg",       title: "Track Visibility",           desc: "Monitor campaign performance, submissions, reach activity, and contributor engagement." },
+  { num: "03", icon: "/icon-profile.svg",         title: "Activate Real Participants", desc: "Qeixova growth partners complete tasks and help spread your content across real communities." },
+  { num: "04", icon: "/icon-analytics.svg",       title: "Track Visibility",           desc: "Monitor campaign performance, submissions, reach activity, and growth partner engagement." },
 ];
 
 const faqs = [
-  { q: "What is Qeixova Tasks?",                  a: "Qeixova Tasks is a community-powered growth platform where businesses gain visibility and contributors earn through meaningful digital participation — not bots or fake traffic." },
-  { q: "Who can use Qeixova?",                    a: "Any business, creator, musician, startup, event organizer, or community that wants to grow visibility through real human participation. Contributors earn by completing campaigns." },
-  { q: "How do contributors earn?",               a: "Contributors complete participation tasks — sharing flyers, reposting content, testing apps, joining campaigns — and earn QLT rewards. 10 QLT = ₦1. Withdraw to any Nigerian bank." },
-  { q: "Is this real engagement or fake?",        a: "Real. Every contributor is verified. No bots, no fake accounts, no spam. Campaigns are completed by real people with quality checks and fraud prevention." },
-  { q: "How do withdrawals work?",                a: `Contributors earn QLT by completing tasks. Once you reach ${WITHDRAWAL_UNLOCK_QLT.toLocaleString()} QLT lifetime earnings, withdrawals unlock. Minimum withdrawal is processed within 24 hours to your bank.` },
+  { q: "What is Qeixova Tasks?",                  a: "Qeixova Tasks is a community-powered growth platform where businesses gain visibility and growth partners earn through meaningful digital participation — not bots or fake traffic." },
+  { q: "Who can use Qeixova?",                    a: "Any business, creator, musician, startup, event organizer, or community that wants to grow visibility through real human participation. Growth Partners earn by completing campaigns." },
+  { q: "How do growth partners earn?",               a: "Growth Partners complete participation tasks — sharing flyers, reposting content, testing apps, joining campaigns — and earn QLT rewards. 10 QLT = ₦1. Withdraw to any Nigerian bank." },
+  { q: "Is this real engagement or fake?",        a: "Real. Every growth partner is verified. No bots, no fake accounts, no spam. Campaigns are completed by real people with quality checks and fraud prevention." },
+  { q: "How do withdrawals work?",                a: `Growth Partners earn QLT by completing tasks. Once you reach ${WITHDRAWAL_UNLOCK_QLT.toLocaleString()} QLT lifetime earnings, withdrawals unlock. Minimum withdrawal is processed within 24 hours to your bank.` },
   { q: "How much does a campaign cost?",          a: "You set the reward per completion and the total budget. You only pay for verified completions — no wasted spend on impressions or clicks that don't convert." },
 ];
 
@@ -177,7 +177,7 @@ export default function LandingPage() {
             Start a Campaign
           </Link>
           <Link href="/register" className="btn-glow" style={{ background: "#111", border: "1.5px solid #222", color: "#F5F5F5", textDecoration: "none", padding: "16px 32px", borderRadius: 14, fontWeight: 600, fontSize: 15, transition: "all 0.2s ease" }}>
-            Become a Contributor
+            Become a Growth Partner
           </Link>
         </div>
         <p className="animate-fade-up delay-5" style={{ color: "#999", fontSize: 12, marginTop: 18, position: "relative" }}>Trusted for community-powered growth, content distribution, and grassroots digital promotion.</p>
@@ -186,7 +186,7 @@ export default function LandingPage() {
       {/* Trust strip */}
       <section style={{ background: "#0a0a0a", borderBottom: "1px solid #1a1a1a", padding: "18px 5vw" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 28, flexWrap: "wrap" }}>
-          {["Verified contributors only", "Pay per completion", "Real human participation", "Transparent QLT conversion", "24h withdrawal processing"].map(t => (
+          {["Verified growth partners only", "Pay per completion", "Real human participation", "Transparent QLT conversion", "24h withdrawal processing"].map(t => (
             <div key={t} style={{ display: "flex", alignItems: "center", gap: 7 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#1AEF22", flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: "#ccc", fontWeight: 500 }}>{t}</span>
@@ -338,7 +338,7 @@ export default function LandingPage() {
             <div>
               <p style={{ fontSize: 18, fontWeight: 800, color: "#F5F5F5", marginBottom: 8 }}>Ready to launch your first campaign?</p>
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                {["Pay per completion", "Verified contributors", "Real human reach"].map(t => (
+                {["Pay per completion", "Verified growth partners", "Real human reach"].map(t => (
                   <span key={t} style={{ fontSize: 12, color: "#ccc" }}><span style={{ color: "#F5A623" }}>✓</span> {t}</span>
                 ))}
               </div>
@@ -355,15 +355,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SECTION 5 — For Contributors */}
+      {/* SECTION 5 — For Growth Partners */}
       <section id="contributors" className="contributors-section" style={{ padding: "32px 5vw 48px", background: "#050505", borderTop: "1px solid #1a1a1a" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div className="contributors-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
             <div className="contributors-copy">
-              <span style={{ display: "inline-flex", fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 2, textTransform: "uppercase", background: "rgba(26,239,34,0.08)", borderRadius: 20, padding: "4px 14px" }}>For Contributors</span>
+              <span style={{ display: "inline-flex", fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 2, textTransform: "uppercase", background: "rgba(26,239,34,0.08)", borderRadius: 20, padding: "4px 14px" }}>For Growth Partners</span>
               <h2 className="contributors-title" style={{ fontSize: "clamp(22px, 3.5vw, 38px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: 0, marginBottom: 16 }}>Earn By Helping Businesses Grow</h2>
               <p style={{ fontSize: 15, color: "#ccc", lineHeight: 1.8, marginBottom: 20 }}>
-                Become part of a growing network of digital contributors helping brands and creators reach more people online.
+                Become part of a growing network of digital growth partners helping brands and creators reach more people online.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 28 }}>
                 {["Reposting content", "Sharing flyers", "Testing apps", "Joining campaigns", "Giving feedback", "Referral activities"].map(t => (
@@ -450,7 +450,7 @@ export default function LandingPage() {
           <span style={{ fontSize: 11, fontWeight: 700, color: "#1AEF22", letterSpacing: 2, textTransform: "uppercase", background: "rgba(26,239,34,0.08)", borderRadius: 20, padding: "4px 14px" }}>Our Vision</span>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#F5F5F5", marginTop: 14, letterSpacing: -1, marginBottom: 20 }}>Building Africa&apos;s Human Participation Network</h2>
           <p style={{ fontSize: 16, color: "#ccc", lineHeight: 1.8, marginBottom: 16 }}>
-            Qeixova Tasks is building a digital ecosystem where businesses gain visibility, creators grow faster, and contributors earn through meaningful online participation.
+            Qeixova Tasks is building a digital ecosystem where businesses gain visibility, creators grow faster, and growth partners earn through meaningful online participation.
           </p>
           <p style={{ fontSize: 15, color: "#bbb", lineHeight: 1.8 }}>
             We believe growth should not belong only to companies with large advertising budgets. Through community-powered distribution and participation, we help brands and creators reach people in a more human way.
@@ -498,7 +498,7 @@ export default function LandingPage() {
             Create Campaign
           </Link>
           <Link href="/register" style={{ background: "#111", border: "1.5px solid #222", color: "#F5F5F5", textDecoration: "none", padding: "16px 28px", borderRadius: 14, fontWeight: 600, fontSize: 15, display: "inline-block" }}>
-            Become a Contributor
+            Become a Growth Partner
           </Link>
         </div>
         <p style={{ color: "#999", fontSize: 12, marginTop: 16 }}>Free to join. No experience needed.</p>
@@ -518,7 +518,7 @@ export default function LandingPage() {
             </div>
             <div>
               <p style={{ color: "#F5F5F5", fontWeight: 700, fontSize: 12, marginBottom: 14 }}>Platform</p>
-              {[{ label: "How it works", href: "#how-it-works" }, { label: "For businesses", href: "#for-businesses" }, { label: "Campaigns", href: "/business/register" }, { label: "Contributors", href: "/register" }].map(l => (
+              {[{ label: "How it works", href: "#how-it-works" }, { label: "For businesses", href: "#for-businesses" }, { label: "Campaigns", href: "/business/register" }, { label: "Growth Partners", href: "/register" }].map(l => (
                 <a key={l.label} href={l.href} style={{ display: "block", fontSize: 12, marginBottom: 9, color: "#aaa", textDecoration: "none" }}>{l.label}</a>
               ))}
             </div>

@@ -317,7 +317,7 @@ export async function POST(req: NextRequest) {
           type: "participation",
           tone: "gold",
           title: "New proof submitted",
-          body: `${userRows[0]?.full_name || "A contributor"} submitted proof for ${task.title}.`,
+          body: `${userRows[0]?.full_name || "A growth partner"} submitted proof for ${task.title}.`,
           status: "Needs review",
           href: `/business/tasks/${taskId}`,
           metadata: { taskId: Number(taskId), completionId: Number(completionRows[0].id), contributorId: session.userId, attemptNumber },

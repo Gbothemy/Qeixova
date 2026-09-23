@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 
 interface Config { key: string; value: string; description: string; updated_at: string; }
+interface History { id:number; config_key:string; old_value:string; new_value:string; reason:string; admin_email:string; created_at:string }
 
 const LABELS: Record<string, string> = {
   max_submissions_per_hour:   "Max Submissions / Hour",
@@ -12,6 +13,7 @@ const LABELS: Record<string, string> = {
   platform_fee_pct:           "Platform Fee %",
   trust_score_flag_threshold: "Trust Score Flag Threshold",
   trust_score_min_missions:   "Min Missions Before Trust Enforced",
+  dual_approval_withdrawal_qlt:"Dual Approval Threshold (QLT)",
 };
 
 export default function ConfigPage() {
@@ -21,6 +23,8 @@ export default function ConfigPage() {
   const [saved, setSaved] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [reason, setReason] = useState("");
+  const [history, setHistory] = useState<History[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/config").then(async (response) => {
@@ -33,19 +37,22 @@ export default function ConfigPage() {
         const vals: Record<string, string> = {};
         d.configs.forEach((c: Config) => { vals[c.key] = c.value; });
         setEditing(vals);
+        setHistory(d.history ?? []);
       }
     }).catch((error) => setNotice({ type: "error", message: error instanceof Error ? error.message : "Unable to load economy settings" }))
       .finally(() => setLoading(false));
   }, []);
 
   const save = async (key: string) => {
+    if (!reason.trim()) { setNotice({ type: "error", message: "Enter a reason for this economy change." }); return; }
     setSaving(key);
     setNotice(null);
     try {
-      const response = await fetch("/api/admin/config", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, value: editing[key] }) });
+      const response = await fetch("/api/admin/config", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, value: editing[key], reason }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Unable to save economy setting");
       setSaved(key);
+      setReason("");
       setNotice({ type: "success", message: `${LABELS[key] ?? key} updated successfully.` });
       setTimeout(() => setSaved(null), 1500);
     } catch (error) {
@@ -63,6 +70,8 @@ export default function ConfigPage() {
       </div>
 
       {notice && <div className={`adminResult${notice.type === "error" ? " error" : ""}`}><span>{notice.message}</span><button type="button" onClick={() => setNotice(null)}>×</button></div>}
+
+      <div className="adminPanel" style={{marginBottom:16}}><label style={{display:"block",fontWeight:800,fontSize:12,marginBottom:7}}>Reason for change</label><input value={reason} onChange={e=>setReason(e.target.value)} placeholder="Required for the administrative audit trail" style={{width:"100%",boxSizing:"border-box",padding:11,border:"1px solid #d0d5dd",borderRadius:8}}/></div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {loading ? <div className="adminPanel">Loading economy settings…</div> : configs.length === 0 ? <div className="adminPanel">No economy settings are available.</div> : configs.map(c => (
@@ -83,6 +92,7 @@ export default function ConfigPage() {
           </div>
         ))}
       </div>
+      <div className="adminPanel" style={{marginTop:20}}><h2 style={{marginTop:0,fontSize:18}}>Configuration history</h2><p style={{color:"#667085",fontSize:12}}>Every economy change is recorded for review and rollback.</p><div style={{display:"grid",gap:8}}>{history.map(item=><div key={item.id} style={{display:"flex",justifyContent:"space-between",gap:12,padding:10,border:"1px solid #edf0f4",borderRadius:9,fontSize:12}}><div><b>{LABELS[item.config_key]??item.config_key}</b><div style={{color:"#667085"}}>{item.old_value} → {item.new_value} · {item.reason}</div></div><span>{item.admin_email}<br/>{new Date(item.created_at).toLocaleString()}</span></div>)}</div></div>
     </div>
   );
 }

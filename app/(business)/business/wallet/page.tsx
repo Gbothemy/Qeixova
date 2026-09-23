@@ -167,7 +167,7 @@ export default function BusinessWalletPage() {
               <div className="summaryCard">
                 <span>Spent</span>
                 <strong>{formatQlt(spent)}</strong>
-                <small>Released to contributors</small>
+                <small>Released to growth partners</small>
               </div>
               <div className="summaryCard">
                 <span>Pending</span>
@@ -253,7 +253,7 @@ export default function BusinessWalletPage() {
                 <p className="eyebrow">Ledger</p>
                 <h2>Recent transactions</h2>
               </div>
-              <span>{transactions.length} total</span>
+              <div style={{display:'flex',gap:8,alignItems:'center'}}><a href="/api/business/reports?type=transactions" style={{color:'#F5A623',fontSize:12,fontWeight:800}}>Download statement</a><span>{transactions.length} total</span></div>
             </div>
 
             {recentTransactions.length === 0 ? (
@@ -272,6 +272,7 @@ export default function BusinessWalletPage() {
                     <div className="txMeta">
                       <strong className={tx.type === "credit" ? "creditText" : "debitText"}>{tx.type === "credit" ? "+" : "-"}{formatQlt(tx.amount)}</strong>
                       <span className={`statusBadge ${tx.status}`}>{tx.status}</span>
+                      <a href={`/api/business/reports?type=transactions&id=${tx.id}`} style={{fontSize:10,color:'#F5A623'}}>Receipt</a>
                     </div>
                   </article>
                 ))}

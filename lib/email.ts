@@ -78,6 +78,19 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
   }
 }
 
+export async function sendAdminSecurityCodeEmail(to:string,name:string,code:string):Promise<boolean>{
+  return sendEmail(to,"Your Qeixova admin security code",`<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px"><h2>Admin sign-in verification</h2><p>Hello ${name},</p><p>Use this one-time code to complete your Qeixova Admin sign-in:</p><div style="font-size:30px;font-weight:800;letter-spacing:8px;padding:18px;background:#f3f4f6;border-radius:12px;text-align:center">${code}</div><p>This code expires in 10 minutes. If you did not attempt to sign in, change your password and contact the platform owner.</p></div>`);
+}
+
+export async function sendAdminOperationsReportEmail(to:string,summary:{users:number;businesses:number;campaigns:number;pendingProofs:number;openPayouts:number;openDisputes:number}):Promise<boolean>{
+  const cells=Object.entries(summary).map(([key,value])=>`<td style="padding:16px;border:1px solid #e5e7eb"><div style="font-size:11px;text-transform:uppercase;color:#667085">${key.replace(/([A-Z])/g," $1")}</div><strong style="font-size:24px">${value.toLocaleString()}</strong></td>`).join("");
+  return sendEmail(to,"Qeixova operations report",`<div style="font-family:Arial,sans-serif;max-width:720px;margin:auto;padding:28px"><h1>Operations report</h1><p>Current platform totals and decision queues.</p><table style="border-collapse:collapse;width:100%"><tr>${cells}</tr></table><p style="color:#667085">Generated ${new Date().toISOString()}</p></div>`);
+}
+
+export async function sendBusinessSecurityCodeEmail(to:string,name:string,code:string):Promise<boolean>{
+ return sendEmail(to,"Your Qeixova business security code",`<div style="font-family:sans-serif;max-width:520px;margin:auto;background:#080808;color:#fff;padding:32px;border-radius:16px"><h1>Confirm your sign in</h1><p>Hi ${name}, use this one-time code to finish signing in:</p><div style="font-size:32px;font-weight:900;letter-spacing:8px;color:#F5A623">${code}</div><p style="color:#999">This code expires in 10 minutes. Never share it.</p></div>`);
+}
+
 // ── Templates ────────────────────────────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
@@ -188,4 +201,3 @@ export async function sendCampaignLiveEmail(to: string, businessName: string, ca
     </div>
   `);
 }
-

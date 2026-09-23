@@ -15,7 +15,7 @@ const nav = [
 export default function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="bottom-nav contributor-bottom-nav" aria-label="Contributor navigation">
+    <nav className="bottom-nav contributor-bottom-nav" aria-label="Growth Partner navigation">
       {nav.map((item) => {
         const active = path === item.href;
         return (

@@ -6,7 +6,7 @@ type ContributorLoadingProps = {
 };
 
 export default function ContributorLoading({
-  label = "Loading contributor portal",
+  label = "Loading growth partner portal",
   detail = "Preparing your workspace",
 }: ContributorLoadingProps) {
   return (

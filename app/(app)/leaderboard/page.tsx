@@ -40,7 +40,7 @@ export default function LeaderboardPage() {
     }).catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <ContributorLoading label="Loading leaderboard" detail="Ranking contributors by missions and QLT earned." />;
+  if (loading) return <ContributorLoading label="Loading leaderboard" detail="Ranking growth partners by missions and QLT earned." />;
 
   const list = tab === "missions" ? topEarners : topQLT;
   const activeRank = tab === "missions" ? myRanks.monthly : myRanks.allTime;

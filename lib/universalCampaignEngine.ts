@@ -274,10 +274,10 @@ export function validateCampaignReadiness(input: Pick<EngineInput, "title" | "mi
     { key: "category", label: "Mission category selected", ready: Boolean(input.missionCategory) },
     { key: "goal", label: "Campaign goal selected", ready: Boolean(input.campaignGoal) },
     { key: "title", label: "Campaign title added", ready: Boolean(input.title?.trim()) },
-    { key: "actions", label: "Contributor actions configured", ready: Boolean(input.actions?.length) },
+    { key: "actions", label: "Growth Partner actions configured", ready: Boolean(input.actions?.length) },
     { key: "platforms", label: "Target platforms selected", ready: Boolean(input.platforms?.length) },
-    { key: "contributors", label: "Contributor quantity selected", ready: input.contributorCount > 0 },
-    { key: "reward", label: "Contributor reward meets minimum", ready: input.rewardQlt >= toQlt(MIN_REWARD_NAIRA) },
+    { key: "contributors", label: "Growth Partner quantity selected", ready: input.contributorCount > 0 },
+    { key: "reward", label: "Growth Partner reward meets minimum", ready: input.rewardQlt >= toQlt(MIN_REWARD_NAIRA) },
     { key: "pricing", label: "Pricing calculated", ready: input.totalCostQlt > 0 },
   ];
 
@@ -308,11 +308,11 @@ export function calculateCampaignQualityScore(input: Pick<EngineInput, "title" |
   }
   if (!input.description || input.description.trim().length < 40) {
     score -= 12;
-    suggestions.push("Add clearer contributor instructions.");
+    suggestions.push("Add clearer growth partner instructions.");
   }
   if (!input.actions?.length) {
     score -= 18;
-    suggestions.push("Add at least one contributor action.");
+    suggestions.push("Add at least one growth partner action.");
   }
   if (!input.platforms?.length) {
     score -= 8;
@@ -320,7 +320,7 @@ export function calculateCampaignQualityScore(input: Pick<EngineInput, "title" |
   }
   if (input.rewardQlt < toQlt(MIN_REWARD_NAIRA)) {
     score -= 20;
-    suggestions.push("Increase the contributor reward to the platform minimum.");
+    suggestions.push("Increase the growth partner reward to the platform minimum.");
   }
   if (!input.verificationType || input.verificationType === "none") {
     score -= 14;
@@ -377,7 +377,7 @@ export function buildCampaignEngineMetadata(input: EngineInput) {
 }
 
 export async function ensureUniversalCampaignTaskColumns() {
-  // These columns are used by contributor mission discovery as well as
+  // These columns are used by growth partner mission discovery as well as
   // business campaigns. Keep this migration here so a new registration never
   // depends on an administrator having run a separate legacy migration.
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS task_status TEXT NOT NULL DEFAULT 'active'`;

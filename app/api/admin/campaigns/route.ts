@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "@/lib/adminAuth";
+import { canAdmin, getAdminContext, logAdminAction } from "@/lib/adminPlatform";
 import { sql } from "@/lib/db";
 import { ensureUniversalCampaignTables, refundUnusedCampaignBudget, transitionCampaignStatus } from "@/lib/universalCampaignEngine";
 import { createBusinessNotification } from "@/lib/businessNotifications";
 import { activateMissionExpiryByTask, expireElapsedMissions } from "@/lib/missionExpiry";
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  await ensureUniversalCampaignTables();
-  await expireElapsedMissions();
+  if (!await checkAdminAuth(req,"campaigns.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const actor=await getAdminContext();
+    await ensureUniversalCampaignTables();
+    await expireElapsedMissions();
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") || "";
@@ -72,39 +75,47 @@ export async function GET(req: NextRequest) {
     LIMIT 100
   `;
 
-  return NextResponse.json({ campaigns });
+    return NextResponse.json({ campaigns, canManage:Boolean(actor&&canAdmin(actor,"campaigns.manage")) });
+  } catch (error) {
+    console.error("[api/admin/campaigns] failed to load campaigns", error);
+    return NextResponse.json({ error: "Campaign data is temporarily unavailable. Please retry." }, { status: 503 });
+  }
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"campaigns.manage")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
   const campaignId = Number(body.campaignId);
   const taskId = Number(body.taskId);
   const action = String(body.action || "");
+  const actor=await getAdminContext();
   if ((!Number.isFinite(campaignId) || campaignId <= 0) && (!Number.isFinite(taskId) || taskId <= 0)) {
     return NextResponse.json({ error: "campaignId or taskId required" }, { status: 400 });
   }
 
   if ((!Number.isFinite(campaignId) || campaignId <= 0) && taskId > 0) {
-    const rows = await sql`SELECT business_id, title, approved_at, expires_at FROM tasks WHERE id = ${taskId}`;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_start_at TIMESTAMPTZ`;
+    const rows = await sql`SELECT business_id, title, approved_at, expires_at, scheduled_start_at FROM tasks WHERE id = ${taskId}`;
     if (rows.length === 0) return NextResponse.json({ error: "Task not found" }, { status: 404 });
     if (action === "approve" || action === "launch" || action === "resume") {
-      await sql`UPDATE tasks SET is_active = TRUE, task_status = 'active', campaign_status = 'live' WHERE id = ${taskId}`;
-      if (action !== "resume" || !rows[0].expires_at) await activateMissionExpiryByTask(taskId);
+      const scheduled = rows[0].scheduled_start_at && new Date(rows[0].scheduled_start_at).getTime() > Date.now();
+      await sql`UPDATE tasks SET is_active = ${!scheduled}, task_status = ${scheduled ? "scheduled" : "active"}, campaign_status = ${scheduled ? "scheduled" : "live"} WHERE id = ${taskId}`;
+      if (!scheduled && (action !== "resume" || !rows[0].expires_at)) await activateMissionExpiryByTask(taskId);
       if (rows[0]?.business_id) {
         await createBusinessNotification({
           businessId: Number(rows[0].business_id),
           type: "approved",
           tone: "green",
           title: "Campaign approved",
-          body: `${rows[0].title} has been approved by admin and is now visible to contributors.`,
-          status: "Live",
+          body: scheduled ? `${rows[0].title} has been approved and will launch at the scheduled time.` : `${rows[0].title} has been approved by admin and is now visible to growth partners.`,
+          status: scheduled ? "Scheduled" : "Live",
           href: `/business/tasks/${taskId}`,
           metadata: { taskId, action },
         });
       }
-      return NextResponse.json({ ok: true, status: "live" });
+      await logAdminAction({action:`campaign.${action}`,entityType:"task",entityId:taskId,before:rows[0],after:{status:scheduled?"scheduled":"live"},reason:body.reason},actor);
+      return NextResponse.json({ ok: true, status: scheduled ? "scheduled" : "live" });
     }
     if (action === "reject") {
       const reason = String(body.reason || "Campaign needs edits");
@@ -128,6 +139,7 @@ export async function PATCH(req: NextRequest) {
           metadata: { taskId, reason },
         });
       }
+      await logAdminAction({action:"campaign.reject",entityType:"task",entityId:taskId,before:rows[0],after:{status:"rejected"},reason},actor);
       return NextResponse.json({ ok: true, status: "rejected" });
     }
     return NextResponse.json({ error: "This campaign record is missing. Only approve/reject is available." }, { status: 400 });
@@ -143,12 +155,13 @@ export async function PATCH(req: NextRequest) {
         type: "approved",
         tone: "green",
         title: "Campaign approved",
-        body: `${rows[0].title} has been approved by admin and is now visible to contributors.`,
+        body: `${rows[0].title} has been approved by admin and is now visible to growth partners.`,
         status: "Live",
         href: `/business/tasks/${rows[0].task_id}`,
         metadata: { campaignId, taskId: rows[0].task_id, action },
       });
     }
+    await logAdminAction({action:`campaign.${action}`,entityType:"campaign",entityId:campaignId,after:result,reason:body.reason},actor);
     return NextResponse.json(result);
   }
   if (action === "pause") {
@@ -167,6 +180,7 @@ export async function PATCH(req: NextRequest) {
         metadata: { campaignId, taskId: rows[0].task_id },
       });
     }
+    await logAdminAction({action:"campaign.pause",entityType:"campaign",entityId:campaignId,after:result,reason:body.reason},actor);
     return NextResponse.json(result);
   }
   if (action === "resume") {
@@ -179,12 +193,13 @@ export async function PATCH(req: NextRequest) {
         type: "approved",
         tone: "green",
         title: "Campaign resumed",
-        body: `${rows[0].title} is live again and visible to contributors.`,
+        body: `${rows[0].title} is live again and visible to growth partners.`,
         status: "Live",
         href: `/business/tasks/${rows[0].task_id}`,
         metadata: { campaignId, taskId: rows[0].task_id },
       });
     }
+    await logAdminAction({action:"campaign.resume",entityType:"campaign",entityId:campaignId,after:result,reason:body.reason},actor);
     return NextResponse.json(result);
   }
   if (action === "reject") {
@@ -216,6 +231,7 @@ export async function PATCH(req: NextRequest) {
         metadata: { campaignId, taskId: rows[0].task_id, reason: String(body.reason || "Campaign needs edits") },
       });
     }
+    await logAdminAction({action:"campaign.reject",entityType:"campaign",entityId:campaignId,before:rows[0],after:{status:"rejected"},reason:String(body.reason||"Campaign needs edits")},actor);
     return NextResponse.json({ ok: true, status: "rejected" });
   }
   if (action === "close") {
@@ -239,6 +255,7 @@ export async function PATCH(req: NextRequest) {
         metadata: { campaignId, taskId: rows[0].task_id },
       });
     }
+    await logAdminAction({action:"campaign.close",entityType:"campaign",entityId:campaignId,before:rows[0],after:{status:"closed"},reason:body.reason||"Admin closed campaign"},actor);
     return NextResponse.json({ ok: true, status: "closed" });
   }
 

@@ -7,13 +7,14 @@ import { sendMissionApprovedEmail, sendMissionRejectedEmail } from "@/lib/email"
 import { reviewCampaignSubmission } from "@/lib/universalCampaignEngine";
 import { createBusinessNotification } from "@/lib/businessNotifications";
 import { createContributorNotification } from "@/lib/contributorNotifications";
+import { getAdminContext, logAdminAction } from "@/lib/adminPlatform";
 
 async function ensureCompletionRewardReleaseSchema() {
   await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS reward_released_at TIMESTAMPTZ`;
 }
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"proofs.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const page      = Math.max(1, Number(searchParams.get("page") ?? 1));
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"proofs.manage")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await ensureCompletionRewardReleaseSchema();
 
@@ -155,7 +156,7 @@ export async function PATCH(req: NextRequest) {
         userId: Number(completion.user_id),
         type: "reward_credited",
         title: "QLT credited",
-        message: `${reward.toLocaleString()} QLT has been added to your contributor wallet.`,
+        message: `${reward.toLocaleString()} QLT has been added to your growth partner wallet.`,
         href: "/wallet",
         dedupeKey: `reward:${completionId}`,
         metadata: { completionId, taskId: completion.task_id, reward },
@@ -170,7 +171,7 @@ export async function PATCH(req: NextRequest) {
           businessId: Number(completion.business_id),
           type: "participation",
           tone: "green",
-          title: "Contributor proof approved",
+          title: "Growth Partner proof approved",
           body: `A proof submission for ${completion.task_title} was approved and ${reward.toLocaleString()} QLT was released.`,
           status: "Approved",
           href: `/business/tasks/${completion.task_id}`,
@@ -184,6 +185,7 @@ export async function PATCH(req: NextRequest) {
         sendMissionApprovedEmail(userEmail[0].email, userEmail[0].full_name, completion.task_title, reward).catch(() => {});
       }
 
+      await logAdminAction({action:"proof.approved",entityType:"completion",entityId:completionId,before:{status:completion.status},after:{status:"approved",reward,trustScore}},await getAdminContext());
       return NextResponse.json({
         ok: true,
         message: "Approved - QLT credited",
@@ -250,7 +252,7 @@ export async function PATCH(req: NextRequest) {
         businessId: Number(completion.business_id),
         type: "participation",
         tone: "gold",
-        title: "Contributor proof rejected",
+        title: "Growth Partner proof rejected",
         body: `A proof submission for ${completion.task_title} was rejected. Reason: ${reason}.`,
         status: "Rejected",
         href: `/business/tasks/${completion.task_id}`,
@@ -264,6 +266,7 @@ export async function PATCH(req: NextRequest) {
       sendMissionRejectedEmail(userEmail[0].email, userEmail[0].full_name, completion.task_title, reason).catch(() => {});
     }
 
+    await logAdminAction({action:"proof.rejected",entityType:"completion",entityId:completionId,before:{status:completion.status},after:{status:"rejected",trustScore},reason},await getAdminContext());
     return NextResponse.json({ ok: true, message: "Rejected", trustScore });
   }
 }

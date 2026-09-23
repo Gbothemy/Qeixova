@@ -8,10 +8,12 @@ import { useEffect, useState } from "react";
 const nav = [
   { href: "/business/dashboard", label: "Overview", icon: "/icon-home.svg", desc: "Account health" },
   { href: "/business/tasks", label: "Campaigns", icon: "/icon-task.svg", desc: "Campaign manager" },
+  { href: "/business/analytics", label: "Analytics", icon: "/icon-analytics.svg", desc: "Performance reports" },
   { href: "/business/tasks/new", label: "Create", icon: "/icon-content.svg", desc: "Guided campaign setup" },
   { href: "/business/wallet", label: "Billing", icon: "/icon-wallet.svg", desc: "Credits and spend" },
   { href: "/business/growth", label: "Alerts", icon: "/icon-notifications.svg", desc: "Notifications" },
   { href: "/business/profile", label: "Profile", icon: "/icon-profile.svg", desc: "Account settings" },
+  { href: "/business/security", label: "Security", icon: "/icon-verified.svg", desc: "Sessions and 2FA" },
 ];
 
 function isActivePath(path: string, href: string) {

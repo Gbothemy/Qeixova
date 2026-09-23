@@ -48,7 +48,7 @@ const campaignGoalOptions = ["Brand awareness", "Event awareness", "Product prom
 const categoryOptions = ["Content Distribution", "Music Promotion", "Community Growth", "App Testing", "Feedback Campaign"];
 const platformOptions = ["WhatsApp", "Instagram", "Facebook", "TikTok", "X (Twitter)", "Telegram", "YouTube", "App stores", "Website"];
 const interestOptions = [...INTEREST_OPTIONS];
-const alertOptions = ["Campaign approval", "Contributor proof submitted", "Wallet and funding updates", "Unread alert details", "Campaign rejection", "Budget reserved"];
+const alertOptions = ["Campaign approval", "Growth Partner proof submitted", "Wallet and funding updates", "Unread alert details", "Campaign rejection", "Budget reserved"];
 
 function makeForm(business: Business): FormState {
   const profile = business.profile ?? {};

@@ -153,6 +153,7 @@ export default function AdminCampaignsPage() {
   const [status, setStatus] = useState("pending_review");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [canManage, setCanManage] = useState(false);
   const [rejecting, setRejecting] = useState<Campaign | null>(null);
   const [reason, setReason] = useState("Campaign needs edits before it can go live.");
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -163,9 +164,15 @@ export default function AdminCampaignsPage() {
     try {
       const params = status ? `?status=${encodeURIComponent(status)}` : "";
       const res = await fetch(`/api/admin/campaigns${params}`);
-      const data = await res.json();
+      const responseText = await res.text();
+      let data: { campaigns?: Campaign[]; error?: string; canManage?: boolean } = {};
+      if (responseText) {
+        try { data = JSON.parse(responseText) as typeof data; }
+        catch { data = { error: responseText.startsWith("<") ? "Campaign service returned an unexpected response." : responseText }; }
+      }
       if (!res.ok) throw new Error(data.error || "Unable to load campaigns");
       setCampaigns(data.campaigns ?? []);
+      setCanManage(Boolean(data.canManage));
     } catch (error) {
       setCampaigns([]);
       setNotice({ type: "error", message: error instanceof Error ? error.message : "Unable to load campaigns" });
@@ -256,7 +263,7 @@ export default function AdminCampaignsPage() {
         <div className="adminStatCard" style={{ "--accent": "#22C55E" } as React.CSSProperties}>
           <span>Live in View</span>
           <strong>{counts.live}</strong>
-          <small>Visible to contributors</small>
+          <small>Visible to growth partners</small>
         </div>
         <div className="adminStatCard" style={{ "--accent": "#EF4444" } as React.CSSProperties}>
           <span>Rejected in View</span>
@@ -286,7 +293,7 @@ export default function AdminCampaignsPage() {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <strong style={{ display: "block", color: "#111" }}>{Number(campaign.total_budget).toLocaleString()} QLT</strong>
-                    <span style={{ color: "#5f6876", fontSize: 12 }}>{Number(campaign.task_reward ?? 0).toLocaleString()} QLT per contributor</span>
+                    <span style={{ color: "#5f6876", fontSize: 12 }}>{Number(campaign.task_reward ?? 0).toLocaleString()} QLT per growth partner</span>
                   </div>
                 </div>
 
@@ -316,7 +323,7 @@ export default function AdminCampaignsPage() {
                   </div>
                 ) : null}
 
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {canManage&&<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {campaign.status === "pending_review" && (
                     <>
                       <button type="button" onClick={() => campaignAction(campaign, "approve", "Approved by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("#1AEF22", "#000")}>Approve & Launch</button>
@@ -332,7 +339,7 @@ export default function AdminCampaignsPage() {
                   {["live", "paused"].includes(campaign.status) && (
                     <button type="button" onClick={() => campaignAction(campaign, "close", "Closed by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("#f5f5f5", "#555")}>Close</button>
                   )}
-                </div>
+                </div>}
               </article>
             );
           })}
@@ -419,7 +426,7 @@ function SubmittedContentPreview({ content, taskId }: { content: SubmittedConten
 
         {content.contentCaption ? (
           <div style={{ border: "1px solid #f5d28d", borderRadius: 10, background: "#fff8e8", padding: 11 }}>
-            <span style={{ display: "block", color: "#8a5a00", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 5 }}>Caption for contributors</span>
+            <span style={{ display: "block", color: "#8a5a00", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 5 }}>Caption for growth partners</span>
             <p style={{ margin: 0, color: "#2f250f", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{content.contentCaption}</p>
           </div>
         ) : null}

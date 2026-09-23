@@ -127,7 +127,7 @@ function ProofCell({ type, value, onPreview }: { type: string; value: string | n
   }
   if (value === "[screenshot uploaded]" || value.startsWith("[")) {
     return (
-      <span title="This older proof was saved before image previews were enabled. Ask the contributor to resubmit if the image must be inspected." style={{ display: "inline-block", padding: "3px 9px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: "#fff8e1", color: "#b7791f", whiteSpace: "nowrap" }}>
+      <span title="This older proof was saved before image previews were enabled. Ask the growth partner to resubmit if the image must be inspected." style={{ display: "inline-block", padding: "3px 9px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: "#fff8e1", color: "#b7791f", whiteSpace: "nowrap" }}>
         No preview saved
       </span>
     );
@@ -379,7 +379,7 @@ export default function CompletionsPage() {
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 18, color: "#111827" }}>Proof screenshots</h3>
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280" }}>{previewShots.length} image{previewShots.length === 1 ? "" : "s"} submitted by contributor</p>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280" }}>{previewShots.length} image{previewShots.length === 1 ? "" : "s"} submitted by growth partner</p>
               </div>
               <button type="button" onClick={() => setPreviewShots(null)} style={{ border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", padding: "9px 12px", fontWeight: 700, cursor: "pointer" }}>Close</button>
             </div>

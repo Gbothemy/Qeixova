@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       try {
         await removeUnverifiedRegistration(createdUserId);
       } catch (cleanupError) {
-        console.error("Could not remove incomplete contributor registration", cleanupError);
+        console.error("Could not remove incomplete growth partner registration", cleanupError);
       }
     }
     console.error(err);

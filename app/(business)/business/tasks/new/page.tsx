@@ -115,20 +115,20 @@ const missionCategories: MissionCategory[] = [
     contentPlaceholder: "Paste a flyer, post, video, or landing page link",
     contentTypes: ["Flyer", "Social post", "Announcement", "Promo video", "Offer"],
     defaultActions: ["Post the campaign content", "Keep visible for 12 hours", "Submit screenshot proof"],
-    defaultAudience: ["Local Promoters", "Students", "Community Influencers", "General Contributors"],
+    defaultAudience: ["Local Promoters", "Students", "Community Influencers", "General Growth Partners"],
   },
   {
     id: "music",
     name: "Music Promotion",
     apiCategory: "Music Promotion",
     missionType: "engagement",
-    description: "Get contributors to promote songs, cover art, artist pages, and release links across social platforms.",
+    description: "Get growth partners to promote songs, cover art, artist pages, and release links across social platforms.",
     goals: ["New song awareness", "Music link promotion", "Cover art promotion", "Release promotion", "Artist visibility"],
     contentLabel: "Music, artist, or promo link",
     contentPlaceholder: "Paste the song, artist page, promo post, TikTok, YouTube, Audiomack, or other campaign link",
     contentTypes: ["Song link", "Cover art"],
     defaultActions: ["Open the music campaign link", "Share or post the selected music asset on the required platform", "Submit screenshot proof of the promotion"],
-    defaultAudience: ["Music Supporters", "Creators", "Students", "Verified Contributors"],
+    defaultAudience: ["Music Supporters", "Creators", "Students", "Verified Growth Partners"],
   },
   {
     id: "community",
@@ -141,7 +141,7 @@ const missionCategories: MissionCategory[] = [
     contentPlaceholder: "Paste WhatsApp, Telegram, Discord, or Facebook Group link",
     contentTypes: ["WhatsApp community", "Telegram group", "Discord server", "Facebook group"],
     defaultActions: ["Join the community", "Read the community rules", "Submit join proof"],
-    defaultAudience: ["Community Builders", "Verified Contributors", "Local Promoters", "Students"],
+    defaultAudience: ["Community Builders", "Verified Growth Partners", "Local Promoters", "Students"],
   },
   {
     id: "apps",
@@ -154,7 +154,7 @@ const missionCategories: MissionCategory[] = [
     contentPlaceholder: "Paste Play Store, App Store, web app, APK, TestFlight, or test instruction link",
     contentTypes: ["Android app", "iOS app", "Web app", "APK test", "Onboarding flow", "Feature prototype"],
     defaultActions: ["Open or install the app", "Complete the assigned test steps", "Submit screenshot proof and useful feedback"],
-    defaultAudience: ["Tech Testers", "Verified Contributors", "Beta Test Participants", "Premium Contributors"],
+    defaultAudience: ["Tech Testers", "Verified Growth Partners", "Beta Test Participants", "Premium Growth Partners"],
   },
   {
     id: "feedback",
@@ -167,7 +167,7 @@ const missionCategories: MissionCategory[] = [
     contentPlaceholder: "Paste the form, product page, website, video, document, or research brief link",
     contentTypes: ["Short survey", "Product feedback", "Content feedback", "Feature validation", "Market research", "Detailed review"],
     defaultActions: ["Review the campaign context carefully", "Answer the feedback questions honestly", "Submit a clear written response"],
-    defaultAudience: ["Verified Contributors", "Experienced Reviewers", "Students", "General Contributors"],
+    defaultAudience: ["Verified Growth Partners", "Experienced Reviewers", "Students", "General Growth Partners"],
   },
 ];
 
@@ -258,32 +258,32 @@ const stepHeroCopy = [
   {
     eyebrow: "Step 2 / Campaign goal",
     title: "Choose the campaign goal",
-    description: "Pick the goal that should guide reward recommendations, contributor actions, proof style, and the best campaign path.",
+    description: "Pick the goal that should guide reward recommendations, growth partner actions, proof style, and the best campaign path.",
   },
   {
     eyebrow: "Step 3 / Campaign content",
-    title: "Attach the content contributors will use",
-    description: "Upload or link the exact flyer, post, video, app, community, survey, or asset contributors need to complete the mission.",
+    title: "Attach the content growth partners will use",
+    description: "Upload or link the exact flyer, post, video, app, community, survey, or asset growth partners need to complete the mission.",
   },
   {
     eyebrow: "Step 4 / Bundle and platform",
     title: "Select the bundle and platform",
-    description: "Choose where contributors should participate, then select the exact platform actions that match your campaign content.",
+    description: "Choose where growth partners should participate, then select the exact platform actions that match your campaign content.",
   },
   {
     eyebrow: "Step 5 / Actions and reach",
-    title: "Confirm contributor actions and reach",
-    description: "Set what contributors must do, how many people should complete the campaign, and the reward budget for each approval.",
+    title: "Confirm growth partner actions and reach",
+    description: "Set what growth partners must do, how many people should complete the campaign, and the reward budget for each approval.",
   },
   {
     eyebrow: "Step 6 / Audience and location",
-    title: "Target the right contributors",
-    description: "Choose matching interests and decide whether the campaign should reach contributors nationwide or in specific locations.",
+    title: "Target the right growth partners",
+    description: "Choose matching interests and decide whether the campaign should reach growth partners nationwide or in specific locations.",
   },
   {
     eyebrow: "Step 7 / Campaign preview",
     title: "Review the campaign before payment",
-    description: "Check the contributor experience, content, platforms, reward, reach, location, and total campaign cost before submitting.",
+    description: "Check the growth partner experience, content, platforms, reward, reach, location, and total campaign cost before submitting.",
   },
 ];
 const MAX_STORED_ASSET_BYTES = 2.5 * 1024 * 1024;
@@ -329,7 +329,7 @@ const goalInfo: Record<string, GoalInfo> = {
     bundleIds: ["story-status", "community-distribution", "short-video"],
   },
   "Product promotion": {
-    detail: "Get contributors to share product offers, launches, and sales content.",
+    detail: "Get growth partners to share product offers, launches, and sales content.",
     titlePlaceholder: "Promote my skincare product launch",
     bundleIds: ["story-status", "short-video", "community-distribution"],
   },
@@ -344,17 +344,17 @@ const goalInfo: Record<string, GoalInfo> = {
     bundleIds: ["community-distribution", "story-status"],
   },
   "New song awareness": {
-    detail: "Get contributors to promote a new song or artist through status posts, stories, and social sharing.",
+    detail: "Get growth partners to promote a new song or artist through status posts, stories, and social sharing.",
     titlePlaceholder: "Promote my new single",
     bundleIds: ["story-status", "streaming-awareness", "short-video"],
   },
   "Music link promotion": {
-    detail: "Get contributors to share, post, or promote your music link to real audiences.",
+    detail: "Get growth partners to share, post, or promote your music link to real audiences.",
     titlePlaceholder: "Promote my new song link",
     bundleIds: ["streaming-awareness"],
   },
   "Cover art promotion": {
-    detail: "Get contributors to post your cover art with your music link or release message.",
+    detail: "Get growth partners to post your cover art with your music link or release message.",
     titlePlaceholder: "Promote my song cover art",
     bundleIds: ["story-status", "short-video"],
   },
@@ -364,7 +364,7 @@ const goalInfo: Record<string, GoalInfo> = {
     bundleIds: ["short-video", "story-status"],
   },
   "Artist visibility": {
-    detail: "Grow recognition for an artist through contributor shares, status posts, and social promotion.",
+    detail: "Grow recognition for an artist through growth partner shares, status posts, and social promotion.",
     titlePlaceholder: "Increase visibility for my artist profile",
     bundleIds: ["story-status", "streaming-awareness", "short-video"],
   },
@@ -374,12 +374,12 @@ const goalInfo: Record<string, GoalInfo> = {
     bundleIds: ["community-expansion"],
   },
   "Increase members": {
-    detail: "Grow membership count while requiring contributors to stay for a set period.",
+    detail: "Grow membership count while requiring growth partners to stay for a set period.",
     titlePlaceholder: "Grow my WhatsApp community",
     bundleIds: ["community-expansion"],
   },
   "Install and open test": {
-    detail: "Ask contributors to install or open your app, confirm it loads, and share first-use feedback.",
+    detail: "Ask growth partners to install or open your app, confirm it loads, and share first-use feedback.",
     titlePlaceholder: "Test installs for my app",
     bundleIds: ["app-growth"],
   },
@@ -399,7 +399,7 @@ const goalInfo: Record<string, GoalInfo> = {
     bundleIds: ["app-growth"],
   },
   "App review": {
-    detail: "Collect structured impressions, usability notes, and screenshots after contributors use your app.",
+    detail: "Collect structured impressions, usability notes, and screenshots after growth partners use your app.",
     titlePlaceholder: "Collect app review feedback",
     bundleIds: ["app-growth"],
   },
@@ -409,7 +409,7 @@ const goalInfo: Record<string, GoalInfo> = {
     bundleIds: ["user-feedback"],
   },
   "Content feedback": {
-    detail: "Ask contributors to review copy, design, video, article, flyer, or creative content.",
+    detail: "Ask growth partners to review copy, design, video, article, flyer, or creative content.",
     titlePlaceholder: "Review my Instagram campaign content",
     bundleIds: ["user-feedback"],
   },
@@ -679,7 +679,7 @@ function getBundleDisplay(bundle: CampaignBundle, categoryId: string) {
     return {
       ...bundle,
       name: "App Testing & Review Flow",
-      description: "Choose the app platform or testing path contributors must complete before submitting proof and feedback.",
+      description: "Choose the app platform or testing path growth partners must complete before submitting proof and feedback.",
       platforms: ["Android", "iOS", "Web App", "APK", "Onboarding", "Bug Report", "Feature Test", "App Review"],
       actionHint: ["Open or install the app", "Complete the assigned test flow", "Submit screenshots and useful feedback"],
     };
@@ -689,7 +689,7 @@ function getBundleDisplay(bundle: CampaignBundle, categoryId: string) {
     return {
       ...bundle,
       name: "Survey & Feedback Flow",
-      description: "Choose the feedback format contributors must complete with a clear written response.",
+      description: "Choose the feedback format growth partners must complete with a clear written response.",
       platforms: ["Survey Form", "Product Page", "Content Link", "Feature Brief", "Research Brief", "Review Form"],
       actionHint: ["Open the feedback context", "Answer every required question", "Submit a clear written response"],
     };
@@ -701,7 +701,7 @@ function getBundleDisplay(bundle: CampaignBundle, categoryId: string) {
     return {
       ...bundle,
       name: "Music Status Promotion",
-      description: "Contributors post your song link, cover art, or release promo on WhatsApp, Instagram, Facebook, Telegram, TikTok, and Snapchat.",
+      description: "Growth Partners post your song link, cover art, or release promo on WhatsApp, Instagram, Facebook, Telegram, TikTok, and Snapchat.",
       platforms: ["WhatsApp", "Instagram", "Facebook", "Telegram", "TikTok", "Snapchat"],
       actionHint: ["Post the approved music promo asset", "Keep visible for 12 hours", "Submit screenshot proof of the promotion"],
     };
@@ -711,7 +711,7 @@ function getBundleDisplay(bundle: CampaignBundle, categoryId: string) {
     return {
       ...bundle,
       name: "Short Video Music Promotion",
-      description: "Contributors promote your music through short-form video platforms using your approved promo asset or link.",
+      description: "Growth Partners promote your music through short-form video platforms using your approved promo asset or link.",
       platforms: ["WhatsApp Status Video", "Instagram Reel", "Facebook Reel", "TikTok Video", "YouTube Shorts", "Snapchat Spotlight"],
       actionHint: ["Create or repost the approved music promo", "Use the provided caption or campaign instruction", "Submit link or screenshot proof"],
     };
@@ -721,7 +721,7 @@ function getBundleDisplay(bundle: CampaignBundle, categoryId: string) {
     return {
       ...bundle,
       name: "Music Link Promotion",
-      description: "Contributors share your song link, artist page, release page, or promo URL to help push the music campaign.",
+      description: "Growth Partners share your song link, artist page, release page, or promo URL to help push the music campaign.",
       platforms: ["Audiomack", "Spotify", "Boomplay", "Apple Music", "YouTube", "TikTok", "Artist Page", "Promo URL"],
       actionHint: ["Open the campaign link", "Share or post the music link as instructed", "Submit screenshot proof of the promotion"],
     };
@@ -793,7 +793,7 @@ function getContentRequirement(categoryId: string, contentType: string): Content
     return {
       mode: "link",
       title: "App test link required",
-      detail: "Add the exact app, build, prototype, or instruction link contributors must open before completing the test.",
+      detail: "Add the exact app, build, prototype, or instruction link growth partners must open before completing the test.",
       linkLabel: "Required app or test link",
       linkHint: "Use the Play Store, App Store, TestFlight, APK, web app, prototype, or testing instruction link.",
       uploadHint: "No file upload",
@@ -804,9 +804,9 @@ function getContentRequirement(categoryId: string, contentType: string): Content
     return {
       mode: "link",
       title: "Feedback context required",
-      detail: "Add the survey, product page, content link, prototype, research brief, or form contributors must review.",
+      detail: "Add the survey, product page, content link, prototype, research brief, or form growth partners must review.",
       linkLabel: "Required feedback link",
-      linkHint: "Contributors will open this link, review the context, and submit their written response.",
+      linkHint: "Growth Partners will open this link, review the context, and submit their written response.",
       uploadHint: "No file upload",
     };
   }
@@ -818,7 +818,7 @@ function getContentRequirement(categoryId: string, contentType: string): Content
     return {
       mode: "either",
       title: "Campaign content",
-      detail: "Upload the cover art or paste a direct link contributors can open and use for the campaign.",
+      detail: "Upload the cover art or paste a direct link growth partners can open and use for the campaign.",
       linkLabel: "Cover art link",
       linkHint: "Use this if the cover art already lives online.",
       uploadHint: "Upload image, PDF, or use a link",
@@ -829,9 +829,9 @@ function getContentRequirement(categoryId: string, contentType: string): Content
     return {
       mode: "link",
       title: "Campaign link required",
-      detail: "This content type needs a link contributors can open directly. File upload is hidden so the instruction stays clear.",
+      detail: "This content type needs a link growth partners can open directly. File upload is hidden so the instruction stays clear.",
       linkLabel: "Required link",
-      linkHint: "Contributors will open this link to complete the task.",
+      linkHint: "Growth Partners will open this link to complete the task.",
       uploadHint: "No file upload",
     };
   }
@@ -840,9 +840,9 @@ function getContentRequirement(categoryId: string, contentType: string): Content
     return {
       mode: "upload",
       title: "Campaign asset required",
-      detail: "This content type needs an uploaded visual or document that contributors can use for the campaign.",
+      detail: "This content type needs an uploaded visual or document that growth partners can use for the campaign.",
       linkLabel: "Optional supporting link",
-      linkHint: "Add a link only if contributors need extra context.",
+      linkHint: "Add a link only if growth partners need extra context.",
       uploadHint: "Images, PDF, or document only",
     };
   }
@@ -850,7 +850,7 @@ function getContentRequirement(categoryId: string, contentType: string): Content
   return {
     mode: "either",
     title: "Campaign content",
-    detail: "Upload the campaign material or add a link, depending on what contributors need to complete the task.",
+    detail: "Upload the campaign material or add a link, depending on what growth partners need to complete the task.",
     linkLabel: "Campaign link",
     linkHint: "Use this if the content already lives online.",
     uploadHint: "Upload a file or use a link",
@@ -921,6 +921,7 @@ export default function NewCampaignPage() {
   const [policyAccepted, setPolicyAccepted] = useState(false);
   const [success, setSuccess] = useState(false);
   const [draftReady, setDraftReady] = useState(false);
+  const [scheduledStartAt, setScheduledStartAt] = useState("");
   const skipCategorySyncRef = useRef(false);
   const lastStepIndexRef = useRef(stepIndex);
 
@@ -971,7 +972,7 @@ export default function NewCampaignPage() {
     objective.trim().length >= 10 ? "" : "campaign objective",
     hasCampaignAsset ? "" : "campaign link or attached asset",
     hasPricingSelection ? "" : "selected platform",
-    hasContributorActions ? "" : category.id === "apps" ? "app test instructions" : "contributor action",
+    hasContributorActions ? "" : category.id === "apps" ? "app test instructions" : "growth partner action",
     hasLocationTarget ? "" : "target location",
     policyAccepted ? "" : "prohibited campaign confirmation",
   ].filter(Boolean);
@@ -1087,6 +1088,23 @@ export default function NewCampaignPage() {
     setLocationSearchDraft(draft.locationSearchDraft ?? createEmptyTargetLocation());
     setError("");
   };
+
+  useEffect(() => {
+    if (!draftReady) return;
+    const sourceId = new URLSearchParams(window.location.search).get("duplicate");
+    if (!sourceId || !/^\d+$/.test(sourceId)) return;
+    let cancelled = false;
+    fetch(`/api/business/campaign-tools?source=${encodeURIComponent(sourceId)}`, { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "The duplicated campaign could not be loaded.");
+        if (!cancelled && data.draft) applyDraft(data.draft as CampaignBuilderDraft);
+      })
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError instanceof Error ? loadError.message : "The duplicated campaign could not be loaded.");
+      });
+    return () => { cancelled = true; };
+  }, [draftReady]);
 
   useEffect(() => {
     fetch("/api/business/me")
@@ -1243,7 +1261,7 @@ export default function NewCampaignPage() {
       setAssetMimeType("");
       setAssetPreviewUrl("");
       setAssetDataUrl("");
-      setError("Upload a campaign asset under 2.5MB so it can be stored and shown to contributors.");
+      setError("Upload a campaign asset under 2.5MB so it can be stored and shown to growth partners.");
       return;
     }
     setError("");
@@ -1399,7 +1417,7 @@ export default function NewCampaignPage() {
       return;
     }
     if (stepIndex === 4 && category.id === "apps" && appInstructionSteps.length === 0) {
-      setError("Write the app test instructions contributors should follow.");
+      setError("Write the app test instructions growth partners should follow.");
       return;
     }
     if (stepIndex === 5 && !hasLocationTarget) {
@@ -1453,7 +1471,7 @@ export default function NewCampaignPage() {
       `Platforms: ${selectedPlatforms.join(", ")}`,
       selectedInterests.length > 0 ? `Target interests: ${selectedInterests.join(", ")}` : "Target interests: Broad audience",
       `Target location: ${locationSummary}`,
-      `Contributor actions: ${contributorSteps.join(" | ")}`,
+      `Growth Partner actions: ${contributorSteps.join(" | ")}`,
       `Reward: ${pricing.rewardQlt.toLocaleString()} QLT per approved participation.`,
     ].join("\n");
 
@@ -1482,6 +1500,7 @@ export default function NewCampaignPage() {
       target_states: locationMode === "nationwide" ? [] : locationStateTargets,
       campaign_goal: goal,
       campaign_package: reach.name,
+      scheduled_start_at: scheduledStartAt || null,
       campaign_metadata: {
         productBibleVersion: "participation-growth-v1",
         missionCategoryId: category.id,
@@ -1576,7 +1595,7 @@ export default function NewCampaignPage() {
               <span className="successStatus">Submitted successfully</span>
               <p className="eyebrow">Campaign submitted</p>
               <h1>{title || selectedGoalInfo.titlePlaceholder}</h1>
-              <p>Your campaign is now in review. Once approved, contributors will be able to participate and approved completions will be paid from the reserved campaign budget.</p>
+              <p>Your campaign is now in review. Once approved, growth partners will be able to participate and approved completions will be paid from the reserved campaign budget.</p>
             </div>
             <div className="successSummaryGrid" aria-label="Campaign submission summary">
               <article>
@@ -1681,13 +1700,13 @@ export default function NewCampaignPage() {
                 </label>
                 <label className="fieldBlock">
                   Campaign objective
-                  <textarea value={objective} onChange={(event) => setObjective(event.target.value)} placeholder="Describe what contributors should help you achieve." />
+                  <textarea value={objective} onChange={(event) => setObjective(event.target.value)} placeholder="Describe what growth partners should help you achieve." />
                 </label>
               </StepSection>
             )}
 
             {stepIndex === 2 && (
-              <StepSection eyebrow="Step 3" title="Attach campaign content" note="Add the exact content contributors will promote, test, join, review, or respond to.">
+              <StepSection eyebrow="Step 3" title="Attach campaign content" note="Add the exact content growth partners will promote, test, join, review, or respond to.">
                 <div className="pillGrid">
                   {category.contentTypes.map((item) => (
                     <button key={item} type="button" className={contentType === item ? "pill active" : "pill"} onClick={() => selectContentType(item)}>{item}</button>
@@ -1728,11 +1747,11 @@ export default function NewCampaignPage() {
                   <textarea
                     value={contentCaption}
                     onChange={(event) => setContentCaption(event.target.value)}
-                    placeholder="Write the caption, message, hashtags, or post text contributors should use with this content."
+                    placeholder="Write the caption, message, hashtags, or post text growth partners should use with this content."
                     rows={4}
                     maxLength={1200}
                   />
-                  <span className="fieldHelp">{contentCaption.trim().length.toLocaleString()}/1,200 characters. Contributors will see this before the action steps.</span>
+                  <span className="fieldHelp">{contentCaption.trim().length.toLocaleString()}/1,200 characters. Growth Partners will see this before the action steps.</span>
                 </label>
                 {!acceptsLink && contentLink && (
                   <div className="fieldNotice">
@@ -1795,17 +1814,17 @@ export default function NewCampaignPage() {
             )}
 
             {stepIndex === 4 && (
-              <StepSection eyebrow="Step 5" title="Confirm actions and reach" note="Set what contributors must do and how many people should complete the campaign.">
+              <StepSection eyebrow="Step 5" title="Confirm actions and reach" note="Set what growth partners must do and how many people should complete the campaign.">
                 {category.id === "apps" ? (
                   <div className="appInstructionPanel">
                     <header className="appInstructionTop">
                       <div>
-                        <p className="inlineSectionTitle">Contributor checklist</p>
+                        <p className="inlineSectionTitle">Growth Partner checklist</p>
                         <h3>What should testers do?</h3>
                       </div>
                       <span>{appInstructionSteps.length > 0 ? `${appInstructionSteps.length} steps added` : "Required"}</span>
                     </header>
-                    <p className="appInstructionCopy">Enter the exact actions contributors must complete. Use one line per step so the mission is easy to follow.</p>
+                    <p className="appInstructionCopy">Enter the exact actions growth partners must complete. Use one line per step so the mission is easy to follow.</p>
                     <label className="appInstructionEditor">
                       <textarea
                         value={appContributorInstructions}
@@ -1815,7 +1834,7 @@ export default function NewCampaignPage() {
                         }}
                         placeholder={"Install the app and create an account\nOpen the wallet page and test the fund button\nTake screenshots of each completed step\nWrite what worked, what failed, and what confused you"}
                       />
-                      <small>Each line becomes a separate contributor step.</small>
+                      <small>Each line becomes a separate growth partner step.</small>
                     </label>
                     <div className="appTestSummary">
                       <span>Selected test path</span>
@@ -1843,13 +1862,13 @@ export default function NewCampaignPage() {
                   {reachPackages.map((item) => (
                     <button key={item.id} type="button" className={item.id === reachId ? "packageCard active" : "packageCard"} onClick={() => setReachId(item.id)}>
                       <strong>{item.name}</strong>
-                      <span>{item.contributors.toLocaleString()} contributors</span>
+                      <span>{item.contributors.toLocaleString()} growth partners</span>
                       <small>{item.duration}</small>
                     </button>
                   ))}
                 </div>
                 <label className="fieldBlock compact">
-                  Custom contributor quantity
+                  Custom growth partner quantity
                   <input type="number" min="1" value={customContributors} onChange={(event) => setCustomContributors(event.target.value)} placeholder="Use package quantity" />
                 </label>
               </StepSection>
@@ -1859,7 +1878,7 @@ export default function NewCampaignPage() {
               <StepSection eyebrow="Step 6" title="Target people and location" note="Choose the interests and location that make this campaign feel like real human participation.">
                 <div className="interestTargeting">
                   <div>
-                    <p className="inlineSectionTitle">Contributor interests</p>
+                    <p className="inlineSectionTitle">Growth Partner interests</p>
                     <span>Select interests that match the people most likely to understand, share, test, or respond to this campaign.</span>
                   </div>
                   <details className="interestDropdown">
@@ -1896,7 +1915,7 @@ export default function NewCampaignPage() {
                     <button type="button" className={locationMode === "nationwide" ? "locationMode active" : "locationMode"} onClick={() => setLocationMode("nationwide")}>
                       <span className="locationModeIcon">NG</span>
                       <strong>Nationwide</strong>
-                      <span>Open this campaign to contributors across the country.</span>
+                      <span>Open this campaign to growth partners across the country.</span>
                     </button>
                     <button type="button" className={locationMode === "exact" ? "locationMode active" : "locationMode"} onClick={() => setLocationMode("exact")}>
                       <span className="locationModeIcon">PIN</span>
@@ -1946,7 +1965,7 @@ export default function NewCampaignPage() {
                                     >
                                       <strong>{result.name}</strong>
                                       <span>{[result.type.replace("_", " "), result.region, result.country].filter(Boolean).join(" · ")}</span>
-                                      <small>{result.contributorCount.toLocaleString()} contributor{result.contributorCount === 1 ? "" : "s"} in this state</small>
+                                      <small>{result.contributorCount.toLocaleString()} growth partner{result.contributorCount === 1 ? "" : "s"} in this state</small>
                                     </button>
                                   ))}
                                 </div>
@@ -1963,7 +1982,7 @@ export default function NewCampaignPage() {
                                 <small>
                                   {[
                                     selectedMeta,
-                                    typeof location.contributorCount === "number" ? `${location.contributorCount.toLocaleString()} contributors in this state` : "",
+                                    typeof location.contributorCount === "number" ? `${location.contributorCount.toLocaleString()} growth partners in this state` : "",
                                     location.population ? `${location.population.toLocaleString()} people est.` : "",
                                     location.boundary ? `${location.boundary.type.toUpperCase()} boundary` : "",
                                   ].filter(Boolean).join(" · ")}
@@ -1985,7 +2004,7 @@ export default function NewCampaignPage() {
                                 <small>
                                   {[
                                     selectedMeta,
-                                    typeof location.contributorCount === "number" ? `${location.contributorCount.toLocaleString()} contributors in this state` : "",
+                                    typeof location.contributorCount === "number" ? `${location.contributorCount.toLocaleString()} growth partners in this state` : "",
                                     location.population ? `${location.population.toLocaleString()} people est.` : "",
                                     location.boundary ? `${location.boundary.type.toUpperCase()} boundary` : "",
                                   ].filter(Boolean).join(" - ")}
@@ -2019,7 +2038,8 @@ export default function NewCampaignPage() {
             )}
 
             {stepIndex === 6 && (
-              <StepSection eyebrow="Step 7" title="Preview campaign" note="This is what the business and contributor experience are built from.">
+              <StepSection eyebrow="Step 7" title="Preview campaign" note="This is what the business and growth partner experience are built from.">
+                <label style={{display:'grid',gap:7,marginBottom:18,color:'#ddd',fontSize:13,fontWeight:800}}>Schedule launch (optional)<input type="datetime-local" min={new Date().toISOString().slice(0,16)} value={scheduledStartAt} onChange={e=>setScheduledStartAt(e.target.value)} style={{maxWidth:320,padding:12,borderRadius:10,border:'1px solid #292929',background:'#0c0c0c',color:'#fff'}}/><small style={{color:'#888',fontWeight:500}}>Admin approval remains required. A future time keeps the campaign scheduled until launch.</small></label>
                 <CampaignPreview
                   title={title || selectedGoalInfo.titlePlaceholder}
                   objective={objective || selectedGoalInfo.detail}
@@ -2194,7 +2214,7 @@ function CampaignPreview({
           <p>{objective}</p>
           {contentCaption.trim() ? (
             <div className="previewCaptionBox">
-              <strong>Caption for contributors</strong>
+              <strong>Caption for growth partners</strong>
               <span>{contentCaption.trim()}</span>
             </div>
           ) : null}
@@ -2235,7 +2255,7 @@ function CampaignPreview({
 
       <section className="previewSection">
         <div className="previewSectionHead">
-          <h3>Contributors will</h3>
+          <h3>Growth Partners will</h3>
           <button type="button" className="previewPillButton" onClick={onChangePackage}>{shownActions.length} selected</button>
         </div>
         <div className="previewActionGrid">
@@ -2245,7 +2265,7 @@ function CampaignPreview({
             </div>
           )) : (
             <div className="previewActionItem">
-              <p>No contributor actions selected.</p>
+              <p>No growth partner actions selected.</p>
             </div>
           )}
         </div>
@@ -2271,7 +2291,7 @@ function CampaignPreview({
           </div>
           <div className="previewSplit">
             <div><strong>{bundleName}</strong><span>{selectedPlatformLabel}</span></div>
-            <div><strong>{duration}</strong><span>{contributorCount.toLocaleString()} contributors</span></div>
+            <div><strong>{duration}</strong><span>{contributorCount.toLocaleString()} growth partners</span></div>
           </div>
         </article>
         <article className="previewSection">
@@ -2305,7 +2325,7 @@ function CampaignPreview({
           )}
           {showBudgetBreakdown && (
             <div id="preview-budget-breakdown" className="previewBudgetBreakdown" aria-label="Campaign budget breakdown">
-              <div><span>Contributor reward</span><strong>{contributorRewardsQlt.toLocaleString()} QLT</strong></div>
+              <div><span>Growth Partner reward</span><strong>{contributorRewardsQlt.toLocaleString()} QLT</strong></div>
               <div><span>Qeixova commission</span><strong>{qeixovaCommissionQlt.toLocaleString()} QLT</strong></div>
               <div><span>Verification fee</span><strong>{verificationFeeQlt.toLocaleString()} QLT</strong></div>
             </div>
@@ -2326,6 +2346,9 @@ const pageStyles = `
   .loadingShell,
   .successShell,
   .pageShell {
+    flex: 1 1 auto;
+    width: 0;
+    min-width: 0;
     min-height: 100vh;
     padding: 24px 24px 104px;
     background:
@@ -2345,7 +2368,7 @@ const pageStyles = `
   }
 
   .successPanel {
-    width: min(720px, 100%);
+    width: min(960px, 100%);
     display: grid;
     gap: 20px;
     justify-items: center;
@@ -2355,7 +2378,7 @@ const pageStyles = `
       radial-gradient(circle at 50% 0%, rgba(245, 166, 35, .14), transparent 36%),
       linear-gradient(180deg, #111312, #080909);
     border-radius: 12px;
-    padding: 34px;
+    padding: clamp(24px, 3vw, 44px);
     box-shadow: 0 18px 60px rgba(0, 0, 0, .34);
   }
 
@@ -2396,13 +2419,13 @@ const pageStyles = `
 
   .successPanel h1 {
     margin: 0;
-    max-width: 620px;
+    max-width: 760px;
     font-size: clamp(28px, 4vw, 40px);
     line-height: 1.08;
   }
 
   .successPanel p {
-    max-width: 610px;
+    max-width: 720px;
     margin: 0;
     color: #bdbdbd;
     line-height: 1.7;

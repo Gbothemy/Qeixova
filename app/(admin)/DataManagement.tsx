@@ -13,8 +13,8 @@ type ClearOption = {
 
 const OPTIONS: ClearOption[] = [
   { scope: "completions", label: "Clear Mission Submissions", description: "Removes all submission records and resets campaign usage counters. User balances are not affected.", danger: "medium", icon: "📋" },
-  { scope: "transactions", label: "Clear Transactions & Balances", description: "Deletes transaction history and resets every contributor QLT balance to zero.", danger: "high", icon: "💰" },
-  { scope: "tasks", label: "Deactivate All Missions", description: "Soft-disables all missions so contributors cannot discover them. They can be reactivated later.", danger: "medium", icon: "🔒" },
+  { scope: "transactions", label: "Clear Transactions & Balances", description: "Deletes transaction history and resets every growth partner QLT balance to zero.", danger: "high", icon: "💰" },
+  { scope: "tasks", label: "Deactivate All Missions", description: "Soft-disables all missions so growth partners cannot discover them. They can be reactivated later.", danger: "medium", icon: "🔒" },
   { scope: "tasks_hard", label: "Delete All Missions", description: "Permanently deletes all missions and their submission records. This cannot be undone.", danger: "high", icon: "🗑️" },
   { scope: "users", label: "Delete All Users", description: "Permanently deletes user accounts, balances, submissions, and transactions. Missions are kept.", danger: "critical", icon: "👥" },
   { scope: "all", label: "Wipe All App Data", description: "Deletes users, missions, submissions, and transactions. Use only when resetting a test environment.", danger: "critical", icon: "☢️" },
@@ -33,7 +33,7 @@ export default function DataManagement() {
       const response = await fetch("/api/admin/clear-data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scope }),
+        body: JSON.stringify({ scope, confirmation: `CONFIRM ${scope.toUpperCase()}` }),
       });
       const data = await response.json().catch(() => ({}));
       setResult({ ok: response.ok, message: data.message || data.error || "Operation finished." });
@@ -68,7 +68,7 @@ export default function DataManagement() {
 
       <div className="dataGrid">
         {OPTIONS.map((option) => {
-          const phrase = `DELETE ${option.scope.toUpperCase()}`;
+          const phrase = `CONFIRM ${option.scope.toUpperCase()}`;
           const isConfirming = confirming === option.scope;
           return (
             <article key={option.scope} className={`dataCard ${option.danger}`}>

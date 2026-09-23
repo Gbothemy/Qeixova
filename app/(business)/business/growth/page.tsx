@@ -183,7 +183,7 @@ export default function BusinessGrowthPage() {
               <div>
                 <p className="notificationEyebrow">{businessName} alerts</p>
                 <h1 className="businessPageTitle">Notifications</h1>
-                <p>Important campaign updates will appear here, just like a clean inbox for approvals, reviews, unread notices, and contributor actions.</p>
+                <p>Important campaign updates will appear here, just like a clean inbox for approvals, reviews, unread notices, and growth partner actions.</p>
               </div>
               <div className="heroStatus">
                 <span>Unread</span>

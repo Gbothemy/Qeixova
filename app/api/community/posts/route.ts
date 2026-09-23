@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { platformFeatureEnabled } from "@/lib/adminPlatform";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { createContributorNotification } from "@/lib/contributorNotifications";
@@ -53,6 +54,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if(!await platformFeatureEnabled("community")) return NextResponse.json({error:"Community posting is temporarily unavailable"},{status:503});
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -100,7 +102,7 @@ export async function POST(req: NextRequest) {
         userId: Number(postRows[0].user_id),
         type: "growth_activity",
         title: "New comment on your post",
-        message: `${postRows[0].full_name || "A contributor"} commented: ${content.slice(0, 120)}`,
+        message: `${postRows[0].full_name || "A growth partner"} commented: ${content.slice(0, 120)}`,
         href: "/growth",
         metadata: { postId, actorId: session.userId },
       });
@@ -140,7 +142,7 @@ export async function POST(req: NextRequest) {
           userId: Number(postRows[0].user_id),
           type: "growth_activity",
           title: "Reaction on your post",
-          message: `${postRows[0].full_name || "A contributor"} marked your growth feed post as helpful.`,
+          message: `${postRows[0].full_name || "A growth partner"} marked your growth feed post as helpful.`,
           href: "/growth",
           dedupeKey: `post:${postId}:reaction:${session.userId}`,
           metadata: { postId, actorId: session.userId },

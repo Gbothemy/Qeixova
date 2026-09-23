@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 
 export default function BusinessLoginPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", code: "" });
+  const [requiresTwoFactor,setRequiresTwoFactor]=useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,7 +19,8 @@ export default function BusinessLoginPage() {
       body: JSON.stringify(form),
     });
     const data = await res.json();
-    if (res.ok) router.push("/business/dashboard");
+    if (res.ok && data.requiresTwoFactor) { setRequiresTwoFactor(true); setError(data.message||""); }
+    else if (res.ok) router.push("/business/dashboard");
     else setError(data.error || "Login failed");
     setLoading(false);
   };
@@ -68,6 +70,7 @@ export default function BusinessLoginPage() {
                   onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required style={inp}
                   onFocus={e => (e.target.style.borderColor = "#F5A623")} onBlur={e => (e.target.style.borderColor = "#1e1e1e")} />
               </div>
+              {requiresTwoFactor&&<div><label style={{fontSize:11,fontWeight:700,color:'#aaa'}}>SECURITY CODE</label><input inputMode="numeric" maxLength={6} placeholder="6-digit email code" value={form.code} onChange={e=>setForm(p=>({...p,code:e.target.value.replace(/\D/g,'')}))} required style={inp}/></div>}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: 0.8, textTransform: "uppercase" }}>Password</label>
@@ -93,6 +96,7 @@ export default function BusinessLoginPage() {
               </button>
             </form>
             <p style={{ textAlign: "center", fontSize: 13, color: "#999", marginTop: 20 }}>
+              <Link href="/forgot-password" style={{color:'#F5A623',fontWeight:700,textDecoration:'none'}}>Forgot password?</Link><br/><br/>
               No account?{" "}
               <Link href="/register" style={{ color: "#F5A623", fontWeight: 700, textDecoration: "none" }}>Create one</Link>
             </p>
@@ -110,7 +114,7 @@ export default function BusinessLoginPage() {
               <div style={{ width: 24, height: 24, borderRadius: 6, background: "rgba(26,239,34,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <img src="/icon-profile.svg" width={12} height={12} style={{ filter: "invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)" }} alt="" />
               </div>
-              Contributor Login →
+              Growth Partner Login →
             </Link>
           </div>
         </div>

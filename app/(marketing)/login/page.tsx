@@ -59,10 +59,10 @@ export default function LoginPage() {
   return (
     <main className="loginPage">
       <section className="loginStage">
-        <section className="formPanel" aria-label="Contributor login form">
+        <section className="formPanel" aria-label="Growth Partner login form">
           <div className="formHeader">
             <p>Welcome back</p>
-            <h2>Contributor login</h2>
+            <h2>Growth Partner login</h2>
             <span>Sign in with the email connected to your account.</span>
           </div>
 
@@ -495,7 +495,7 @@ void String.raw`
             <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(26,239,34,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img src="/icon-profile.svg" width={14} height={14} style={{ filter: "invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)" }} alt="" />
             </div>
-            <span style={{ fontSize: 12, color: "#bbb" }}>Contributor Login</span>
+            <span style={{ fontSize: 12, color: "#bbb" }}>Growth Partner Login</span>
           </div>
           <Link href="/business/login" style={{ fontSize: 12, color: "#F5A623", fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 24, height: 24, borderRadius: 6, background: "rgba(245,166,35,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>

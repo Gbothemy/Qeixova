@@ -1,4 +1,7 @@
 {
   "buildCommand": "next build",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "crons": [
+    { "path": "/api/cron/admin-report", "schedule": "0 8 * * *" }
+  ]
 }

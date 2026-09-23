@@ -70,7 +70,7 @@ export default function BusinessDashboard() {
   const cards = [
     { label: "Campaigns", value: stats?.tasks.total ?? 0, sub: `${stats?.tasks.active ?? 0} active campaigns`, icon: "/icon-task.svg", accent: "#4a9eff" },
     { label: "Submissions", value: stats?.completions.total ?? 0, sub: `${stats?.completions.pending ?? 0} awaiting review`, icon: "/icon-survey.svg", accent: "#F5A623" },
-    { label: "Approved", value: stats?.completions.approved ?? 0, sub: "Verified contributor actions", icon: "/icon-check-circle.svg", accent: "#1AEF22" },
+    { label: "Approved", value: stats?.completions.approved ?? 0, sub: "Verified growth partner actions", icon: "/icon-check-circle.svg", accent: "#1AEF22" },
     { label: "Rejected", value: stats?.completions.rejected ?? 0, sub: "Did not qualify", icon: "/icon-alert.svg", accent: "#e53e3e" },
   ];
   const businessDisplayName = business.name?.trim() || "Business";

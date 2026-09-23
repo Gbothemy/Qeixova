@@ -1,17 +1,18 @@
 import { redirect } from "next/navigation";
-import { getAdminSession } from "@/lib/adminAuth";
+import { getAdminContext } from "@/lib/adminPlatform";
 import AdminSidebar from "./AdminSidebar";
+import AdminAccessGate from "./AdminAccessGate";
 import "./admin.css";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const isAdmin = await getAdminSession();
-  if (!isAdmin) redirect("/admin-login");
+  const admin = await getAdminContext();
+  if (!admin) redirect("/admin-login");
 
   return (
     <div className="admin-shell">
-      <AdminSidebar />
+      <AdminSidebar role={admin.role} name={admin.name} />
       <main className="admin-main">
-        {children}
+        <AdminAccessGate role={admin.role}>{children}</AdminAccessGate>
       </main>
     </div>
   );

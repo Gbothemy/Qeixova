@@ -9,7 +9,7 @@ import { INTEREST_OPTIONS } from "@/lib/interestTaxonomy";
 const BUSINESS_CATEGORIES = ["Content Distribution","Music Promotion","Community Growth","App Testing & Reviews","Surveys & Feedback","Local Business","Creator Brand","Event Promotion","E-commerce","Other"];
 const BUSINESS_GOALS = ["Brand awareness","Event awareness","Product promotion","Creator content promotion","Local visibility","New song awareness","Increase members","Signup/onboarding test","Bug discovery","Product feedback","Market research"];
 const _BUSINESS_CAMPAIGN_TYPES = ["Story & Status Awareness","Short-Form Video Boost","Community Distribution","Streaming Awareness","User Feedback","App Growth","Community Expansion"];
-const BUSINESS_ALERTS = ["Admin verification","Contributor proof submitted","Wallet and funding updates","Campaign approval or rejection","Unread alert details"];
+const BUSINESS_ALERTS = ["Admin verification","Growth Partner proof submitted","Wallet and funding updates","Campaign approval or rejection","Unread alert details"];
 const CONTRIBUTOR_INTERESTS = [...INTEREST_OPTIONS];
 const _TARGET_INTERESTS = [...INTEREST_OPTIONS];
 const PLATFORMS = ["WhatsApp Status","Facebook Story","Instagram Story","TikTok","Instagram Reels","Facebook Groups","Telegram Communities","Streaming Platform","Feedback Form","Android","iOS","Web App"];
@@ -110,7 +110,7 @@ export default function RegisterPage() {
   const [bizCity, _setBizCity] = useState("");
   const [bizAlerts] = useState<string[]>(BUSINESS_ALERTS);
 
-  // Contributor onboarding
+  // Growth Partner onboarding
   const [interests, setInterests] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
 
@@ -233,7 +233,7 @@ export default function RegisterPage() {
                   Welcome to <span className="shimmer-text">Qeixova Tasks</span>
                 </h1>
                 <p className="animate-fade-up delay-2" style={{ fontSize:14, color:"#ccc", lineHeight:1.7, marginBottom:36, maxWidth:380, margin:"0 auto 36px" }}>
-                  A community-powered growth platform where businesses gain visibility and contributors earn through meaningful participation.
+                  A community-powered growth platform where businesses gain visibility and growth partners earn through meaningful participation.
                 </p>
 
                 <div className="animate-fade-up delay-3" style={{ display:"flex", flexDirection:"column", gap:12 }}>
@@ -246,13 +246,13 @@ export default function RegisterPage() {
                     Continue as Business
                   </button>
 
-                  {/* Contributor button — green */}
+                  {/* Growth Partner button — green */}
                   <button onClick={()=>{ setAccountType("contributor"); setScreen("type"); }}
                     style={{ width:"100%", background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"#000", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer", boxShadow:"0 6px 20px rgba(26,239,34,0.28)", display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all 0.2s ease" }}
                     onMouseEnter={e=>(e.currentTarget.style.boxShadow="0 8px 28px rgba(26,239,34,0.45)")}
                     onMouseLeave={e=>(e.currentTarget.style.boxShadow="0 6px 20px rgba(26,239,34,0.28)")}>
-                    <Image src="/icon-profile.svg" alt="Contributor" width={18} height={18} style={{ objectFit:"contain", filter:"brightness(0)" }} />
-                    Continue as Contributor
+                    <Image src="/icon-profile.svg" alt="Growth Partner" width={18} height={18} style={{ objectFit:"contain", filter:"brightness(0)" }} />
+                    Continue as Growth Partner
                   </button>
                 </div>
 
@@ -301,7 +301,7 @@ export default function RegisterPage() {
                     <img src="/icon-profile.svg" width={26} height={26} style={{ filter:"brightness(0)" }} alt="" />
                   </div>
                     <div>
-                      <h2 style={{ fontSize:20, fontWeight:900, color:"#F5F5F5", marginBottom:3 }}>Contributor Account</h2>
+                      <h2 style={{ fontSize:20, fontWeight:900, color:"#F5F5F5", marginBottom:3 }}>Growth Partner Account</h2>
                       <p style={{ fontSize:13, color:"#bbb" }}>Earn by helping businesses grow</p>
                     </div>
                   </div>
@@ -309,7 +309,7 @@ export default function RegisterPage() {
                     Earn rewards by helping businesses and creators distribute content, test products, and grow online.
                   </p>
                   <div style={{ background:"#0a0a0a", borderRadius:14, padding:"18px", border:"1px solid #1a1a1a", marginBottom:24 }}>
-                    {["Complete participation tasks","Earn QLT rewards","Build contributor level","Access better campaigns","Join growth communities"].map(f => (
+                    {["Complete participation tasks","Earn QLT rewards","Build growth partner level","Access better campaigns","Join growth communities"].map(f => (
                       <div key={f} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                         <div style={{ width:6, height:6, borderRadius:"50%", background:"#1AEF22", flexShrink:0 }} />
                         <span style={{ fontSize:13, color:"#ccc" }}>{f}</span>
@@ -317,7 +317,7 @@ export default function RegisterPage() {
                     ))}
                   </div>
                   <button onClick={()=>setScreen("signup")} style={{ width:"100%", background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"#000", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer" }}>
-                    Create Contributor Account →
+                    Create Growth Partner Account →
                   </button>
                 </div>
               )}
@@ -344,7 +344,7 @@ export default function RegisterPage() {
                 <button onClick={()=>setScreen("type")} style={{ background:"none", border:"none", color:"#bbb", fontSize:13, cursor:"pointer", marginBottom:16, padding:0 }}>← Back</button>
                 <h2 style={{ fontWeight:800, fontSize:22, color:"#F5F5F5", marginBottom:6 }}>Create Your Account</h2>
                 <p style={{ fontSize:13, color:"#bbbbbb", marginBottom:24 }}>
-                  {accountType === "business" ? "Set up your business login." : "Set up your contributor account."}
+                  {accountType === "business" ? "Set up your business login." : "Set up your growth partner account."}
                 </p>
 
                 {error && <div style={{ background:"rgba(229,62,62,0.1)", border:"1px solid rgba(229,62,62,0.3)", borderRadius:10, padding:"11px 14px", marginBottom:20, fontSize:13, color:"#e53e3e", fontWeight:500 }}>⚠️ {error}</div>}
@@ -476,7 +476,7 @@ export default function RegisterPage() {
                 <div>
                   <StepBar current={1} total={2} color="#F5A623" />
                   <h2 style={{ fontSize:20, fontWeight:800, color:"#F5F5F5", marginBottom:4 }}>Business Setup</h2>
-                  <p style={{ fontSize:13, color:"#bbb", marginBottom:20 }}>Help us match you with the right contributors.</p>
+                  <p style={{ fontSize:13, color:"#bbb", marginBottom:20 }}>Help us match you with the right growth partners.</p>
                   <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
                     <div>
                       <label style={{ fontSize:11, fontWeight:700, color:"#aaa", letterSpacing:0.8, textTransform:"uppercase" }}>Business Category</label>
@@ -544,8 +544,8 @@ export default function RegisterPage() {
               {onboardStep === 3 && (
                 <div>
                   <StepBar current={3} total={3} />
-                  <h2 style={{ fontSize:20, fontWeight:800, color:"#F5F5F5", marginBottom:4 }}>Contributor Verification</h2>
-                  <p style={{ fontSize:13, color:"#bbb", marginBottom:20 }}>We verify contributors to protect campaign quality and ensure businesses receive authentic participation.</p>
+                  <h2 style={{ fontSize:20, fontWeight:800, color:"#F5F5F5", marginBottom:4 }}>Growth Partner Verification</h2>
+                  <p style={{ fontSize:13, color:"#bbb", marginBottom:20 }}>We verify growth partners to protect campaign quality and ensure businesses receive authentic participation.</p>
                   <div style={{ background:"#0a0a0a", borderRadius:14, padding:"18px", border:"1px solid #1a1a1a", marginBottom:20 }}>
                     {["Active account history","Real profile photo","Engagement consistency","Spam prevention review"].map(c=>(
                       <div key={c} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
@@ -581,7 +581,7 @@ export default function RegisterPage() {
                 {accountType === "business" ? "Welcome to a smarter way to grow visibility through real human participation." : "Welcome to a new way to earn through meaningful digital participation."}
               </h2>
               <p style={{ fontSize:14, color:"#bbb", lineHeight:1.7, marginBottom:32 }}>
-                {accountType === "business" ? "Your business account is ready. Create your first campaign and start reaching real people." : "Your contributor account is ready. Start completing tasks and earning QLT rewards."}
+                {accountType === "business" ? "Your business account is ready. Create your first campaign and start reaching real people." : "Your growth partner account is ready. Start completing tasks and earning QLT rewards."}
               </p>
               <button onClick={()=>router.push(accountType === "business" ? "/business/dashboard" : "/tasks")} style={{ width:"100%", background:`linear-gradient(135deg, ${accountType==="business"?"#F5A623, #d89420":"#1AEF22, #06B517"})`, color:"#000", border:"none", borderRadius:13, padding:"16px", fontWeight:800, fontSize:16, cursor:"pointer" }}>
                 {accountType === "business" ? "Launch Your First Campaign →" : "Start Completing Tasks →"}

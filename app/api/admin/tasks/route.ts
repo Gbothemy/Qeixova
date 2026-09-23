@@ -10,12 +10,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { sendCampaignLiveEmail } from "@/lib/email";
 import { checkAdminAuth } from "@/lib/adminAuth";
+import { getAdminContext, logAdminAction } from "@/lib/adminPlatform";
 import { createBusinessNotification } from "@/lib/businessNotifications";
 import { canonicalizeInterests } from "@/lib/interestTaxonomy";
 import { activateMissionExpiryByTask, expireElapsedMissions } from "@/lib/missionExpiry";
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"campaigns.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await expireElapsedMissions();
   const tasks = await sql`
     SELECT
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"campaigns.manage")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const { title, category, reward, duration, icon, color, instructions, steps, proof_type, proof_label, max_screenshots } = body;
@@ -78,15 +79,17 @@ export async function POST(req: NextRequest) {
     RETURNING id, title, category, reward, mission_type
   `;
 
+  await logAdminAction({action:"mission.created",entityType:"mission",entityId:result[0]?.id,after:result[0]},await getAdminContext());
   return NextResponse.json({ ok: true, task: result[0] });
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"campaigns.manage")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id, ...fields } = await req.json();
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
+  const before=(await sql`SELECT * FROM tasks WHERE id=${id}`)[0]??null;
   // Build dynamic update — only update provided fields
   const allowed = ["title", "category", "reward", "duration", "icon", "color", "instructions", "steps", "proof_type", "proof_label", "max_screenshots", "is_active", "total_budget", "task_link", "mission_type", "xp_reward", "min_level", "target_interests", "target_platforms", "target_states", "task_status", "campaign_status"];
   for (const key of allowed) {
@@ -149,7 +152,7 @@ export async function PATCH(req: NextRequest) {
               type: "approved",
               tone: "green",
               title: "Campaign activated",
-              body: `${taskInfo[0].title} is now active and visible to contributors.`,
+              body: `${taskInfo[0].title} is now active and visible to growth partners.`,
               status: "Active",
               href: `/business/tasks/${id}`,
               metadata: { taskId: id },
@@ -163,16 +166,19 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  await logAdminAction({action:"mission.updated",entityType:"mission",entityId:id,before,after:fields},await getAdminContext());
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"campaigns.manage")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
   // Soft delete — deactivate rather than destroy
+  const before=(await sql`SELECT id,title,is_active FROM tasks WHERE id=${id}`)[0]??null;
   await sql`UPDATE tasks SET is_active = FALSE WHERE id = ${id}`;
+  await logAdminAction({action:"mission.deactivated",entityType:"mission",entityId:id,before,after:{is_active:false}},await getAdminContext());
   return NextResponse.json({ ok: true });
 }

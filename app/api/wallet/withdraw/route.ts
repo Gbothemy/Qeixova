@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { platformFeatureEnabled } from "@/lib/adminPlatform";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { sendWithdrawalRequestedEmail } from "@/lib/email";
@@ -6,6 +7,7 @@ import { canWithdraw } from "@/lib/missionEngine";
 import { createContributorNotification } from "@/lib/contributorNotifications";
 
 export async function POST(req: NextRequest) {
+  if(!await platformFeatureEnabled("withdrawals")) return NextResponse.json({error:"Withdrawals are temporarily unavailable"},{status:503});
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

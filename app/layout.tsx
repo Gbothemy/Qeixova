@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Qeixova — Community-Powered Digital Growth",
-  description: "Launch campaigns with verified contributors, grow real visibility, and earn through meaningful digital participation.",
+  description: "Launch campaigns with verified growth partners, grow real visibility, and earn through meaningful digital participation.",
   icons: {
     icon: [{ url: "/qeixova-icon.png?v=2", type: "image/png" }],
     shortcut: "/qeixova-icon.png?v=2",
@@ -32,9 +33,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="shortcut icon" href="/qeixova-icon.png?v=2" type="image/png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <meta name="theme-color" content="#1AEF22" />
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
+        <Script id="qeixova-theme" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

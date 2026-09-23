@@ -9,6 +9,9 @@ export default function AdminLoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [challengeId, setChallengeId] = useState("");
+  const [code, setCode] = useState("");
+  const [developmentCode, setDevelopmentCode] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,10 +21,13 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, challengeId: challengeId || undefined, code: code || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) {
+      if (data.requiresTwoFactor && !challengeId) {
+        setChallengeId(data.challengeId);
+        setDevelopmentCode(data.developmentCode ?? "");
+      } else if (!res.ok) {
         setError(data.error ?? "Login failed");
       } else {
         router.push("/admin");
@@ -64,7 +70,7 @@ export default function AdminLoginPage() {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
+          {!challengeId && <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#aaa", marginBottom: 6 }}>
               Email
             </label>
@@ -84,9 +90,9 @@ export default function AdminLoginPage() {
               }}
               placeholder="admin@qeixova.com"
             />
-          </div>
+          </div>}
 
-          <div style={{ marginBottom: 24 }}>
+          {!challengeId && <div style={{ marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#aaa" }}>
                 Password
@@ -123,7 +129,8 @@ export default function AdminLoginPage() {
               }}
               placeholder="Enter admin password"
             />
-          </div>
+          </div>}
+          {challengeId && <div style={{marginBottom:24}}><label style={{display:"block",fontSize:13,fontWeight:700,color:"#666",marginBottom:6}}>Security code</label><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,""))} required style={{width:"100%",boxSizing:"border-box",padding:"14px",border:"1.5px solid #e0e0e0",borderRadius:8,fontSize:22,textAlign:"center",letterSpacing:8}} placeholder="000000"/><p style={{fontSize:12,color:"#777"}}>Enter the six-digit code sent to your administrator email.{developmentCode?` Development code: ${developmentCode}`:""}</p></div>}
 
           {error && (
             <div
@@ -156,7 +163,7 @@ export default function AdminLoginPage() {
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Verifying..." : challengeId ? "Verify & Sign In" : "Sign In"}
           </button>
         </form>
       </div>

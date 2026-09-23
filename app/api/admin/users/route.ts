@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "@/lib/adminAuth";
 import { sql } from "@/lib/db";
+import { getAdminContext, logAdminAction } from "@/lib/adminPlatform";
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"accounts.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search") ?? "";
@@ -121,11 +122,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await checkAdminAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await checkAdminAuth(req,"accounts.manage")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id, action, value } = await req.json();
   if (!id || !action) return NextResponse.json({ error: "id and action required" }, { status: 400 });
 
+  const before=(await sql`SELECT id,email,banned,trust_score,level_id FROM users WHERE id=${id}`)[0]??null;
   if (action === "ban") {
     await sql`UPDATE users SET banned = TRUE WHERE id = ${id}`;
   } else if (action === "unban") {
@@ -147,6 +149,8 @@ export async function PATCH(req: NextRequest) {
   } else {
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
+
+  await logAdminAction({action:`user.${action}`,entityType:"user",entityId:id,before,after:{value}},await getAdminContext());
 
   return NextResponse.json({ ok: true });
 }

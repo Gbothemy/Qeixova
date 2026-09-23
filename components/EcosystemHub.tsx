@@ -23,11 +23,11 @@ const contributorFlows: Flow[] = [
 ];
 
 const businessFlows: Flow[] = [
-  { title: "Proof Verification", description: "Review submitted proof, approve qualified work, reject weak proof.", steps: ["Open campaign details", "Inspect proof", "Approve or reject", "Contributor wallet updates"], status: "Live", href: "/business/tasks", accent: "#1AEF22" },
+  { title: "Proof Verification", description: "Review submitted proof, approve qualified work, reject weak proof.", steps: ["Open campaign details", "Inspect proof", "Approve or reject", "Growth Partner wallet updates"], status: "Live", href: "/business/tasks", accent: "#1AEF22" },
   { title: "Campaign Analytics", description: "Track participation, approvals, rejection rate, and campaign progress.", steps: ["View campaign stats", "Compare submissions", "Monitor approval quality", "Pause when needed"], status: "Live", href: "/business/tasks", accent: "#4a9eff" },
   { title: "Templates & Launching", description: "Use guided campaign categories for SMEs, creators, music, apps, and local promotion.", steps: ["Pick template type", "Set goal", "Add content", "Launch for review"], status: "Live", href: "/business/tasks/new", accent: "#F5A623" },
-  { title: "Funding & Budgeting", description: "Model campaign budget, contributor rewards, and reach before launch.", steps: ["Choose package", "Customize rewards", "Set contributor limit", "Preview spend"], status: "Live", href: "/business/tasks/new", accent: "#22c55e" },
-  { title: "Business Insights", description: "Turn campaign outcomes into growth intelligence and next-action suggestions.", steps: ["Find best categories", "Watch high-quality contributors", "Spot region trends", "Repeat winners"], status: "Ready", href: "/business/dashboard", accent: "#c084fc" },
+  { title: "Funding & Budgeting", description: "Model campaign budget, growth partner rewards, and reach before launch.", steps: ["Choose package", "Customize rewards", "Set growth partner limit", "Preview spend"], status: "Live", href: "/business/tasks/new", accent: "#22c55e" },
+  { title: "Business Insights", description: "Turn campaign outcomes into growth intelligence and next-action suggestions.", steps: ["Find best categories", "Watch high-quality growth partners", "Spot region trends", "Repeat winners"], status: "Ready", href: "/business/dashboard", accent: "#c084fc" },
   { title: "Trust Protection", description: "Reduce fraud through proof review, rejection records, trust scores, and audit trails.", steps: ["Review suspicious proof", "Reject duplicates", "Protect budget", "Escalate disputes"], status: "Live", href: "/business/tasks", accent: "#e53e3e" },
 ];
 

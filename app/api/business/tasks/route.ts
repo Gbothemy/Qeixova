@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { platformFeatureEnabled } from "@/lib/adminPlatform";
 import { getBusinessSession } from "@/lib/businessAuth";
 import { sql } from "@/lib/db";
 import { QLT_PROGRESS_REWARDS } from "@/lib/missionEngine";
@@ -13,12 +14,20 @@ import {
 import { canonicalizeInterests } from "@/lib/interestTaxonomy";
 import { expireElapsedMissions } from "@/lib/missionExpiry";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getBusinessSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const search = req.nextUrl.searchParams.get("search")?.trim() ?? "";
+  const status = req.nextUrl.searchParams.get("status")?.trim() ?? "all";
+  const page = Math.max(1, Number(req.nextUrl.searchParams.get("page")) || 1);
+  const pageSize = Math.min(50, Math.max(5, Number(req.nextUrl.searchParams.get("pageSize")) || 10));
+  const offset = (page - 1) * pageSize;
+  const searchLike = `%${search}%`;
+  const statusLike = status === "active" ? "active" : status;
   await expireElapsedMissions();
 
-  const tasks = await sql`
+  const [tasks, countRows] = await Promise.all([sql`
     SELECT
       t.*,
       t.task_status AS status,
@@ -30,14 +39,24 @@ export async function GET() {
     LEFT JOIN completions c ON c.task_id = t.id
     WHERE t.business_id = ${session.businessId}
       AND COALESCE(t.task_status, '') <> 'deleted'
+      AND (${search} = '' OR t.title ILIKE ${searchLike} OR t.category ILIKE ${searchLike} OR COALESCE(t.mission_type, '') ILIKE ${searchLike})
+      AND (${status} = 'all' OR COALESCE(t.task_status, CASE WHEN t.is_active THEN 'active' ELSE 'paused' END) = ${statusLike})
     GROUP BY t.id
     ORDER BY t.created_at DESC
-  `;
+    LIMIT ${pageSize} OFFSET ${offset}
+  `, sql`
+    SELECT COUNT(*)::int AS count FROM tasks t
+    WHERE t.business_id = ${session.businessId}
+      AND COALESCE(t.task_status, '') <> 'deleted'
+      AND (${search} = '' OR t.title ILIKE ${searchLike} OR t.category ILIKE ${searchLike} OR COALESCE(t.mission_type, '') ILIKE ${searchLike})
+      AND (${status} = 'all' OR COALESCE(t.task_status, CASE WHEN t.is_active THEN 'active' ELSE 'paused' END) = ${statusLike})
+  `]);
 
-  return NextResponse.json({ tasks });
+  return NextResponse.json({ tasks, pagination: { page, pageSize, total: Number(countRows[0]?.count ?? 0), pages: Math.max(1, Math.ceil(Number(countRows[0]?.count ?? 0) / pageSize)) } });
 }
 
 export async function POST(req: NextRequest) {
+  if(!await platformFeatureEnabled("campaignCreation")) return NextResponse.json({error:"Campaign creation is temporarily unavailable"},{status:503});
   const session = await getBusinessSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -46,10 +65,15 @@ export async function POST(req: NextRequest) {
     proof_type, proof_label, max_screenshots, task_link,
     total_budget, target_completion_count,
     mission_type, verification_type, difficulty, min_level,
-    target_professions, target_interests, target_platforms,
+    target_professions, target_interests, target_platforms, scheduled_start_at,
     target_age_ranges, target_genders, target_countries, target_states,
     campaign_goal, campaign_package, campaign_metadata,
   } = await req.json();
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_start_at TIMESTAMPTZ`;
+  const scheduledStart = scheduled_start_at ? new Date(scheduled_start_at) : null;
+  if (scheduledStart && (!Number.isFinite(scheduledStart.getTime()) || scheduledStart.getTime() <= Date.now())) {
+    return NextResponse.json({ error: "Scheduled launch must be a valid future date and time" }, { status: 400 });
+  }
 
   const rewardAmount = Number(reward);
   if (!title?.trim() || !category || !Number.isFinite(rewardAmount) || rewardAmount <= 0) {
@@ -135,7 +159,7 @@ export async function POST(req: NextRequest) {
       mission_type, xp_reward, verification_type, difficulty, min_level,
       target_professions, target_interests, target_platforms,
       target_age_ranges, target_genders, target_countries, target_states,
-      business_id, is_active, task_status,
+      business_id, is_active, task_status, scheduled_start_at,
       campaign_status, campaign_goal, campaign_pricing, campaign_metadata
     ) VALUES (
       ${title.trim()}, ${category}, ${rewardAmount},
@@ -148,7 +172,7 @@ export async function POST(req: NextRequest) {
       ${resolvedDifficulty}, ${resolvedMinLevel},
       ${target_professions || []}, ${resolvedTargetInterests}, ${target_platforms || []},
       ${target_age_ranges || []}, ${target_genders || []}, ${target_countries || []}, ${target_states || []},
-      ${session.businessId}, ${false}, ${campaignStatus},
+      ${session.businessId}, ${false}, ${campaignStatus}, ${scheduledStart?.toISOString() ?? null},
       ${campaignStatus}, ${resolvedCampaignGoal}, ${JSON.stringify(enginePricing)}::jsonb, ${JSON.stringify(metadata)}::jsonb
     )
     RETURNING id
@@ -189,7 +213,7 @@ export async function POST(req: NextRequest) {
     type: "verification",
     tone: "gold",
     title: "Campaign submitted for admin verification",
-    body: `${title.trim()} is waiting for admin approval. Contributors will not see it until verification is completed within 24 hours.`,
+    body: `${title.trim()} is waiting for admin approval. Growth Partners will not see it until verification is completed within 24 hours.`,
     status: "Pending approval",
     href: `/business/tasks/${result[0].id}`,
     metadata: { taskId: result[0].id, campaignId: campaign.campaignId, campaignStatus },

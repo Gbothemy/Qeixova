@@ -9,6 +9,7 @@ interface Withdrawal {
   label: string;
   created_at: string;
   status: string;
+  reconciliation?: { provider_reference?: string; reconciliation_status?: string; finance_note?: string } | null;
 }
 
 type StatusFilter = "all" | "pending" | "processing" | "completed" | "failed";
@@ -51,19 +52,28 @@ export default function WithdrawalsPage() {
 
   useEffect(() => { void Promise.resolve().then(fetchWithdrawals); }, [fetchWithdrawals]);
 
-  async function handleAction(id: number, action: "approve" | "processing" | "reject") {
+  async function handleAction(id: number, action: "approve" | "processing" | "reject" | "retry") {
     setActionLoading(id);
     setNotice(null);
     try {
+      let providerReference="",financeNote=""; let recipientVerified=false;
+      if(action==="approve"){
+        providerReference=window.prompt("Enter the verified payment-provider reference")?.trim()??"";
+        if(!providerReference){setActionLoading(null);return}
+        recipientVerified=window.confirm("Confirm that the recipient name and bank account were verified before payment.");
+        if(!recipientVerified){setActionLoading(null);return}
+        financeNote=window.prompt("Finance note (optional)")?.trim()??"";
+      } else if(action==="reject") financeNote=window.prompt("Reason for rejecting this withdrawal")?.trim()??"";
+      else if(action==="retry") financeNote=window.prompt("Reason for retrying this payout")?.trim()??"";
       const res = await fetch("/api/admin/withdrawals", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, action }),
+        body: JSON.stringify({ id, action, providerReference, financeNote, recipientVerified }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Withdrawal action failed");
-      const label = action === "approve" ? "marked paid" : action === "processing" ? "moved to processing" : "rejected";
-      setNotice({ type: "success", message: `Withdrawal ${label} successfully.` });
+      const label = action === "approve" ? "marked paid" : action === "processing" ? "moved to processing" : action === "retry" ? "queued for retry" : "rejected";
+      setNotice({ type: "success", message: data.message ?? `Withdrawal ${label} successfully.` });
       fetchWithdrawals();
     } catch (error) {
       setNotice({ type: "error", message: error instanceof Error ? error.message : "Withdrawal action failed" });
@@ -168,7 +178,7 @@ export default function WithdrawalsPage() {
                       </div>
                     )}
                     {(w.status === "completed" || w.status === "failed") && (
-                      <span style={{ color: "#667085", fontSize: 12 }}>—</span>
+                      w.status === "failed" ? <button onClick={()=>handleAction(w.id,"retry")} disabled={actionLoading===w.id} style={{padding:"5px 12px",borderRadius:6,border:"none",background:"#1565c0",color:"#fff",fontWeight:700,cursor:"pointer"}}>Retry payout</button> : <span style={{ color: "#667085", fontSize: 12 }}>{w.reconciliation?.provider_reference ? `Ref: ${w.reconciliation.provider_reference}` : "—"}</span>
                     )}
                   </td>
                 </tr>

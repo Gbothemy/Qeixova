@@ -178,7 +178,7 @@ export default function UsersPage() {
       </div>
 
       <div className="adminLocationOverview">
-        <LocationBreakdown title="Contributors by location" groups={locationGroups.filter((group) => group.account_type === "contributor")} />
+        <LocationBreakdown title="Growth Partners by location" groups={locationGroups.filter((group) => group.account_type === "contributor")} />
         <LocationBreakdown title="Businesses by location" groups={locationGroups.filter((group) => group.account_type === "business")} />
       </div>
 
@@ -243,7 +243,7 @@ export default function UsersPage() {
                             color: isBusiness ? "#b56d00" : "#2e7d32",
                           }}
                         >
-                          {isBusiness ? "Business" : "Contributor"}
+                          {isBusiness ? "Business" : "Growth Partner"}
                         </span>
                       </div>
                     </td>

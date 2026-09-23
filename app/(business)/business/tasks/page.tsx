@@ -44,11 +44,17 @@ export default function BusinessTasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionTaskId, setActionTaskId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
+  const [templates,setTemplates]=useState<Array<{id:number;title:string;metadata?:{sourceTaskId?:number}}>>([]);
 
   const load = useCallback(async () => {
     setError("");
     try {
-      const response = await fetch("/api/business/tasks", { cache: "no-store" });
+      const query = new URLSearchParams({ search, status: statusFilter, page: String(page), pageSize: "10" });
+      const response = await fetch(`/api/business/tasks?${query}`, { cache: "no-store" });
       if (response.status === 401) {
         router.push("/business/login");
         return;
@@ -56,12 +62,13 @@ export default function BusinessTasksPage() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Campaigns could not be loaded.");
       setTasks(Array.isArray(data.tasks) ? data.tasks : []);
+      if (data.pagination) setPagination(data.pagination);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Campaigns could not be loaded.");
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, search, statusFilter, page]);
 
   useEffect(() => {
     fetch("/api/business/me", { cache: "no-store" })
@@ -78,6 +85,7 @@ export default function BusinessTasksPage() {
       .catch(() => router.push("/business/login"));
 
     void load();
+    fetch('/api/business/campaign-tools').then(r=>r.json()).then(d=>setTemplates(d.templates||[])).catch(()=>{});
   }, [load, router]);
 
   const totals = useMemo(() => ({
@@ -105,6 +113,8 @@ export default function BusinessTasksPage() {
       setActionTaskId(null);
     }
   };
+  const duplicate = (task:Task) => { router.push(`/business/tasks/new?duplicate=${task.id}`); };
+  const saveTemplate = async (task:Task) => { const r=await fetch('/api/business/campaign-tools',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({taskId:task.id})}); setError(r.ok?'Campaign saved as a reusable template.':'Template could not be saved.'); };
 
   if (!business || loading) {
     return <BusinessLoading title="Loading campaigns" detail="Preparing campaign status, results, and submissions." />;
@@ -145,6 +155,13 @@ export default function BusinessTasksPage() {
           </section>
 
           <section className="businessCampaignTable">
+            {templates.length>0&&<div style={{padding:14,borderBottom:'1px solid #222'}}><strong style={{color:'#fff'}}>Saved templates</strong><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:9}}>{templates.map(t=><button key={t.id} type="button" onClick={()=>t.metadata?.sourceTaskId&&void duplicate({id:t.metadata.sourceTaskId} as Task)} style={{padding:'8px 11px',borderRadius:9,border:'1px solid #333',background:'#111',color:'#F5A623'}}>{t.title}</button>)}</div></div>}
+            <div style={{display:"flex",gap:10,padding:14,flexWrap:"wrap",background:"#0a0a0a",borderBottom:"1px solid #1b1b1b"}}>
+              <input aria-label="Search campaigns" value={search} onChange={(e)=>{setSearch(e.target.value);setPage(1);}} placeholder="Search campaigns..." style={{flex:"1 1 220px",padding:"11px 13px",borderRadius:10,border:"1px solid #262626",background:"#111",color:"#fff"}} />
+              <select aria-label="Filter campaign status" value={statusFilter} onChange={(e)=>{setStatusFilter(e.target.value);setPage(1);}} style={{padding:"11px 13px",borderRadius:10,border:"1px solid #262626",background:"#111",color:"#fff"}}>
+                <option value="all">All statuses</option><option value="active">Active</option><option value="pending_review">Under review</option><option value="paused">Paused</option><option value="expired">Expired</option><option value="rejected">Rejected</option>
+              </select>
+            </div>
             <div className="businessCampaignTableHead">
               <span>Campaign</span><span>Status</span><span>Reward</span><span>Results</span><span>Actions</span>
             </div>
@@ -171,6 +188,8 @@ export default function BusinessTasksPage() {
                     <span className="campaignResults">{Number(task.approved_completions || 0)}/{Number(task.total_completions || 0)}</span>
                     <div className="campaignRowActions">
                       <Link href={`/business/tasks/${task.id}`}>View</Link>
+                      <button type="button" onClick={()=>void duplicate(task)}>Duplicate</button>
+                      <button type="button" onClick={()=>void saveTemplate(task)}>Template</button>
                       {canToggle && (
                         <button
                           type="button"
@@ -186,6 +205,7 @@ export default function BusinessTasksPage() {
                 );
               })
             )}
+            {pagination.pages > 1 && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:14,background:"#0a0a0a"}}><button type="button" disabled={page<=1} onClick={()=>setPage(v=>v-1)}>Previous</button><span style={{color:"#aaa",fontSize:12}}>Page {pagination.page} of {pagination.pages} · {pagination.total} campaigns</span><button type="button" disabled={page>=pagination.pages} onClick={()=>setPage(v=>v+1)}>Next</button></div>}
           </section>
         </div>
       </main>
