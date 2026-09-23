@@ -40,7 +40,7 @@ function sanitizeProofValue(proofValue: string) {
     if (parsed.type === "screenshots" && Array.isArray(parsed.screenshots)) {
       const screenshots = parsed.screenshots
         .filter((shot) => typeof shot.dataUrl === "string" && shot.dataUrl.startsWith("data:image/"))
-        .slice(0, 5)
+        .slice(0, 8)
         .map((shot, index) => ({
           name: typeof shot.name === "string" && shot.name.trim() ? shot.name.slice(0, 120) : `proof-${index + 1}`,
           dataUrl: shot.dataUrl,
@@ -61,6 +61,7 @@ type ProofSubmission = {
   proofForVerification: string;
   storedProof: string | null;
   selectedPlatforms: { id: string; label: string; platform: string; rewardQlt: number }[];
+  screenshotCount: number;
 };
 
 function parseStoredProofJson(value: string | null) {
@@ -74,7 +75,7 @@ function parseStoredProofJson(value: string | null) {
 
 function parseProofSubmission(proofValue: string): ProofSubmission {
   const trimmed = proofValue.trim();
-  if (!trimmed) return { proofForVerification: "", storedProof: null, selectedPlatforms: [] };
+  if (!trimmed) return { proofForVerification: "", storedProof: null, selectedPlatforms: [], screenshotCount: 0 };
 
   try {
     const parsed = JSON.parse(trimmed) as {
@@ -97,7 +98,7 @@ function parseProofSubmission(proofValue: string): ProofSubmission {
     if (parsed.type === "screenshots" && Array.isArray(parsed.screenshots)) {
       const screenshots = parsed.screenshots
         .filter((shot) => typeof shot.dataUrl === "string" && shot.dataUrl.startsWith("data:image/"))
-        .slice(0, 5)
+        .slice(0, 8)
         .map((shot, index) => ({
           name: typeof shot.name === "string" && shot.name.trim() ? shot.name.slice(0, 120) : `proof-${index + 1}`,
           dataUrl: shot.dataUrl,
@@ -106,6 +107,7 @@ function parseProofSubmission(proofValue: string): ProofSubmission {
         proofForVerification: JSON.stringify({ type: "screenshots", screenshots }),
         storedProof: JSON.stringify({ type: "screenshots", screenshots, selectedPlatforms }),
         selectedPlatforms,
+        screenshotCount: screenshots.length,
       };
     }
 
@@ -114,9 +116,10 @@ function parseProofSubmission(proofValue: string): ProofSubmission {
       proofForVerification: value,
       storedProof: JSON.stringify({ type: parsed.type || "text", value, selectedPlatforms }),
       selectedPlatforms,
+      screenshotCount: 0,
     };
   } catch {
-    return { proofForVerification: trimmed, storedProof: sanitizeProofValue(trimmed), selectedPlatforms: [] };
+    return { proofForVerification: trimmed, storedProof: sanitizeProofValue(trimmed), selectedPlatforms: [], screenshotCount: 0 };
   }
 }
 
@@ -212,10 +215,16 @@ export async function POST(req: NextRequest) {
     const platformOptions = getCampaignPlatformOptions(task);
     const selectedIds = new Set(parsedProof.selectedPlatforms.map((option) => option.id));
     const selectedPlatformOptions = platformOptions.filter((option) => selectedIds.has(option.id));
+    const fixedRewardRegardlessOfPlatforms = (task.campaign_metadata as { fixedRewardRegardlessOfPlatforms?: boolean } | null)?.fixedRewardRegardlessOfPlatforms === true;
+    if (fixedRewardRegardlessOfPlatforms && (proofType !== "screenshot" || parsedProof.screenshotCount !== selectedPlatformOptions.length)) {
+      return NextResponse.json({ error: `Upload one screenshot for each selected platform (${selectedPlatformOptions.length}).` }, { status: 400 });
+    }
     if (platformOptions.length > 0 && selectedPlatformOptions.length === 0) {
       return NextResponse.json({ error: "Select at least one platform completed for this mission." }, { status: 400 });
     }
-    const selectedReward = platformOptions.length > 0
+    const selectedReward = fixedRewardRegardlessOfPlatforms
+      ? Number(task.reward)
+      : platformOptions.length > 0
       ? selectedPlatformOptions.reduce((total, option) => total + option.rewardQlt, 0)
       : Number(task.reward);
     const storedProofBase = parseStoredProofJson(parsedProof.storedProof);
@@ -261,13 +270,13 @@ export async function POST(req: NextRequest) {
       WHERE u.id = ${session.userId}
     `;
     const userLevel = Math.max(1, displayLevel(userLevelRows[0]?.level_number));
-    if (userLevel < minLevel) {
+    if (task.mission_key !== AWARENESS_MISSION_KEY && userLevel < minLevel) {
       return NextResponse.json({ error: `This mission requires Level ${minLevel}.` }, { status: 403 });
     }
 
     const allowedTypes = getAllowedMissionTypes(userLevelRows[0]?.unlock_features);
     const missionType = task.mission_type ?? "engagement";
-    if (!allowedTypes.has(missionType)) {
+    if (task.mission_key !== AWARENESS_MISSION_KEY && !allowedTypes.has(missionType)) {
       return NextResponse.json({ error: "This mission type is not unlocked for your level yet." }, { status: 403 });
     }
 

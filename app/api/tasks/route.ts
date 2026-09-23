@@ -203,13 +203,14 @@ export async function GET() {
 
     // Score + filter tasks
     const scored = tasks.map((task: Record<string, unknown>) => {
+      const isAwarenessMission = task.mission_key === AWARENESS_MISSION_KEY;
       // Level gate
       const minLevel = Number(task.min_level ?? 1);
-      const lockedByLevel = userLevelNum < minLevel;
+      const lockedByLevel = !isAwarenessMission && userLevelNum < minLevel;
 
       // Mission type gate
       const mType = task.mission_type as string;
-      const lockedByType = allowedMissionTypes.size > 0 ? !allowedMissionTypes.has(mType) : false;
+      const lockedByType = !isAwarenessMission && allowedMissionTypes.size > 0 ? !allowedMissionTypes.has(mType) : false;
 
       // Targeting score
       const stateTargets = deriveStateTargets(task);

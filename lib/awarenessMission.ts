@@ -2,8 +2,55 @@ import { sql } from "@/lib/db";
 import { ensureUniversalCampaignTaskColumns } from "@/lib/universalCampaignEngine";
 
 export const AWARENESS_MISSION_KEY = "qeixova-awareness-verification";
+export const AWARENESS_MISSION_REWARD_QLT = 1_000;
 
-/** A permanent, platform-owned mission that every contributor completes first. */
+const AWARENESS_PLATFORMS = [
+  "WhatsApp Status",
+  "Facebook",
+  "Instagram",
+  "TikTok",
+  "X",
+  "LinkedIn",
+  "Telegram",
+  "Snapchat",
+] as const;
+
+const AWARENESS_CAPTIONS = [
+  {
+    platform: "WhatsApp Status",
+    caption: "I just joined Qeixova, where people can promote, test, share feedback, and support growing ideas through real missions. Join me: https://qeixova.com/register #Qeixova #Growth",
+  },
+  {
+    platform: "Facebook",
+    caption: "Discover Qeixova: a place to support growing businesses and ideas by promoting, testing, sharing feedback, and completing real missions. Join the community: https://qeixova.com/register #Qeixova #GrowthPartners",
+  },
+  {
+    platform: "Instagram",
+    caption: "Good ideas grow when we support them 🌱 I joined Qeixova to promote, test, share feedback, and help growing ideas reach more people. Join in: https://qeixova.com/register #Qeixova #Growth #Community",
+  },
+  {
+    platform: "TikTok",
+    caption: "Found a new way to support growing ideas: Qeixova missions let you promote, test, share feedback, and help real projects grow. Join me at qeixova.com/register #Qeixova #Growth",
+  },
+  {
+    platform: "X",
+    caption: "I joined @qeixovatech to help growing ideas through promotion, testing, feedback, and sharing. Discover Qeixova: https://qeixova.com/register #Qeixova #GrowthPartners",
+  },
+  {
+    platform: "LinkedIn",
+    caption: "I’ve joined Qeixova, a platform connecting people with missions to promote, test, and provide feedback on growing ideas. Learn more and join: https://qeixova.com/register #Qeixova #Growth",
+  },
+  {
+    platform: "Telegram",
+    caption: "I joined Qeixova to support growing businesses and ideas with real missions—promote, test, share feedback, and help good work reach more people. Join here: https://qeixova.com/register #Qeixova",
+  },
+  {
+    platform: "Snapchat",
+    caption: "I’m on Qeixova! Join me in helping growing ideas through promotion, testing, and feedback. Sign up: qeixova.com/register #Qeixova #Growth",
+  },
+] as const;
+
+/** A permanent, platform-owned mission that every growth partner completes first. */
 export async function ensureAwarenessMission() {
   // Registration is often the first path through the application. Ensure the
   // fields used by this platform-owned mission exist before inserting it.
@@ -14,16 +61,52 @@ export async function ensureAwarenessMission() {
     INSERT INTO tasks (
       mission_key, title, category, reward, duration, icon, color,
       instructions, steps, proof_type, proof_label, max_screenshots,
+      target_platforms, campaign_metadata,
       is_active, task_status, campaign_status, mission_type, min_level
     ) VALUES (
-      ${AWARENESS_MISSION_KEY}, 'Qeixova Awareness & Verification', 'Getting Started',
-      0, '3 min', '🛡️', '#e8f5e9',
-      'Read the Qeixova community rules, mission-proof standards, and reward process. This one-time verification must be approved before you can access other missions.',
-      ARRAY['Read the Qeixova mission and community guidelines', 'Understand that proof must be genuine and submitted only after you complete a mission', 'Type: I understand the Qeixova mission rules'],
-      'text', 'Type: I understand the Qeixova mission rules', 1,
+      ${AWARENESS_MISSION_KEY}, 'Welcome to Qeixova: Share & Unlock', 'Getting Started',
+      ${AWARENESS_MISSION_REWARD_QLT}, '15 min', '🌱', '#e8f5e9',
+      'Share the Qeixova image on one or more of the listed social platforms using each platform caption. Choose only platforms where you have published the post and upload a screenshot for each. Once approved, your regular missions unlock. Reward: 1,000 QLT regardless of how many platforms you choose.',
+      ARRAY[
+        'Download the Qeixova image and publish it as a public post or status on one or more of these platforms: WhatsApp Status, Facebook, Instagram, TikTok, X, LinkedIn, Telegram, and Snapchat.',
+        'Select the platforms where you posted and use the matching caption provided. Keep each post visible until your submission is reviewed.',
+        'Upload one clear screenshot for each selected platform. Screenshots must show the published Qeixova image and enough of the account or platform screen to identify the post.'
+      ],
+      'screenshot', 'Choose the platforms where you posted and upload one screenshot for each selected platform.', 8,
+      ${AWARENESS_PLATFORMS}::text[],
+      ${JSON.stringify({
+        contentType: "Qeixova awareness image",
+        assetName: "qeixova-growth-partner-awareness.jpeg",
+        assetDataUrl: "/qeixova-growth-partner-awareness.jpeg",
+        assetMimeType: "image/jpeg",
+        fixedRewardRegardlessOfPlatforms: true,
+        selectedPricingLabel: "Choose one or more platforms",
+        selectedPricingPlatforms: AWARENESS_PLATFORMS,
+        selectedPricingOptions: AWARENESS_PLATFORMS.map((platform, index) => ({
+          id: `awareness-${index}`,
+          label: platform,
+          platform,
+          rewardQlt: AWARENESS_MISSION_REWARD_QLT / AWARENESS_PLATFORMS.length,
+        })),
+        captionOptions: AWARENESS_CAPTIONS,
+        objective: "Share the official Qeixova image on any platforms you use. Choose one or more, submit one screenshot per chosen platform, and receive 1,000 QLT if your submission is approved.",
+        audience: ["All growth partners"],
+      })}::jsonb,
       TRUE, 'active', 'live', 'engagement', 1
     )
     ON CONFLICT (mission_key) WHERE mission_key IS NOT NULL DO UPDATE SET
+      title = EXCLUDED.title,
+      reward = EXCLUDED.reward,
+      duration = EXCLUDED.duration,
+      icon = EXCLUDED.icon,
+      color = EXCLUDED.color,
+      instructions = EXCLUDED.instructions,
+      steps = EXCLUDED.steps,
+      proof_type = EXCLUDED.proof_type,
+      proof_label = EXCLUDED.proof_label,
+      max_screenshots = EXCLUDED.max_screenshots,
+      target_platforms = EXCLUDED.target_platforms,
+      campaign_metadata = EXCLUDED.campaign_metadata,
       is_active = TRUE, task_status = 'active', campaign_status = 'live'
     RETURNING id
   `;

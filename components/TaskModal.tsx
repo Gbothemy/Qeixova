@@ -145,6 +145,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
   const [selectedPlatformIds, setSelectedPlatformIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [copiedCaption, setCopiedCaption] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const metadata = task.campaign_metadata ?? {};
@@ -163,12 +164,15 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
       platform,
       rewardQlt: getBusinessPlatformRewardQlt(platform) ?? splitRewardAcrossPlatforms(Number(task.reward), arr.length)[index],
     }));
+  const fixedRewardRegardlessOfPlatforms = metadata.fixedRewardRegardlessOfPlatforms === true;
   const activePlatformIds = selectedPlatformIds.filter((id) => platformOptions.some((option) => option.id === id));
   const selectedPlatformOptions = platformOptions.filter((option) => activePlatformIds.includes(option.id));
   const selectedReward = selectedPlatformOptions.length > 0
     ? selectedPlatformOptions.reduce((total, option) => total + option.rewardQlt, 0)
     : 0;
-  const displayedSubmitReward = platformOptions.length > 0 ? selectedReward : task.reward;
+  const displayedSubmitReward = fixedRewardRegardlessOfPlatforms
+    ? task.reward
+    : platformOptions.length > 0 ? selectedReward : task.reward;
   const requiredScreenshotCount = platformOptions.length > 0 ? Math.max(1, activePlatformIds.length) : maxShots;
   const visibleScreenshots = screenshots.slice(0, requiredScreenshotCount);
   const location = metadata.targetLocation?.summary || list(task.target_states, "Nationwide");
@@ -177,7 +181,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
   const contentCaption = typeof metadata.contentCaption === "string" ? metadata.contentCaption.trim() : "";
   const assetDataUrl = typeof metadata.assetDataUrl === "string" ? metadata.assetDataUrl : "";
   const assetMimeType = typeof metadata.assetMimeType === "string" ? metadata.assetMimeType : "";
-  const isImageAsset = assetDataUrl.startsWith("data:image/");
+  const isImageAsset = assetDataUrl.startsWith("data:image/") || assetMimeType.startsWith("image/");
   const actionSteps = orderContributorSteps(task.steps?.length ? task.steps : task.instructions.split("\n").filter(Boolean));
   const matchScore = typeof task.matchScore === "number" ? Math.max(0, Math.min(100, task.matchScore)) : 100;
   const remainingSlots = task.target_completion_count
@@ -191,6 +195,16 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
       }
     }
   `;
+
+  const copyCaption = async (platform: string, caption: string) => {
+    try {
+      await navigator.clipboard.writeText(caption);
+      setCopiedCaption(platform);
+      window.setTimeout(() => setCopiedCaption(""), 1800);
+    } catch {
+      setError("Copy was unavailable. Select and copy the caption text instead.");
+    }
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -337,6 +351,20 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
                     <p>{contentCaption}</p>
                   </div>
                 ) : null}
+                {metadata.captionOptions?.length ? (
+                  <div className="campaignCaptionBlock">
+                    <span>Captions for each platform</span>
+                    {metadata.captionOptions.map(({ platform, caption }) => (
+                      <article key={platform} style={{ marginTop: 12 }}>
+                        <strong>{platform}</strong>
+                        <p>{caption}</p>
+                        <button type="button" onClick={() => void copyCaption(platform, caption)}>
+                          {copiedCaption === platform ? "Copied" : `Copy ${platform} caption`}
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
                 {assetDataUrl ? (
                   <div className="downloadAssetNote">
                     {isImageAsset && <img className="assetPreviewImage" src={assetDataUrl} alt="Campaign asset" />}
@@ -436,7 +464,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
                             onChange={() => handlePlatformToggle(option.id, checked)}
                           />
                           <span>{option.platform}</span>
-                          <strong>{option.rewardQlt.toLocaleString()} QLT</strong>
+                          {!fixedRewardRegardlessOfPlatforms && <strong>{option.rewardQlt.toLocaleString()} QLT</strong>}
                         </label>
                       );
                     })}

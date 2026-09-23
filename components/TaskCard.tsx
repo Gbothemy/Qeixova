@@ -9,6 +9,8 @@ export type CampaignMetadata = {
   assetMimeType?: string;
   contentLink?: string;
   contentCaption?: string;
+  fixedRewardRegardlessOfPlatforms?: boolean;
+  captionOptions?: Array<{ platform: string; caption: string }>;
   selectedPricingLabel?: string | null;
   selectedPricingOptions?: Array<{
     id: string;
