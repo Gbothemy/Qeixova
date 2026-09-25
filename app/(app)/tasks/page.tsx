@@ -105,6 +105,8 @@ export default function TasksPage() {
 
   const filtered = tasks
     .filter((task) => {
+      // Keep onboarding visible regardless of the member's board filters.
+      if (task.mission_key === "qeixova-awareness-verification") return true;
       const metadata = task.campaign_metadata ?? {};
       const text = [
         task.title,
@@ -134,6 +136,8 @@ export default function TasksPage() {
       return matchesQuery && matchesCategory && matchesProof && matchesReward && matchesAvailability;
     })
     .sort((a, b) => {
+      if (a.mission_key === "qeixova-awareness-verification") return -1;
+      if (b.mission_key === "qeixova-awareness-verification") return 1;
       const aScore = Number((a as FullTask & { matchScore?: number }).matchScore ?? 100);
       const bScore = Number((b as FullTask & { matchScore?: number }).matchScore ?? 100);
       return bScore - aScore || Number(b.reward) - Number(a.reward);

@@ -8,6 +8,7 @@ const MAX_PROOF_IMAGE_BYTES = 2.5 * 1024 * 1024;
 
 export interface FullTask {
   id: number;
+  mission_key?: string;
   title: string;
   category: string;
   reward: number;
@@ -149,6 +150,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const metadata = task.campaign_metadata ?? {};
+  const isAwarenessMission = task.mission_key === "qeixova-awareness-verification";
   const maxShots = task.max_screenshots ?? 1;
   const platforms = metadata.selectedPricingPlatforms?.length ? metadata.selectedPricingPlatforms : task.target_platforms;
   const platformOptions = metadata.selectedPricingOptions?.length
@@ -173,6 +175,20 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
   const displayedSubmitReward = fixedRewardRegardlessOfPlatforms
     ? task.reward
     : platformOptions.length > 0 ? selectedReward : task.reward;
+  const awarenessMinReward = platformOptions.length > 0
+    ? Math.min(...platformOptions.map((option) => option.rewardQlt))
+    : task.reward;
+  const awarenessMaxReward = platformOptions.length > 0
+    ? platformOptions.reduce((total, option) => total + option.rewardQlt, 0)
+    : task.reward;
+  const rewardBannerLabel = isAwarenessMission
+    ? selectedPlatformOptions.length > 0 ? "Selected reward" : "Possible reward range"
+    : "Approved reward";
+  const rewardBannerValue = isAwarenessMission
+    ? selectedPlatformOptions.length > 0
+      ? `${selectedReward.toLocaleString()} QLT`
+      : `${awarenessMinReward.toLocaleString()}–${awarenessMaxReward.toLocaleString()} QLT`
+    : `${task.reward.toLocaleString()} QLT`;
   const requiredScreenshotCount = platformOptions.length > 0 ? Math.max(1, activePlatformIds.length) : maxShots;
   const visibleScreenshots = screenshots.slice(0, requiredScreenshotCount);
   const location = metadata.targetLocation?.summary || list(task.target_states, "Nationwide");
@@ -313,7 +329,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
             <div className="successMark">OK</div>
             <span>Submission received</span>
             <h2>Proof sent for review</h2>
-            <p>Your completion for <strong>{task.title}</strong> is now pending verification. Approved work will release {task.reward.toLocaleString()} QLT to your wallet.</p>
+            <p>Your completion for <strong>{task.title}</strong> is now pending verification. Approved work will release {(isAwarenessMission ? displayedSubmitReward : task.reward).toLocaleString()} QLT to your wallet.</p>
             <div className="pendingReward">
               <span>Pending reward</span>
               <strong>+{displayedSubmitReward.toLocaleString()} QLT</strong>
@@ -381,8 +397,8 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
 
             <div className="rewardBanner">
               <div>
-                <span>Approved reward</span>
-                <strong>{task.reward.toLocaleString()} QLT</strong>
+                <span>{rewardBannerLabel}</span>
+                <strong>{rewardBannerValue}</strong>
               </div>
               <div>
                 <span>Estimated time</span>

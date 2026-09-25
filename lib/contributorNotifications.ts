@@ -102,7 +102,7 @@ export async function seedContributorTaskNotifications(userId: number) {
     : [];
 
   const tasks = await sql`
-    SELECT id, title, reward, created_at
+    SELECT id, title, reward, created_at, mission_key
     FROM tasks
     WHERE (
         is_active = true
@@ -129,11 +129,14 @@ export async function seedContributorTaskNotifications(userId: number) {
   `;
 
   for (const task of tasks) {
+    const isWelcomeMission = task.mission_key === "qeixova-awareness-verification";
     await createContributorNotification({
       userId,
       type: "task_available",
       title: "New mission available",
-      message: `${task.title} matches your profile and pays ${Number(task.reward ?? 0).toLocaleString()} QLT.`,
+      message: isWelcomeMission
+        ? "Choose the platforms you use to earn up to 10,000 QLT. WhatsApp, Facebook, Instagram, and Telegram pay 1,500 QLT each; TikTok, X, LinkedIn, and Snapchat pay 1,000 QLT each."
+        : `${task.title} matches your profile and pays ${Number(task.reward ?? 0).toLocaleString()} QLT.`,
       href: "/tasks",
       dedupeKey: `task:${task.id}`,
       metadata: { taskId: Number(task.id), reward: Number(task.reward ?? 0) },

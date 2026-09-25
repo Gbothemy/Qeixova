@@ -4,6 +4,7 @@ import { ensureCompletionAttemptSchema } from "@/lib/antiFraud";
 
 export const AWARENESS_MISSION_KEY = "qeixova-awareness-verification";
 export const AWARENESS_MISSION_REWARD_QLT = 1_000;
+export const AWARENESS_MISSION_MAX_REWARD_QLT = 10_000;
 
 const AWARENESS_PLATFORMS = [
   "WhatsApp Status",
@@ -15,6 +16,17 @@ const AWARENESS_PLATFORMS = [
   "Telegram",
   "Snapchat",
 ] as const;
+
+const AWARENESS_PLATFORM_REWARDS: Record<(typeof AWARENESS_PLATFORMS)[number], number> = {
+  "WhatsApp Status": 1_500,
+  Facebook: 1_500,
+  Instagram: 1_500,
+  TikTok: 1_000,
+  X: 1_000,
+  LinkedIn: 1_000,
+  Telegram: 1_500,
+  Snapchat: 1_000,
+};
 
 const AWARENESS_CAPTIONS = [
   {
@@ -67,8 +79,8 @@ export async function ensureAwarenessMission() {
       is_active, task_status, campaign_status, mission_type, min_level
     ) VALUES (
       ${AWARENESS_MISSION_KEY}, 'Welcome to Qeixova: Share & Unlock', 'Getting Started',
-      ${AWARENESS_MISSION_REWARD_QLT}, '15 min', '🌱', '#e8f5e9',
-      'Share the Qeixova image on one or more of the listed social platforms using each platform caption. Choose only platforms where you have published the post and upload a screenshot for each. Once approved, your regular missions unlock. Reward: 1,000 QLT regardless of how many platforms you choose.',
+      ${AWARENESS_MISSION_MAX_REWARD_QLT}, '15 min', '🌱', '#e8f5e9',
+      'Share the Qeixova image on one or more of the listed social platforms using each platform caption. Choose only platforms where you have published the post and upload a screenshot for each. WhatsApp Status, Facebook, Instagram, and Telegram pay 1,500 QLT each; TikTok, X, LinkedIn, and Snapchat pay 1,000 QLT each. Rewards add up across the platforms you select. Once approved, your regular missions unlock.',
       ARRAY[
         'Download the Qeixova image and publish it as a public post or status on one or more of these platforms: WhatsApp Status, Facebook, Instagram, TikTok, X, LinkedIn, Telegram, and Snapchat.',
         'Select the platforms where you posted and use the matching caption provided. Keep each post visible until your submission is reviewed.',
@@ -81,17 +93,17 @@ export async function ensureAwarenessMission() {
         assetName: "qeixova-growth-partner-awareness.jpeg",
         assetDataUrl: "/qeixova-growth-partner-awareness.jpeg",
         assetMimeType: "image/jpeg",
-        fixedRewardRegardlessOfPlatforms: true,
+        fixedRewardRegardlessOfPlatforms: false,
         selectedPricingLabel: "Choose one or more platforms",
         selectedPricingPlatforms: AWARENESS_PLATFORMS,
         selectedPricingOptions: AWARENESS_PLATFORMS.map((platform, index) => ({
           id: `awareness-${index}`,
           label: platform,
           platform,
-          rewardQlt: AWARENESS_MISSION_REWARD_QLT / AWARENESS_PLATFORMS.length,
+          rewardQlt: AWARENESS_PLATFORM_REWARDS[platform],
         })),
         captionOptions: AWARENESS_CAPTIONS,
-        objective: "Share the official Qeixova image on any platforms you use. Choose one or more, submit one screenshot per chosen platform, and receive 1,000 QLT if your submission is approved.",
+        objective: "Share the official Qeixova image on any platforms you use. WhatsApp Status, Facebook, Instagram, and Telegram pay 1,500 QLT each; TikTok, X, LinkedIn, and Snapchat pay 1,000 QLT each. Select one or more platforms, submit one screenshot per platform, and earn the selected rewards if approved.",
         audience: ["All growth partners"],
       })}::jsonb,
       TRUE, 'active', 'live', 'engagement', 1
@@ -107,6 +119,8 @@ export async function ensureAwarenessMission() {
       proof_type = EXCLUDED.proof_type,
       proof_label = EXCLUDED.proof_label,
       max_screenshots = EXCLUDED.max_screenshots,
+      total_budget = 0,
+      budget_used = 0,
       target_platforms = EXCLUDED.target_platforms,
       campaign_metadata = EXCLUDED.campaign_metadata,
       target_professions = ARRAY[]::text[],

@@ -39,6 +39,7 @@ export type CampaignMetadata = {
 
 export interface Task {
   id: number;
+  mission_key?: string;
   title: string;
   category: string;
   reward: number;
@@ -94,6 +95,14 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
   const locked = task.lockedByLevel || task.lockedByType;
   const badge = MISSION_BADGE[task.mission_type ?? "engagement"] ?? MISSION_BADGE.engagement;
   const metadata = task.campaign_metadata ?? {};
+  const isAwarenessMission = task.mission_key === "qeixova-awareness-verification";
+  const awarenessPlatformRewards = isAwarenessMission ? metadata.selectedPricingOptions ?? [] : [];
+  const awarenessMinReward = awarenessPlatformRewards.length
+    ? Math.min(...awarenessPlatformRewards.map((option) => option.rewardQlt))
+    : task.reward;
+  const awarenessMaxReward = awarenessPlatformRewards.length
+    ? awarenessPlatformRewards.reduce((total, option) => total + option.rewardQlt, 0)
+    : task.reward;
   const platforms = metadata.selectedPricingPlatforms?.length ? metadata.selectedPricingPlatforms : task.target_platforms;
   const location = metadata.targetLocation?.summary || joinList(task.target_states, "Nationwide");
   const interests = metadata.selectedInterests?.length ? metadata.selectedInterests : task.target_interests;
@@ -127,8 +136,10 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
         </div>
 
         <div className="missionReward">
-          <span>Reward</span>
-          <strong>+{task.reward.toLocaleString()}</strong>
+          <span>{isAwarenessMission ? "Reward range" : "Reward"}</span>
+          <strong>{isAwarenessMission
+            ? `${awarenessMinReward.toLocaleString()}–${awarenessMaxReward.toLocaleString()}`
+            : `+${task.reward.toLocaleString()}`}</strong>
           <small>QLT</small>
         </div>
       </div>

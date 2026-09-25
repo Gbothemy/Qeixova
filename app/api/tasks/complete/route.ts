@@ -222,7 +222,8 @@ export async function POST(req: NextRequest) {
     const selectedIds = new Set(parsedProof.selectedPlatforms.map((option) => option.id));
     const selectedPlatformOptions = platformOptions.filter((option) => selectedIds.has(option.id));
     const fixedRewardRegardlessOfPlatforms = (task.campaign_metadata as { fixedRewardRegardlessOfPlatforms?: boolean } | null)?.fixedRewardRegardlessOfPlatforms === true;
-    if (fixedRewardRegardlessOfPlatforms && (proofType !== "screenshot" || parsedProof.screenshotCount !== selectedPlatformOptions.length)) {
+    const requireScreenshotPerPlatform = fixedRewardRegardlessOfPlatforms || isWelcomeMission;
+    if (requireScreenshotPerPlatform && (proofType !== "screenshot" || parsedProof.screenshotCount !== selectedPlatformOptions.length)) {
       return NextResponse.json({ error: `Upload one screenshot for each selected platform (${selectedPlatformOptions.length}).` }, { status: 400 });
     }
     if (platformOptions.length > 0 && selectedPlatformOptions.length === 0) {
