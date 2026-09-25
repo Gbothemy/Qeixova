@@ -135,7 +135,7 @@ export async function seedContributorTaskNotifications(userId: number) {
       type: "task_available",
       title: "New mission available",
       message: isWelcomeMission
-        ? "Choose the platforms you use to earn up to 10,000 QLT. WhatsApp, Facebook, Instagram, and Telegram pay 1,500 QLT each; TikTok, X, LinkedIn, and Snapchat pay 1,000 QLT each."
+        ? "Choose the platforms you use to earn up to 10,000 QLT. WhatsApp, Facebook, Instagram, and X pay 1,500 QLT each; TikTok, Telegram, LinkedIn, and Snapchat pay 1,000 QLT each."
         : `${task.title} matches your profile and pays ${Number(task.reward ?? 0).toLocaleString()} QLT.`,
       href: "/tasks",
       dedupeKey: `task:${task.id}`,

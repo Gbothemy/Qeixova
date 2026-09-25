@@ -22,9 +22,9 @@ const AWARENESS_PLATFORM_REWARDS: Record<(typeof AWARENESS_PLATFORMS)[number], n
   Facebook: 1_500,
   Instagram: 1_500,
   TikTok: 1_000,
-  X: 1_000,
+  X: 1_500,
   LinkedIn: 1_000,
-  Telegram: 1_500,
+  Telegram: 1_000,
   Snapchat: 1_000,
 };
 
@@ -80,7 +80,7 @@ export async function ensureAwarenessMission() {
     ) VALUES (
       ${AWARENESS_MISSION_KEY}, 'Welcome to Qeixova: Share & Unlock', 'Getting Started',
       ${AWARENESS_MISSION_MAX_REWARD_QLT}, '15 min', '🌱', '#e8f5e9',
-      'Share the Qeixova image on one or more of the listed social platforms using each platform caption. Choose only platforms where you have published the post and upload a screenshot for each. WhatsApp Status, Facebook, Instagram, and Telegram pay 1,500 QLT each; TikTok, X, LinkedIn, and Snapchat pay 1,000 QLT each. Rewards add up across the platforms you select. Once approved, your regular missions unlock.',
+      'Share the Qeixova image on one or more of the listed social platforms using each platform caption. Choose only platforms where you have published the post and upload a screenshot for each. WhatsApp Status, Facebook, Instagram, and X pay 1,500 QLT each; TikTok, Telegram, LinkedIn, and Snapchat pay 1,000 QLT each. Rewards add up across the platforms you select. Once approved, your regular missions unlock.',
       ARRAY[
         'Download the Qeixova image and publish it as a public post or status on one or more of these platforms: WhatsApp Status, Facebook, Instagram, TikTok, X, LinkedIn, Telegram, and Snapchat.',
         'Select the platforms where you posted and use the matching caption provided. Keep each post visible until your submission is reviewed.',
@@ -103,7 +103,7 @@ export async function ensureAwarenessMission() {
           rewardQlt: AWARENESS_PLATFORM_REWARDS[platform],
         })),
         captionOptions: AWARENESS_CAPTIONS,
-        objective: "Share the official Qeixova image on any platforms you use. WhatsApp Status, Facebook, Instagram, and Telegram pay 1,500 QLT each; TikTok, X, LinkedIn, and Snapchat pay 1,000 QLT each. Select one or more platforms, submit one screenshot per platform, and earn the selected rewards if approved.",
+        objective: "Share the official Qeixova image on any platforms you use. WhatsApp Status, Facebook, Instagram, and X pay 1,500 QLT each; TikTok, Telegram, LinkedIn, and Snapchat pay 1,000 QLT each. Select one or more platforms, submit one screenshot per platform, and earn the selected rewards if approved.",
         audience: ["All growth partners"],
       })}::jsonb,
       TRUE, 'active', 'live', 'engagement', 1
