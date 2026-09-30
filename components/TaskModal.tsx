@@ -453,7 +453,15 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
             {isSelected ? (
               <div className="missionDetailActions">
                 <button type="button" className="primaryAction" data-tour={isAwarenessMission ? "welcome-start-proof" : undefined} onClick={() => { setPhase("proof"); if (isAwarenessMission) window.dispatchEvent(new Event("qeixova-welcome-guide-refresh")); }}>Continue to submit proof</button>
-                <Link href="/tasks/submit" data-tour="my-missions-link" className="myMissionsLink">Back to My Missions</Link>
+                <Link
+                  href="/tasks/submit"
+                  data-tour="my-missions-link"
+                  className="myMissionsLink"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, width: "100%", minHeight: 44, boxSizing: "border-box", border: "1px solid rgba(255,255,255,.12)", borderRadius: 12, background: "rgba(255,255,255,.035)", color: "#c3c9c4", padding: "0 14px", fontSize: 12, fontWeight: 850, textDecoration: "none" }}
+                >
+                  <span aria-hidden="true" style={{ color: "#1aef22", fontSize: 15, lineHeight: 1 }}>←</span>
+                  <span>Back to My Missions</span>
+                </Link>
                 {onToggleSelection && <button type="button" className="removeSelectionAction" onClick={onToggleSelection}>Remove from My Missions</button>}
               </div>
             ) : (
@@ -883,7 +891,8 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           text-decoration: none;
         }
         .missionDetailActions { display: grid; gap: 9px; }
-        .myMissionsLink { display: flex; justify-content: center; padding: 8px; color: var(--muted); font-size: 12px; font-weight: 850; text-decoration: none; }
+        .myMissionsLink { transition: border-color .16s ease, background .16s ease, color .16s ease; }
+        .myMissionsLink:hover { border-color: rgba(26,239,34,.48) !important; background: rgba(26,239,34,.07) !important; color: #f5f5f5 !important; }
         .removeSelectionAction { width: 100%; border: 1px solid var(--border); border-radius: 11px; background: transparent; color: var(--muted); padding: 11px; font-size: 12px; font-weight: 850; cursor: pointer; }
         .platformChoice.active {
           border-color: rgba(26,239,34,.45);
