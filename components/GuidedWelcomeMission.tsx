@@ -34,7 +34,8 @@ export default function GuidedWelcomeMission() {
   const [selected, setSelected] = useState(false);
   const [started, setStarted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [manual, setManual] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [submittedLocally, setSubmittedLocally] = useState(false);
   const [detailTourStep, setDetailTourStep] = useState(0);
@@ -69,7 +70,9 @@ export default function GuidedWelcomeMission() {
   useEffect(() => {
     if (!user) return;
     setDismissed(window.localStorage.getItem(`qeixova-welcome-guide-dismissed-v1-${user.id}`) === "1");
+    setFinished(window.localStorage.getItem(`qeixova-welcome-guide-finished-v1-${user.id}`) === "1");
     setCompletionDismissed(window.localStorage.getItem(`qeixova-welcome-guide-complete-v1-${user.id}`) === "1");
+    setPreferencesLoaded(true);
   }, [user]);
 
   useEffect(() => {
@@ -79,11 +82,21 @@ export default function GuidedWelcomeMission() {
     window.addEventListener("qeixova-mission-selection", listener);
     window.addEventListener("qeixova-mission-started", listener);
     const refreshStage = () => setStageRevision((value) => value + 1);
-    const markSubmitted = () => { setSubmittedLocally(true); setStageRevision((value) => value + 1); };
+    const markSubmitted = () => {
+      setSubmittedLocally(true);
+      window.localStorage.setItem(`qeixova-welcome-guide-finished-v1-${user?.id}`, "1");
+      setFinished(true);
+      setStageRevision((value) => value + 1);
+    };
     const openDetails = () => { setDetailTourStep(0); setStageRevision((value) => value + 1); };
+    const finishGuide = () => {
+      window.localStorage.setItem(`qeixova-welcome-guide-finished-v1-${user?.id}`, "1");
+      setFinished(true);
+    };
     window.addEventListener("qeixova-welcome-guide-refresh", refreshStage);
     window.addEventListener("qeixova-welcome-mission-submitted", markSubmitted);
     window.addEventListener("qeixova-welcome-details-opened", openDetails);
+    window.addEventListener("qeixova-welcome-guide-finished", finishGuide);
     return () => {
       window.removeEventListener("storage", listener);
       window.removeEventListener("qeixova-mission-selection", listener);
@@ -91,12 +104,13 @@ export default function GuidedWelcomeMission() {
       window.removeEventListener("qeixova-welcome-guide-refresh", refreshStage);
       window.removeEventListener("qeixova-welcome-mission-submitted", markSubmitted);
       window.removeEventListener("qeixova-welcome-details-opened", openDetails);
+      window.removeEventListener("qeixova-welcome-guide-finished", finishGuide);
     };
-  }, [syncProgress, pathname]);
+  }, [syncProgress, pathname, user]);
 
   const isApproved = Boolean(welcome?.completed && welcome.completion_status === "approved");
   const isPendingReview = submittedLocally || Boolean(welcome?.completed && welcome.completion_status === "pending");
-  const isActive = Boolean(user && welcome && !authLoading && (manual || (!dismissed && !isApproved)));
+  const isActive = Boolean(user && welcome && !authLoading && preferencesLoaded && !dismissed && !finished && !isApproved);
 
   useEffect(() => {
     if (!isActive) return;
@@ -119,8 +133,15 @@ export default function GuidedWelcomeMission() {
         ...(contentAvailable ? [{ selector: '[data-tour="welcome-mission-content"]', title: "Stage 2 · Use the official content", body: "Use the Qeixova image and the matching caption shown here. Publish it on the platform or platforms you choose." }] : []),
         { selector: '[data-tour="welcome-mission-steps"]', title: "Stage 3 · Follow the instructions", body: "Read each numbered action in order. These are the specific steps to complete before you upload proof." },
       ];
-      if (detailTourStep < detailStages.length) return { ...detailStages[detailTourStep], href: "/tasks/submit", action: "Next step", advance: true };
-      return { selector: '[data-tour="welcome-start-proof"]', title: "When you’ve completed the steps", body: "After you have shared the image and followed the instructions, continue to the proof form. You can come back to these instructions at any time.", href: "/tasks/submit", action: "Continue when ready", activateTarget: true };
+      const currentDetailStage = detailStages[Math.min(detailTourStep, detailStages.length - 1)];
+      const isFinalDetailStage = detailTourStep >= detailStages.length - 1;
+      return {
+        ...currentDetailStage,
+        href: "/tasks/submit",
+        action: isFinalDetailStage ? "Finish guide" : "Next step",
+        advance: !isFinalDetailStage,
+        finish: isFinalDetailStage,
+      };
     }
     const proofUpload = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-proof-upload"]');
     if (!proofUpload) {
@@ -197,12 +218,10 @@ export default function GuidedWelcomeMission() {
   const dismiss = () => {
     if (storageKey) window.localStorage.setItem(storageKey, "1");
     setDismissed(true);
-    setManual(false);
   };
-  const startAgain = () => { if (storageKey) window.localStorage.removeItem(storageKey); setDismissed(false); setManual(true); };
   const goToTarget = () => {
-    if (step && "advance" in step && step.advance) setDetailTourStep((current) => current + 1);
-    else if (step && "activateTarget" in step && step.activateTarget) findVisibleTarget(step.selector)?.click();
+    if (step && "finish" in step && step.finish) window.dispatchEvent(new Event("qeixova-welcome-guide-finished"));
+    else if (step && "advance" in step && step.advance) setDetailTourStep((current) => current + 1);
     else if (step) router.push(step.href);
   };
 
@@ -212,7 +231,7 @@ export default function GuidedWelcomeMission() {
     return <aside className="welcomeGuideComplete" role="status"><span aria-hidden="true">✓</span><div><strong>Welcome mission approved</strong><p>Your regular matched missions are now unlocked. Browse Missions whenever you’re ready.</p></div><button type="button" onClick={() => { window.localStorage.setItem(`qeixova-welcome-guide-complete-v1-${user.id}`, "1"); setCompletionDismissed(true); }} aria-label="Dismiss">×</button><style jsx>{`.welcomeGuideComplete{position:fixed;z-index:12000;right:18px;bottom:20px;width:min(420px,calc(100vw - 36px));display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border:1px solid rgba(26,239,34,.35);border-radius:15px;background:#101411;color:#f5f5f5;box-shadow:0 18px 55px #000a}.welcomeGuideComplete>span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#1aef22;color:#031003;font-weight:1000}.welcomeGuideComplete strong{font-size:14px}.welcomeGuideComplete p{margin-top:4px;color:#b8c1b8;font-size:12px;line-height:1.45}.welcomeGuideComplete button{margin-left:auto;border:0;background:none;color:#aeb4af;font-size:20px;cursor:pointer}`}</style></aside>;
   }
 
-  if (!isActive || !step) return dismissed ? <><button type="button" className="welcomeGuideRestart" onClick={startAgain}>Welcome mission guide</button><style jsx>{`.welcomeGuideRestart{position:fixed;z-index:11000;right:18px;bottom:20px;border:1px solid rgba(26,239,34,.3);border-radius:999px;background:#101411;color:#1aef22;padding:10px 14px;font-size:11px;font-weight:900;box-shadow:0 8px 28px #0008;cursor:pointer}@media(max-width:600px){.welcomeGuideRestart{right:12px;bottom:78px}}`}</style></> : null;
+  if (!isActive || !step) return null;
 
   return <>
     {anchor && <div className="welcomeGuideSpotlight" style={{ top: anchor.top - 5, left: anchor.left - 5, width: anchor.width + 10, height: anchor.height + 10 }} aria-hidden="true" />}
@@ -236,8 +255,6 @@ export default function GuidedWelcomeMission() {
       .welcomeGuideEyebrow{color:#1aef22;font-size:9px;font-weight:950;letter-spacing:1px;margin-bottom:8px}
       .welcomeGuideCard strong{font-size:15px;font-weight:900}.welcomeGuideCard p{margin-top:6px;color:#b9c0ba;font-size:12px;line-height:1.55}
       .welcomeGuideActions{display:flex;align-items:center;gap:12px;margin-top:13px}.welcomeGuidePrimary{border:0;border-radius:9px;background:#1aef22;color:#061006;padding:10px 13px;font-size:11px;font-weight:950;cursor:pointer}.welcomeGuideDismiss{border:0;background:transparent;color:#929a93;font-size:10px;font-weight:800;cursor:pointer}
-      .welcomeGuideRestart{position:fixed;z-index:11000;right:18px;bottom:20px;border:1px solid rgba(26,239,34,.3);border-radius:999px;background:#101411;color:#1aef22;padding:10px 14px;font-size:11px;font-weight:900;box-shadow:0 8px 28px #0008;cursor:pointer}
-      @media(max-width:600px){.welcomeGuideRestart{right:12px;bottom:78px}}
     `}</style>
   </>;
 }

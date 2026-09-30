@@ -137,9 +137,10 @@ export default function MyMissionsPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 7 }}>
                   <button type="button" onClick={() => {
-                    if (started) { setActiveMode("proof"); setActiveTask(task); }
+                    if (started && task.mission_key !== "qeixova-awareness-verification") { setActiveMode("proof"); setActiveTask(task); }
+                    else if (started) startMission(task);
                     else startMission(task);
-                  }} data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-start" : undefined} style={{ minWidth: 132, minHeight: 40, border: 0, borderRadius: 10, background: "#1aef22", color: "#061006", padding: "0 12px", fontSize: 12, fontWeight: 950, cursor: "pointer" }}>{started ? "Submit proof" : "Start mission"}</button>
+                  }} data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-start" : undefined} style={{ minWidth: 132, minHeight: 40, border: 0, borderRadius: 10, background: "#1aef22", color: "#061006", padding: "0 12px", fontSize: 12, fontWeight: 950, cursor: "pointer" }}>{started && task.mission_key !== "qeixova-awareness-verification" ? "Submit proof" : started ? "Review instructions" : "Start mission"}</button>
                   {started && <button type="button" data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-view-instructions" : undefined} onClick={() => startMission(task)} style={{ border: 0, background: "transparent", color: "#aeb4af", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>View instructions</button>}
                   <button type="button" onClick={() => removeMission(task.id)} style={{ border: 0, background: "transparent", color: "#8c928d", fontSize: 10, cursor: "pointer" }}>Remove</button>
                 </div>

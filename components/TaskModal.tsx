@@ -452,7 +452,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
 
             {isSelected ? (
               <div className="missionDetailActions">
-                <button type="button" className="primaryAction" data-tour={isAwarenessMission ? "welcome-start-proof" : undefined} onClick={() => { setPhase("proof"); if (isAwarenessMission) window.dispatchEvent(new Event("qeixova-welcome-guide-refresh")); }}>Continue to submit proof</button>
+                <button type="button" className="primaryAction" data-tour={isAwarenessMission ? "welcome-start-proof" : undefined} onClick={() => { setPhase("proof"); if (isAwarenessMission) { window.dispatchEvent(new Event("qeixova-welcome-guide-finished")); window.dispatchEvent(new Event("qeixova-welcome-guide-refresh")); } }}>Continue to submit proof</button>
                 <Link
                   href="/tasks/submit"
                   data-tour="my-missions-link"
