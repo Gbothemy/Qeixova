@@ -37,6 +37,7 @@ export default function GuidedWelcomeMission() {
   const [manual, setManual] = useState(false);
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [submittedLocally, setSubmittedLocally] = useState(false);
+  const [detailTourStep, setDetailTourStep] = useState(0);
   const [anchor, setAnchor] = useState<Anchor>(null);
   const [popupPosition, setPopupPosition] = useState<PopupPosition>(null);
   const [stageRevision, setStageRevision] = useState(0);
@@ -79,14 +80,17 @@ export default function GuidedWelcomeMission() {
     window.addEventListener("qeixova-mission-started", listener);
     const refreshStage = () => setStageRevision((value) => value + 1);
     const markSubmitted = () => { setSubmittedLocally(true); setStageRevision((value) => value + 1); };
+    const openDetails = () => { setDetailTourStep(0); setStageRevision((value) => value + 1); };
     window.addEventListener("qeixova-welcome-guide-refresh", refreshStage);
     window.addEventListener("qeixova-welcome-mission-submitted", markSubmitted);
+    window.addEventListener("qeixova-welcome-details-opened", openDetails);
     return () => {
       window.removeEventListener("storage", listener);
       window.removeEventListener("qeixova-mission-selection", listener);
       window.removeEventListener("qeixova-mission-started", listener);
       window.removeEventListener("qeixova-welcome-guide-refresh", refreshStage);
       window.removeEventListener("qeixova-welcome-mission-submitted", markSubmitted);
+      window.removeEventListener("qeixova-welcome-details-opened", openDetails);
     };
   }, [syncProgress, pathname]);
 
@@ -106,9 +110,24 @@ export default function GuidedWelcomeMission() {
     if (!pathname.startsWith("/tasks")) return { selector: '[data-tour="missions-link"]', title: "Start with the welcome mission", body: "Open Missions to find your required first mission.", href: "/tasks", action: "Go to Missions" };
     if (!selected) return { selector: '[data-tour="welcome-select"]', title: "Choose the welcome mission", body: "Select “Welcome to Qeixova: Share & Unlock”. You can view its instructions first, then select it to continue.", href: "/tasks", action: "Find the mission" };
     if (!pathname.startsWith("/tasks/submit")) return { selector: '[data-tour="my-missions-link"]', title: "Open My Missions", body: "Your selected welcome mission is now in My Missions. Open it there to begin.", href: "/tasks/submit", action: "Open My Missions" };
-    if (!started) return { selector: '[data-tour="welcome-start"]', title: "Start the welcome mission", body: "Open the mission instructions and follow the steps. When you are ready, continue to proof.", href: "/tasks/submit", action: "Find your mission" };
-    const continueToProof = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-start-proof"]');
-    if (continueToProof) return { selector: '[data-tour="welcome-start-proof"]', title: "Continue to proof", body: "Review the welcome instructions, then continue to the proof form when you have shared the campaign image.", href: "/tasks/submit", action: "Continue to proof" };
+    if (!started) return { selector: '[data-tour="welcome-start"]', title: "Start the welcome mission", body: "Open the mission instructions. The guide will walk you through its goal, campaign content, and required actions before proof submission.", href: "/tasks/submit", action: "View instructions" };
+    const detailsOpen = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-mission-overview"]');
+    if (detailsOpen) {
+      const contentAvailable = Boolean(findVisibleTarget('[data-tour="welcome-mission-content"]'));
+      const detailStages = [
+        { selector: '[data-tour="welcome-mission-overview"]', title: "Stage 1 · Understand the mission", body: "This is the welcome mission goal and summary. Read what you need to do, the reward, and what proof will be reviewed." },
+        ...(contentAvailable ? [{ selector: '[data-tour="welcome-mission-content"]', title: "Stage 2 · Use the official content", body: "Use the Qeixova image and the matching caption shown here. Publish it on the platform or platforms you choose." }] : []),
+        { selector: '[data-tour="welcome-mission-steps"]', title: "Stage 3 · Follow the instructions", body: "Read each numbered action in order. These are the specific steps to complete before you upload proof." },
+      ];
+      if (detailTourStep < detailStages.length) return { ...detailStages[detailTourStep], href: "/tasks/submit", action: "Next step", advance: true };
+      return { selector: '[data-tour="welcome-start-proof"]', title: "When you’ve completed the steps", body: "After you have shared the image and followed the instructions, continue to the proof form. You can come back to these instructions at any time.", href: "/tasks/submit", action: "Continue when ready", activateTarget: true };
+    }
+    const proofUpload = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-proof-upload"]');
+    if (!proofUpload) {
+      const viewInstructions = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-view-instructions"]');
+      if (viewInstructions) return { selector: '[data-tour="welcome-view-instructions"]', title: "Review the mission details first", body: "Open the instructions to see the welcome mission stages, the official campaign content, and exactly what to do before submitting proof.", href: "/tasks/submit", action: "View instructions" };
+      return { selector: '[data-tour="welcome-start"]', title: "Continue the welcome mission", body: "Open the mission to review its stages and instructions before submitting proof.", href: "/tasks/submit", action: "Open mission" };
+    }
     const platformChoice = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-platform-choice"]');
     if (platformChoice && platformChoice.dataset.selected !== "true") return { selector: '[data-tour="welcome-platform-choice"]', title: "Choose where you shared it", body: "Select every platform you completed this mission on. The proof requirement and reward update to match your choices.", href: "/tasks/submit", action: "Choose platforms" };
     const upload = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-proof-upload"]');
@@ -118,7 +137,7 @@ export default function GuidedWelcomeMission() {
       return { selector: '[data-tour="welcome-proof-submit"]', title: "Submit for approval", body: "Your required proof is ready. Submit it for review. Once approved, your regular matched missions unlock.", href: "/tasks/submit", action: "Submit proof" };
     }
     return { selector: '[data-tour="welcome-start"]', title: "Continue your welcome mission", body: "Open the welcome mission to add proof and submit it for approval.", href: "/tasks/submit", action: "Continue mission" };
-  }, [welcome, isApproved, isPendingReview, pathname, selected, started, stageRevision]);
+  }, [welcome, isApproved, isPendingReview, pathname, selected, started, stageRevision, detailTourStep]);
 
   const targetSelector = step?.selector;
   useEffect(() => {
@@ -181,7 +200,11 @@ export default function GuidedWelcomeMission() {
     setManual(false);
   };
   const startAgain = () => { if (storageKey) window.localStorage.removeItem(storageKey); setDismissed(false); setManual(true); };
-  const goToTarget = () => { if (step) router.push(step.href); };
+  const goToTarget = () => {
+    if (step && "advance" in step && step.advance) setDetailTourStep((current) => current + 1);
+    else if (step && "activateTarget" in step && step.activateTarget) findVisibleTarget(step.selector)?.click();
+    else if (step) router.push(step.href);
+  };
 
   if (!user || authLoading || !welcome) return null;
 

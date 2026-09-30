@@ -62,6 +62,7 @@ export default function MyMissionsPage() {
     setStartedIds(next);
     window.localStorage.setItem(STARTED_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event("qeixova-mission-started"));
+    if (task.mission_key === "qeixova-awareness-verification") window.dispatchEvent(new Event("qeixova-welcome-details-opened"));
     setActiveMode("details");
     setActiveTask(task);
   };
@@ -139,7 +140,7 @@ export default function MyMissionsPage() {
                     if (started) { setActiveMode("proof"); setActiveTask(task); }
                     else startMission(task);
                   }} data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-start" : undefined} style={{ minWidth: 132, minHeight: 40, border: 0, borderRadius: 10, background: "#1aef22", color: "#061006", padding: "0 12px", fontSize: 12, fontWeight: 950, cursor: "pointer" }}>{started ? "Submit proof" : "Start mission"}</button>
-                  {started && <button type="button" onClick={() => startMission(task)} style={{ border: 0, background: "transparent", color: "#aeb4af", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>View instructions</button>}
+                  {started && <button type="button" data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-view-instructions" : undefined} onClick={() => startMission(task)} style={{ border: 0, background: "transparent", color: "#aeb4af", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>View instructions</button>}
                   <button type="button" onClick={() => removeMission(task.id)} style={{ border: 0, background: "transparent", color: "#8c928d", fontSize: 10, cursor: "pointer" }}>Remove</button>
                 </div>
               </article>

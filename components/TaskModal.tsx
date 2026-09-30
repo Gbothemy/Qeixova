@@ -350,7 +350,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
 
         {phase === "details" && (
           <div className="modalContent">
-            <header className="missionBriefHeader">
+            <header className="missionBriefHeader" data-tour={isAwarenessMission ? "welcome-mission-overview" : undefined}>
               <div>
                 <span>{task.business_name || "Qeixova business campaign"}</span>
                 <h2>{task.title}</h2>
@@ -360,7 +360,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
             </header>
 
             {(campaignLink || metadata.assetName) && (
-              <section className="missionSection">
+              <section className="missionSection" data-tour={isAwarenessMission ? "welcome-mission-content" : undefined}>
                 <div className="sectionHead">
                   <span>Campaign content</span>
                   <strong>{metadata.assetName ? "Uploaded campaign asset" : "Campaign link"}</strong>
@@ -435,7 +435,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
               </div>
             </section>
 
-            <section className="missionSection">
+            <section className="missionSection" data-tour={isAwarenessMission ? "welcome-mission-steps" : undefined}>
               <div className="sectionHead">
                 <span>Growth Partner actions</span>
                 <strong>{actionSteps.length} step{actionSteps.length === 1 ? "" : "s"}</strong>
