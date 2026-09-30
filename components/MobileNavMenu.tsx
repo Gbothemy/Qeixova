@@ -21,7 +21,7 @@ export default function MobileNavMenu() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="mobile-nav-menu">
+    <div className={`mobile-nav-menu${open ? " mobile-nav-menu--open" : ""}`}>
       <div className="mobile-nav-menu__bar">
         <Link href="/dashboard" className="mobile-nav-menu__brand" onClick={() => setOpen(false)}>
           <Image src="/qeixova-icon.png" alt="" width={30} height={30} />

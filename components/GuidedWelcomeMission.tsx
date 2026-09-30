@@ -45,8 +45,6 @@ export default function GuidedWelcomeMission() {
   const [pageLoading, setPageLoading] = useState(true);
   const guideCardRef = useRef<HTMLElement>(null);
 
-  const storageKey = useMemo(() => user ? `qeixova-welcome-guide-dismissed-v1-${user.id}` : "", [user]);
-
   useEffect(() => {
     setPageLoading(true);
     const updateLoadingState = () => setPageLoading(Boolean(document.querySelector(".contributorLoadingShell")));
@@ -80,8 +78,8 @@ export default function GuidedWelcomeMission() {
 
   useEffect(() => {
     if (!user) return;
-    setDismissed(window.localStorage.getItem(`qeixova-welcome-guide-dismissed-v1-${user.id}`) === "1");
-    setFinished(window.localStorage.getItem(`qeixova-welcome-guide-finished-v1-${user.id}`) === "1");
+    setDismissed(false);
+    setFinished(false);
     setCompletionDismissed(window.localStorage.getItem(`qeixova-welcome-guide-complete-v1-${user.id}`) === "1");
     setPreferencesLoaded(true);
   }, [user]);
@@ -95,15 +93,11 @@ export default function GuidedWelcomeMission() {
     const refreshStage = () => setStageRevision((value) => value + 1);
     const markSubmitted = () => {
       setSubmittedLocally(true);
-      window.localStorage.setItem(`qeixova-welcome-guide-finished-v1-${user?.id}`, "1");
       setFinished(true);
       setStageRevision((value) => value + 1);
     };
     const openDetails = () => { setDetailTourStep(0); setStageRevision((value) => value + 1); };
-    const finishGuide = () => {
-      window.localStorage.setItem(`qeixova-welcome-guide-finished-v1-${user?.id}`, "1");
-      setFinished(true);
-    };
+    const finishGuide = () => setFinished(true);
     window.addEventListener("qeixova-welcome-guide-refresh", refreshStage);
     window.addEventListener("qeixova-welcome-mission-submitted", markSubmitted);
     window.addEventListener("qeixova-welcome-details-opened", openDetails);
@@ -131,18 +125,18 @@ export default function GuidedWelcomeMission() {
 
   const step = useMemo(() => {
     if (!welcome || isApproved) return null;
-    if (isPendingReview) return { selector: '[data-tour="my-missions-link"]', title: "Your proof is under review", body: "You can track its status in My Missions. Other matched missions unlock after approval.", href: "/tasks/submit", action: "Open My Missions" };
-    if (!pathname.startsWith("/tasks")) return { selector: '[data-tour="missions-link"]', title: "Start with the welcome mission", body: "Open Missions to find your required first mission.", href: "/tasks", action: "Go to Missions" };
-    if (!selected) return { selector: '[data-tour="welcome-select"]', title: "Choose the welcome mission", body: "Select “Welcome to Qeixova: Share & Unlock”. You can view its instructions first, then select it to continue.", href: "/tasks", action: "Find the mission" };
-    if (!pathname.startsWith("/tasks/submit")) return { selector: '[data-tour="my-missions-link"]', title: "Open My Missions", body: "Your selected welcome mission is now in My Missions. Open it there to begin.", href: "/tasks/submit", action: "Open My Missions" };
-    if (!started) return { selector: '[data-tour="welcome-start"]', title: "Start the welcome mission", body: "Open the mission instructions. The guide will walk you through its goal, campaign content, and required actions before proof submission.", href: "/tasks/submit", action: "View instructions" };
+    if (isPendingReview) return { selector: '[data-tour="my-missions-link"]', title: "Submission under review", body: "You can check the decision in My Missions. Regular matched missions become available after approval.", href: "/tasks/submit", action: "Open My Missions" };
+    if (!pathname.startsWith("/tasks")) return { selector: '[data-tour="missions-link"]', title: "Begin with the welcome mission", body: "Open Missions to find the required welcome mission. It must be approved before matched missions are available.", href: "/tasks", action: "Open Missions" };
+    if (!selected) return { selector: '[data-tour="welcome-select"]', title: "Select the welcome mission", body: "Choose “Welcome to Qeixova: Share & Unlock”. You can review its details before adding it to My Missions.", href: "/tasks", action: "Find welcome mission" };
+    if (!pathname.startsWith("/tasks/submit")) return { selector: '[data-tour="my-missions-link"]', title: "Open My Missions", body: "The welcome mission is selected. Open My Missions to review its requirements and instructions.", href: "/tasks/submit", action: "Open My Missions" };
+    if (!started) return { selector: '[data-tour="welcome-start"]', title: "Review the mission", body: "Open the welcome mission details. They explain the objective, campaign materials, and required actions.", href: "/tasks/submit", action: "View instructions" };
     const detailsOpen = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-mission-overview"]');
     if (detailsOpen) {
       const contentAvailable = Boolean(findVisibleTarget('[data-tour="welcome-mission-content"]'));
       const detailStages = [
-        { selector: '[data-tour="welcome-mission-overview"]', title: "Stage 1 · Understand the mission", body: "This is the welcome mission goal and summary. Read what you need to do, the reward, and what proof will be reviewed." },
-        ...(contentAvailable ? [{ selector: '[data-tour="welcome-mission-content"]', title: "Stage 2 · Use the official content", body: "Use the Qeixova image and the matching caption shown here. Publish it on the platform or platforms you choose." }] : []),
-        { selector: '[data-tour="welcome-mission-steps"]', title: "Stage 3 · Follow the instructions", body: "Read each numbered action in order. These are the specific steps to complete before you upload proof." },
+        { selector: '[data-tour="welcome-mission-overview"]', title: "1. Mission overview", body: "Review the campaign objective, reward, and proof requirements before you begin." },
+        ...(contentAvailable ? [{ selector: '[data-tour="welcome-mission-content"]', title: "2. Campaign materials", body: "Use the official Qeixova image and the supplied caption. Publish them on the platform or platforms you choose." }] : []),
+        { selector: '[data-tour="welcome-mission-steps"]', title: `${contentAvailable ? "3" : "2"}. Required actions`, body: "Complete each numbered action in order. These instructions describe what to do and what evidence to provide." },
       ];
       const currentDetailStage = detailStages[Math.min(detailTourStep, detailStages.length - 1)];
       const isFinalDetailStage = detailTourStep >= detailStages.length - 1;
@@ -157,18 +151,18 @@ export default function GuidedWelcomeMission() {
     const proofUpload = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-proof-upload"]');
     if (!proofUpload) {
       const viewInstructions = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-view-instructions"]');
-      if (viewInstructions) return { selector: '[data-tour="welcome-view-instructions"]', title: "Review the mission details first", body: "Open the instructions to see the welcome mission stages, the official campaign content, and exactly what to do before submitting proof.", href: "/tasks/submit", action: "View instructions" };
-      return { selector: '[data-tour="welcome-start"]', title: "Continue the welcome mission", body: "Open the mission to review its stages and instructions before submitting proof.", href: "/tasks/submit", action: "Open mission" };
+      if (viewInstructions) return { selector: '[data-tour="welcome-view-instructions"]', title: "Review the mission details", body: "Open the instructions to review the objective, campaign materials, and required actions before you begin.", href: "/tasks/submit", action: "View instructions" };
+      return { selector: '[data-tour="welcome-start"]', title: "Continue the welcome mission", body: "Open the mission details to review its requirements and instructions.", href: "/tasks/submit", action: "Open mission" };
     }
     const platformChoice = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-platform-choice"]');
     if (platformChoice && platformChoice.dataset.selected !== "true") return { selector: '[data-tour="welcome-platform-choice"]', title: "Choose where you shared it", body: "Select every platform you completed this mission on. The proof requirement and reward update to match your choices.", href: "/tasks/submit", action: "Choose platforms" };
     const upload = typeof document !== "undefined" && findVisibleTarget('[data-tour="welcome-proof-upload"]');
     if (upload) {
       const isReady = upload.dataset.ready === "true";
-      if (!isReady) return { selector: '[data-tour="welcome-proof-upload"]', title: "Add your proof", body: "Upload the required screenshots for your selected platforms. Each image can be up to 5 MB.", href: "/tasks/submit", action: "Add screenshots" };
-      return { selector: '[data-tour="welcome-proof-submit"]', title: "Submit for approval", body: "Your required proof is ready. Submit it for review. Once approved, your regular matched missions unlock.", href: "/tasks/submit", action: "Submit proof" };
+      if (!isReady) return { selector: '[data-tour="welcome-proof-upload"]', title: "Add proof", body: "Upload the required screenshots for your selected platforms. Each image can be up to 5 MB.", href: "/tasks/submit", action: "Add screenshots" };
+      return { selector: '[data-tour="welcome-proof-submit"]', title: "Submit for review", body: "Your required proof is ready. Submit it for review. Approval makes regular matched missions available.", href: "/tasks/submit", action: "Submit proof" };
     }
-    return { selector: '[data-tour="welcome-start"]', title: "Continue your welcome mission", body: "Open the welcome mission to add proof and submit it for approval.", href: "/tasks/submit", action: "Continue mission" };
+    return { selector: '[data-tour="welcome-start"]', title: "Continue the welcome mission", body: "Open the mission to continue with its requirements and proof.", href: "/tasks/submit", action: "Continue mission" };
   }, [welcome, isApproved, isPendingReview, pathname, selected, started, stageRevision, detailTourStep]);
 
   const targetSelector = step?.selector;
@@ -227,7 +221,6 @@ export default function GuidedWelcomeMission() {
   }, [isActive, targetSelector]);
 
   const dismiss = () => {
-    if (storageKey) window.localStorage.setItem(storageKey, "1");
     setDismissed(true);
   };
   const goToTarget = () => {
@@ -239,7 +232,7 @@ export default function GuidedWelcomeMission() {
   if (!user || authLoading || !welcome) return null;
 
   if (!pageLoading && isApproved && !completionDismissed) {
-    return <aside className="welcomeGuideComplete" role="status"><span aria-hidden="true">✓</span><div><strong>Welcome mission approved</strong><p>Your regular matched missions are now unlocked. Browse Missions whenever you’re ready.</p></div><button type="button" onClick={() => { window.localStorage.setItem(`qeixova-welcome-guide-complete-v1-${user.id}`, "1"); setCompletionDismissed(true); }} aria-label="Dismiss">×</button><style jsx>{`.welcomeGuideComplete{position:fixed;z-index:12000;right:18px;bottom:20px;width:min(420px,calc(100vw - 36px));display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border:1px solid rgba(26,239,34,.35);border-radius:15px;background:#101411;color:#f5f5f5;box-shadow:0 18px 55px #000a}.welcomeGuideComplete>span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#1aef22;color:#031003;font-weight:1000}.welcomeGuideComplete strong{font-size:14px}.welcomeGuideComplete p{margin-top:4px;color:#b8c1b8;font-size:12px;line-height:1.45}.welcomeGuideComplete button{margin-left:auto;border:0;background:none;color:#aeb4af;font-size:20px;cursor:pointer}`}</style></aside>;
+    return <aside className="welcomeGuideComplete" role="status"><span aria-hidden="true">✓</span><div><strong>Welcome mission approved</strong><p>Regular matched missions are now available. Browse Missions to see campaigns matched to your profile.</p></div><button type="button" onClick={() => { window.localStorage.setItem(`qeixova-welcome-guide-complete-v1-${user.id}`, "1"); setCompletionDismissed(true); }} aria-label="Dismiss">×</button><style jsx>{`.welcomeGuideComplete{position:fixed;z-index:12000;right:18px;bottom:20px;width:min(420px,calc(100vw - 36px));display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border:1px solid rgba(26,239,34,.3);border-radius:14px;background:#101411;color:#f5f5f5;box-shadow:0 14px 38px #0008}.welcomeGuideComplete>span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#1aef22;color:#031003;font-weight:1000}.welcomeGuideComplete strong{font-size:14px}.welcomeGuideComplete p{margin-top:4px;color:#b8c1b8;font-size:12px;line-height:1.45}.welcomeGuideComplete button{margin-left:auto;border:0;background:none;color:#aeb4af;font-size:20px;cursor:pointer}`}</style></aside>;
   }
 
   if (!isActive || !step || pageLoading) return null;
@@ -247,25 +240,25 @@ export default function GuidedWelcomeMission() {
   return <>
     {anchor && <div className="welcomeGuideSpotlight" style={{ top: anchor.top - 5, left: anchor.left - 5, width: anchor.width + 10, height: anchor.height + 10 }} aria-hidden="true" />}
     <aside ref={guideCardRef} className={`welcomeGuideCard${popupPosition ? ` placement-${popupPosition.placement}` : ""}`} style={popupPosition ? { top: popupPosition.top, left: popupPosition.left, width: popupPosition.width } : { top: 12, left: 12 }} role="status" aria-live="polite">
-      <div className="welcomeGuideEyebrow">WELCOME MISSION · STEP-BY-STEP</div>
+      <div className="welcomeGuideEyebrow"><span aria-hidden="true" />WELCOME MISSION GUIDE</div>
       <strong>{isPendingReview ? "Your proof is under review" : step.title}</strong>
       <p>{step.body}</p>
       <div className="welcomeGuideActions">
-        <button type="button" className="welcomeGuidePrimary" onClick={goToTarget}>{step.action} →</button>
+        <button type="button" className="welcomeGuidePrimary" onClick={goToTarget}>{step.action}<span aria-hidden="true">→</span></button>
         <button type="button" className="welcomeGuideDismiss" onClick={dismiss}>Dismiss guide</button>
       </div>
     </aside>
     <style jsx>{`
-      .welcomeGuideSpotlight{position:fixed;z-index:11998;border:2px solid #1aef22;border-radius:14px;box-shadow:0 0 0 3px rgba(26,239,34,.13),0 0 18px rgba(26,239,34,.24);pointer-events:none;transition:top .18s,left .18s,width .18s,height .18s}
-      .welcomeGuideCard{position:fixed;z-index:11999;width:min(340px,calc(100vw - 24px));max-height:min(220px,calc(100vh - 24px));overflow:auto;box-sizing:border-box;padding:14px 15px;border:1px solid #334236;border-radius:14px;background:#101411;color:#f5f5f5;box-shadow:0 12px 34px #0009;transition:top .16s ease,left .16s ease}
+      .welcomeGuideSpotlight{position:fixed;z-index:11998;border:1.5px solid #94c77d;border-radius:12px;box-shadow:0 0 0 2px rgba(148,199,125,.1);pointer-events:none;transition:top .18s,left .18s,width .18s,height .18s}
+      .welcomeGuideCard{position:fixed;z-index:11999;width:min(340px,calc(100vw - 24px));max-height:min(220px,calc(100vh - 24px));overflow:auto;box-sizing:border-box;padding:14px 15px;border:1px solid #343b35;border-top:2px solid #79a96a;border-radius:12px;background:#101311;color:#f1f3f1;box-shadow:0 10px 28px #0008;transition:top .16s ease,left .16s ease}
       .welcomeGuideCard:after{content:"";position:absolute;width:0;height:0;border:8px solid transparent}
       .welcomeGuideCard.placement-below:after{top:-16px;left:24px;border-bottom-color:#334236}
       .welcomeGuideCard.placement-above:after{bottom:-16px;left:24px;border-top-color:#334236}
       .welcomeGuideCard.placement-right:after{left:-16px;top:20px;border-right-color:#334236}
       .welcomeGuideCard.placement-left:after{right:-16px;top:20px;border-left-color:#334236}
-      .welcomeGuideEyebrow{color:#1aef22;font-size:9px;font-weight:950;letter-spacing:1px;margin-bottom:8px}
-      .welcomeGuideCard strong{font-size:15px;font-weight:900}.welcomeGuideCard p{margin-top:6px;color:#b9c0ba;font-size:12px;line-height:1.55}
-      .welcomeGuideActions{display:flex;align-items:center;gap:12px;margin-top:13px}.welcomeGuidePrimary{border:0;border-radius:9px;background:#1aef22;color:#061006;padding:10px 13px;font-size:11px;font-weight:950;cursor:pointer}.welcomeGuideDismiss{border:0;background:transparent;color:#929a93;font-size:10px;font-weight:800;cursor:pointer}
+      .welcomeGuideEyebrow{display:flex;align-items:center;gap:7px;color:#99b98c;font-size:9px;font-weight:850;letter-spacing:1px;margin-bottom:8px}.welcomeGuideEyebrow span{width:6px;height:6px;border-radius:50%;background:#94c77d}
+      .welcomeGuideCard strong{font-size:14px;font-weight:800;letter-spacing:.05px}.welcomeGuideCard p{margin-top:6px;color:#b8c0b9;font-size:12px;line-height:1.55}
+      .welcomeGuideActions{display:flex;align-items:center;gap:12px;margin-top:13px}.welcomeGuidePrimary{display:inline-flex;align-items:center;gap:8px;border:1px solid #92c67c;border-radius:8px;background:#1aef22;color:#061006;padding:9px 12px;font-size:11px;font-weight:850;cursor:pointer}.welcomeGuidePrimary span{font-size:14px;line-height:1}.welcomeGuideDismiss{border:0;background:transparent;color:#9ca59d;font-size:10px;font-weight:750;cursor:pointer}
     `}</style>
   </>;
 }
