@@ -10,6 +10,7 @@ const STARTED_KEY = "qeixova-started-missions-v2";
 
 type Mission = { id: number; mission_key?: string; completed?: boolean; completion_status?: string };
 type Anchor = { top: number; left: number; width: number; height: number } | null;
+type PopupPosition = { top: number; left: number; width: number; placement: "above" | "below" | "left" | "right" } | null;
 
 function readIds(key: string): number[] {
   try {
@@ -37,6 +38,7 @@ export default function GuidedWelcomeMission() {
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [submittedLocally, setSubmittedLocally] = useState(false);
   const [anchor, setAnchor] = useState<Anchor>(null);
+  const [popupPosition, setPopupPosition] = useState<PopupPosition>(null);
   const [stageRevision, setStageRevision] = useState(0);
   const guideCardRef = useRef<HTMLElement>(null);
 
@@ -120,7 +122,7 @@ export default function GuidedWelcomeMission() {
 
   const targetSelector = step?.selector;
   useEffect(() => {
-    if (!isActive || !targetSelector) { setAnchor(null); return; }
+    if (!isActive || !targetSelector) { setAnchor(null); setPopupPosition(null); return; }
     let previous = "";
     let alive = true;
     const position = () => {
@@ -128,12 +130,43 @@ export default function GuidedWelcomeMission() {
       const rect = element?.getBoundingClientRect();
       if (!element || !rect || rect.width === 0 || rect.height === 0) { setAnchor(null); return; }
       const signature = `${targetSelector}-${Math.round(rect.top)}-${Math.round(rect.left)}`;
-      if (signature !== previous) {
+      if (signature !== previous && (rect.top < 12 || rect.bottom > window.innerHeight - 12)) {
         previous = signature;
         element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
       }
       const nextAnchor = { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
       setAnchor((current) => current && Math.abs(current.top - nextAnchor.top) < 1 && Math.abs(current.left - nextAnchor.left) < 1 && Math.abs(current.width - nextAnchor.width) < 1 && Math.abs(current.height - nextAnchor.height) < 1 ? current : nextAnchor);
+
+      const margin = 12;
+      const popupWidth = Math.min(340, window.innerWidth - margin * 2);
+      const popupHeight = guideCardRef.current?.offsetHeight || 168;
+      const roomAbove = rect.top - margin;
+      const roomBelow = window.innerHeight - rect.bottom - margin;
+      let placement: NonNullable<PopupPosition>["placement"] = "below";
+      let top = rect.bottom + 10;
+      let left = Math.max(margin, Math.min(rect.left, window.innerWidth - popupWidth - margin));
+
+      if (roomBelow >= popupHeight + 10) {
+        placement = "below";
+      } else if (roomAbove >= popupHeight + 10) {
+        placement = "above";
+        top = rect.top - popupHeight - 10;
+      } else if (window.innerWidth - rect.right >= popupWidth + 22) {
+        placement = "right";
+        left = rect.right + 10;
+        top = Math.max(margin, Math.min(rect.top, window.innerHeight - popupHeight - margin));
+      } else if (rect.left >= popupWidth + 22) {
+        placement = "left";
+        left = rect.left - popupWidth - 10;
+        top = Math.max(margin, Math.min(rect.top, window.innerHeight - popupHeight - margin));
+      } else {
+        placement = roomBelow >= roomAbove ? "below" : "above";
+        top = placement === "below"
+          ? Math.min(rect.bottom + 10, window.innerHeight - popupHeight - margin)
+          : Math.max(margin, rect.top - popupHeight - 10);
+      }
+      const nextPopup = { top, left, width: popupWidth, placement };
+      setPopupPosition((current) => current && Math.abs(current.top - nextPopup.top) < 1 && Math.abs(current.left - nextPopup.left) < 1 && current.width === nextPopup.width && current.placement === nextPopup.placement ? current : nextPopup);
     };
     const timer = window.setInterval(() => { if (alive) position(); }, 350);
     position();
@@ -160,8 +193,7 @@ export default function GuidedWelcomeMission() {
 
   return <>
     {anchor && <div className="welcomeGuideSpotlight" style={{ top: anchor.top - 5, left: anchor.left - 5, width: anchor.width + 10, height: anchor.height + 10 }} aria-hidden="true" />}
-    {anchor && guideCardRef.current && <svg className="welcomeGuideArrow" aria-hidden="true"><defs><marker id="welcome-guide-arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#1aef22" /></marker></defs><path d={`M ${anchor.left + anchor.width / 2} ${anchor.top + anchor.height / 2} Q ${(anchor.left + anchor.width / 2 + guideCardRef.current.getBoundingClientRect().left + guideCardRef.current.offsetWidth / 2) / 2} ${(anchor.top + anchor.height / 2 + guideCardRef.current.getBoundingClientRect().top) / 2 - 32} ${guideCardRef.current.getBoundingClientRect().left + guideCardRef.current.offsetWidth / 2} ${guideCardRef.current.getBoundingClientRect().top + 4}`} /></svg>}
-    <aside ref={guideCardRef} className="welcomeGuideCard" role="status" aria-live="polite">
+    <aside ref={guideCardRef} className={`welcomeGuideCard${popupPosition ? ` placement-${popupPosition.placement}` : ""}`} style={popupPosition ? { top: popupPosition.top, left: popupPosition.left, width: popupPosition.width } : { top: 12, left: 12 }} role="status" aria-live="polite">
       <div className="welcomeGuideEyebrow">WELCOME MISSION · STEP-BY-STEP</div>
       <strong>{isPendingReview ? "Your proof is under review" : step.title}</strong>
       <p>{step.body}</p>
@@ -171,14 +203,18 @@ export default function GuidedWelcomeMission() {
       </div>
     </aside>
     <style jsx>{`
-      .welcomeGuideSpotlight{position:fixed;z-index:11998;border:2px solid #1aef22;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.38),0 0 28px rgba(26,239,34,.38);pointer-events:none;transition:top .18s,left .18s,width .18s,height .18s}
-      .welcomeGuideArrow{position:fixed;inset:0;width:100vw;height:100vh;z-index:11998;overflow:visible;pointer-events:none}.welcomeGuideArrow path{fill:none;stroke:#1aef22;stroke-width:2;stroke-dasharray:5 5;marker-end:url(#welcome-guide-arrowhead);filter:drop-shadow(0 2px 5px #000)}
-      .welcomeGuideCard{position:fixed;z-index:11999;right:18px;bottom:20px;width:min(390px,calc(100vw - 36px));padding:17px 18px;border:1px solid #334236;border-radius:16px;background:#101411;color:#f5f5f5;box-shadow:0 18px 55px #000a}
+      .welcomeGuideSpotlight{position:fixed;z-index:11998;border:2px solid #1aef22;border-radius:14px;box-shadow:0 0 0 3px rgba(26,239,34,.13),0 0 18px rgba(26,239,34,.24);pointer-events:none;transition:top .18s,left .18s,width .18s,height .18s}
+      .welcomeGuideCard{position:fixed;z-index:11999;width:min(340px,calc(100vw - 24px));max-height:min(220px,calc(100vh - 24px));overflow:auto;box-sizing:border-box;padding:14px 15px;border:1px solid #334236;border-radius:14px;background:#101411;color:#f5f5f5;box-shadow:0 12px 34px #0009;transition:top .16s ease,left .16s ease}
+      .welcomeGuideCard:after{content:"";position:absolute;width:0;height:0;border:8px solid transparent}
+      .welcomeGuideCard.placement-below:after{top:-16px;left:24px;border-bottom-color:#334236}
+      .welcomeGuideCard.placement-above:after{bottom:-16px;left:24px;border-top-color:#334236}
+      .welcomeGuideCard.placement-right:after{left:-16px;top:20px;border-right-color:#334236}
+      .welcomeGuideCard.placement-left:after{right:-16px;top:20px;border-left-color:#334236}
       .welcomeGuideEyebrow{color:#1aef22;font-size:9px;font-weight:950;letter-spacing:1px;margin-bottom:8px}
       .welcomeGuideCard strong{font-size:15px;font-weight:900}.welcomeGuideCard p{margin-top:6px;color:#b9c0ba;font-size:12px;line-height:1.55}
       .welcomeGuideActions{display:flex;align-items:center;gap:12px;margin-top:13px}.welcomeGuidePrimary{border:0;border-radius:9px;background:#1aef22;color:#061006;padding:10px 13px;font-size:11px;font-weight:950;cursor:pointer}.welcomeGuideDismiss{border:0;background:transparent;color:#929a93;font-size:10px;font-weight:800;cursor:pointer}
       .welcomeGuideRestart{position:fixed;z-index:11000;right:18px;bottom:20px;border:1px solid rgba(26,239,34,.3);border-radius:999px;background:#101411;color:#1aef22;padding:10px 14px;font-size:11px;font-weight:900;box-shadow:0 8px 28px #0008;cursor:pointer}
-      @media(max-width:600px){.welcomeGuideCard{right:12px;bottom:82px;width:calc(100vw - 24px)}.welcomeGuideRestart{right:12px;bottom:78px}}
+      @media(max-width:600px){.welcomeGuideRestart{right:12px;bottom:78px}}
     `}</style>
   </>;
 }
