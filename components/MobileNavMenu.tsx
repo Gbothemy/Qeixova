@@ -27,9 +27,8 @@ export default function MobileNavMenu() {
           <Image src="/qeixova-icon.png" alt="" width={30} height={30} />
           <span>Qeixova</span>
         </Link>
-        <button type="button" className="mobile-nav-menu__toggle" aria-expanded={open} aria-controls="mobile-nav-menu-links" onClick={() => setOpen((value) => !value)}>
+        <button type="button" className="mobile-nav-menu__toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="mobile-nav-menu-links" onClick={() => setOpen((value) => !value)}>
           <span className="mobile-nav-menu__toggle-icon" aria-hidden="true">{open ? "×" : "☰"}</span>
-          <span>{open ? "Close" : "Menu"}</span>
         </button>
       </div>
       {open && (
