@@ -42,9 +42,20 @@ export default function GuidedWelcomeMission() {
   const [anchor, setAnchor] = useState<Anchor>(null);
   const [popupPosition, setPopupPosition] = useState<PopupPosition>(null);
   const [stageRevision, setStageRevision] = useState(0);
+  const [pageLoading, setPageLoading] = useState(true);
   const guideCardRef = useRef<HTMLElement>(null);
 
   const storageKey = useMemo(() => user ? `qeixova-welcome-guide-dismissed-v1-${user.id}` : "", [user]);
+
+  useEffect(() => {
+    setPageLoading(true);
+    const updateLoadingState = () => setPageLoading(Boolean(document.querySelector(".contributorLoadingShell")));
+    updateLoadingState();
+    const observer = new MutationObserver(updateLoadingState);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [pathname]);
+
   const syncProgress = useCallback(() => {
     if (!welcome) return;
     setSelected(readIds(SELECTED_KEY).includes(welcome.id));
@@ -110,7 +121,7 @@ export default function GuidedWelcomeMission() {
 
   const isApproved = Boolean(welcome?.completed && welcome.completion_status === "approved");
   const isPendingReview = submittedLocally || Boolean(welcome?.completed && welcome.completion_status === "pending");
-  const isActive = Boolean(user && welcome && !authLoading && preferencesLoaded && !dismissed && !finished && !isApproved);
+  const isActive = Boolean(user && welcome && !authLoading && preferencesLoaded && !pageLoading && !dismissed && !finished && !isApproved);
 
   useEffect(() => {
     if (!isActive) return;
@@ -227,11 +238,11 @@ export default function GuidedWelcomeMission() {
 
   if (!user || authLoading || !welcome) return null;
 
-  if (isApproved && !completionDismissed) {
+  if (!pageLoading && isApproved && !completionDismissed) {
     return <aside className="welcomeGuideComplete" role="status"><span aria-hidden="true">✓</span><div><strong>Welcome mission approved</strong><p>Your regular matched missions are now unlocked. Browse Missions whenever you’re ready.</p></div><button type="button" onClick={() => { window.localStorage.setItem(`qeixova-welcome-guide-complete-v1-${user.id}`, "1"); setCompletionDismissed(true); }} aria-label="Dismiss">×</button><style jsx>{`.welcomeGuideComplete{position:fixed;z-index:12000;right:18px;bottom:20px;width:min(420px,calc(100vw - 36px));display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border:1px solid rgba(26,239,34,.35);border-radius:15px;background:#101411;color:#f5f5f5;box-shadow:0 18px 55px #000a}.welcomeGuideComplete>span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#1aef22;color:#031003;font-weight:1000}.welcomeGuideComplete strong{font-size:14px}.welcomeGuideComplete p{margin-top:4px;color:#b8c1b8;font-size:12px;line-height:1.45}.welcomeGuideComplete button{margin-left:auto;border:0;background:none;color:#aeb4af;font-size:20px;cursor:pointer}`}</style></aside>;
   }
 
-  if (!isActive || !step) return null;
+  if (!isActive || !step || pageLoading) return null;
 
   return <>
     {anchor && <div className="welcomeGuideSpotlight" style={{ top: anchor.top - 5, left: anchor.left - 5, width: anchor.width + 10, height: anchor.height + 10 }} aria-hidden="true" />}
