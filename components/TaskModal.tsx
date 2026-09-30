@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import type { CampaignMetadata } from "./TaskCard";
 import { getBusinessPlatformRewardQlt } from "@/lib/campaignPlatformPricing";
 
-const MAX_PROOF_IMAGE_BYTES = 2.5 * 1024 * 1024;
+const MAX_PROOF_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export interface FullTask {
   id: number;
@@ -47,6 +48,10 @@ interface Props {
   task: FullTask;
   onClose: () => void;
   onComplete: (id: number, proofValue: string) => Promise<{ ok: boolean; error?: string }>;
+  startAtProof?: boolean;
+  presentation?: "modal" | "page";
+  isSelected?: boolean;
+  onToggleSelection?: () => void;
 }
 
 function StepText({ text }: { text: string }) {
@@ -139,8 +144,8 @@ function splitRewardAcrossPlatforms(totalReward: number, platformCount: number) 
   return Array.from({ length: count }, (_, index) => base + (index < remainder ? 1 : 0));
 }
 
-export default function TaskModal({ task, onClose, onComplete }: Props) {
-  const [phase, setPhase] = useState<"details" | "proof" | "success">("details");
+export default function TaskModal({ task, onClose, onComplete, startAtProof = false, presentation = "modal", isSelected = false, onToggleSelection }: Props) {
+  const [phase, setPhase] = useState<"details" | "proof" | "success">(startAtProof ? "proof" : "details");
   const [proofValue, setProofValue] = useState("");
   const [screenshots, setScreenshots] = useState<{ dataUrl: string; name: string }[]>([]);
   const [selectedPlatformIds, setSelectedPlatformIds] = useState<string[]>([]);
@@ -226,12 +231,13 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
     const files = Array.from(event.target.files ?? []);
     files.forEach((file) => {
       if (file.size > MAX_PROOF_IMAGE_BYTES) {
-        setError("Upload screenshots under 2.5MB each so admin can preview them.");
+        setError("Upload screenshots under 5MB each so admin can preview them.");
         return;
       }
       const reader = new FileReader();
       reader.onload = () => {
         setScreenshots((prev) => prev.length >= requiredScreenshotCount ? prev : [...prev, { dataUrl: reader.result as string, name: file.name }]);
+        if (isAwarenessMission) window.dispatchEvent(new Event("qeixova-welcome-guide-refresh"));
       };
       reader.readAsDataURL(file);
     });
@@ -244,6 +250,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
     if (next.length > 0 && error === "Select at least one platform you completed this mission on.") {
       setError("");
     }
+    if (isAwarenessMission) window.dispatchEvent(new Event("qeixova-welcome-guide-refresh"));
   };
 
   const handleSubmit = async () => {
@@ -288,38 +295,41 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
     setSubmitting(true);
     const result = await onComplete(task.id, finalProof);
     setSubmitting(false);
-    if (result.ok) setPhase("success");
+    if (result.ok) {
+      setPhase("success");
+      if (isAwarenessMission) window.dispatchEvent(new Event("qeixova-welcome-mission-submitted"));
+    }
     else setError(result.error || "Submission failed. Please try again.");
   };
 
   return (
     <div
-      className="missionModalBackdrop"
-      onClick={onClose}
+      className={presentation === "page" ? "missionSubmissionPage" : "missionModalBackdrop"}
+      onClick={presentation === "page" ? undefined : onClose}
       style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 10000,
+        position: presentation === "page" ? "relative" : "fixed",
+        inset: presentation === "page" ? undefined : 0,
+        zIndex: presentation === "page" ? undefined : 10000,
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-        background: "rgba(0,0,0,.72)",
-        backdropFilter: "blur(6px)",
+        alignItems: presentation === "page" ? "start" : "center",
+        justifyContent: presentation === "page" ? "stretch" : "center",
+        padding: presentation === "page" ? "0 0 24px" : 24,
+        background: presentation === "page" ? "transparent" : "rgba(0,0,0,.72)",
+        backdropFilter: presentation === "page" ? undefined : "blur(6px)",
       }}
     >
       <section
         className="missionModalSheet"
         onClick={(event) => event.stopPropagation()}
         style={{
-          width: "min(100%, 860px)",
-          maxHeight: "92vh",
-          overflowY: "auto",
+          width: presentation === "page" ? "100%" : "min(100%, 860px)",
+          maxHeight: presentation === "page" ? "none" : "92vh",
+          overflowY: presentation === "page" ? "visible" : "auto",
           border: "1px solid var(--border)",
           borderRadius: 18,
           background: "var(--card-bg)",
           color: "var(--text)",
-          boxShadow: "0 30px 90px rgba(0,0,0,.45)",
+          boxShadow: presentation === "page" ? "none" : "0 30px 90px rgba(0,0,0,.45)",
         }}
       >
         <div className="modalHandle" />
@@ -334,7 +344,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
               <span>Pending reward</span>
               <strong>+{displayedSubmitReward.toLocaleString()} QLT</strong>
             </div>
-            <button type="button" onClick={onClose}>Back to missions</button>
+            <button type="button" onClick={onClose}>{presentation === "page" ? "Back to My Missions" : "Back to missions"}</button>
           </div>
         )}
 
@@ -440,14 +450,22 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
               </ol>
             </section>
 
-            <button type="button" className="primaryAction" onClick={() => setPhase("proof")}>Start proof submission</button>
+            {isSelected ? (
+              <div className="missionDetailActions">
+                <button type="button" className="primaryAction" data-tour={isAwarenessMission ? "welcome-start-proof" : undefined} onClick={() => { setPhase("proof"); if (isAwarenessMission) window.dispatchEvent(new Event("qeixova-welcome-guide-refresh")); }}>Continue to submit proof</button>
+                <Link href="/tasks/submit" data-tour="my-missions-link" className="myMissionsLink">Back to My Missions</Link>
+                {onToggleSelection && <button type="button" className="removeSelectionAction" onClick={onToggleSelection}>Remove from My Missions</button>}
+              </div>
+            ) : (
+              <button type="button" className="primaryAction" data-tour={isAwarenessMission ? "welcome-select" : undefined} onClick={onToggleSelection}>Select mission to complete</button>
+            )}
           </div>
         )}
 
         {phase === "proof" && (
           <div className="modalContent">
             <header className="proofHeader">
-              <button type="button" onClick={() => setPhase("details")}>Back</button>
+              <button type="button" onClick={presentation === "page" ? onClose : () => setPhase("details")}>{presentation === "page" ? "Back to My Missions" : "Back"}</button>
               <div>
                 <span>Submit proof</span>
                 <h2>{task.title}</h2>
@@ -461,7 +479,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
               </div>
 
               {platformOptions.length > 0 && (
-                <div className="platformChoicePanel">
+                <div className="platformChoicePanel" data-tour={isAwarenessMission ? "welcome-platform-choice" : undefined} data-selected={activePlatformIds.length > 0 ? "true" : "false"}>
                   <div className="platformChoiceHead">
                     <div>
                       <span>Choose platform</span>
@@ -489,7 +507,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
               )}
 
               {task.proof_type === "screenshot" && (
-                <div className="proofUpload">
+                <div className="proofUpload" data-tour={isAwarenessMission ? "welcome-proof-upload" : undefined} data-ready={screenshots.length >= requiredScreenshotCount && (platformOptions.length === 0 || activePlatformIds.length > 0) ? "true" : "false"}>
                   <input ref={fileRef} type="file" accept="image/*" multiple={requiredScreenshotCount > 1} onChange={handleFileChange} />
                   <button type="button" onClick={() => fileRef.current?.click()}>
                     Upload screenshot{requiredScreenshotCount > 1 ? "s" : ""}
@@ -521,7 +539,7 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
 
             {error && <p className="errorBox">{error}</p>}
 
-            <button type="button" className="primaryAction" onClick={handleSubmit} disabled={submitting}>
+            <button type="button" className="primaryAction" data-tour={isAwarenessMission ? "welcome-proof-submit" : undefined} onClick={handleSubmit} disabled={submitting}>
               {submitting ? "Submitting..." : `Submit for ${displayedSubmitReward.toLocaleString()} QLT`}
             </button>
           </div>
@@ -789,6 +807,9 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
         }
         .primaryAction {
           width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           border: 0;
           border-radius: 13px;
           background: linear-gradient(135deg, var(--accent-2), var(--accent-2));
@@ -859,7 +880,11 @@ export default function TaskModal({ task, onClose, onComplete }: Props) {
           background: var(--card-bg);
           padding: 10px;
           cursor: pointer;
+          text-decoration: none;
         }
+        .missionDetailActions { display: grid; gap: 9px; }
+        .myMissionsLink { display: flex; justify-content: center; padding: 8px; color: var(--muted); font-size: 12px; font-weight: 850; text-decoration: none; }
+        .removeSelectionAction { width: 100%; border: 1px solid var(--border); border-radius: 11px; background: transparent; color: var(--muted); padding: 11px; font-size: 12px; font-weight: 850; cursor: pointer; }
         .platformChoice.active {
           border-color: rgba(26,239,34,.45);
           background: rgba(26,239,34,.1);

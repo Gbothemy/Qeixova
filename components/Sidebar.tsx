@@ -11,6 +11,8 @@ const nav = [
   { href: "/leaderboard", label: "Ranks",    icon: "/icon-leaderboard.svg", desc: "Leaderboard" },
   { href: "/wallet",      label: "Wallet",   icon: "/icon-wallet.svg",      desc: "Balance & withdraw" },
   { href: "/profile",     label: "Profile",  icon: "/icon-profile.svg",     desc: "Account settings" },
+  { href: "/notifications", label: "Notifications", icon: "/icon-notifications.svg", desc: "Activity updates" },
+  { href: "/tasks/submit", label: "My Missions", icon: "/icon-task.svg", desc: "Selected work & submissions" },
 ];
 
 export default function Sidebar() {
@@ -58,9 +60,9 @@ export default function Sidebar() {
       <nav style={{ padding: "12px 12px", flex: 1 }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: 1.2, textTransform: "uppercase", padding: "8px 12px 4px" }}>Menu</p>
         {nav.map((item) => {
-          const active = path === item.href;
+          const active = path === item.href || (item.href === "/tasks/submit" && path.startsWith("/tasks/submit/"));
           return (
-            <Link key={item.href} href={item.href} style={{
+            <Link key={item.href} href={item.href} data-tour={item.href === "/tasks" ? "missions-link" : item.href === "/tasks/submit" ? "my-missions-link" : undefined} style={{
               display: "flex", alignItems: "center", gap: 12,
               padding: "11px 14px", borderRadius: 12, textDecoration: "none",
               background: active ? "rgba(26,239,34,0.08)" : "transparent",
@@ -121,5 +123,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
-

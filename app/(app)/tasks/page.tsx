@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import ContributorLoading from "@/components/ContributorLoading";
 import TaskCard, { Task } from "@/components/TaskCard";
@@ -36,6 +37,7 @@ const moreCategoryFilters: MissionCategoryFilter[] = [
 ];
 
 interface Meta { userLevel: number; levelName: string; badgeColor: string; xp: number; dailyEarned: number; dailyCap: number; dailyRemaining: number; trustScore: number; }
+const SELECTED_MISSIONS_KEY = "qeixova-my-missions-v2";
 
 const allCategoryFilters = [...topCategoryFilters, ...moreCategoryFilters];
 
@@ -60,6 +62,27 @@ export default function TasksPage() {
   const [rewardFilter, setRewardFilter] = useState("Any reward");
   const [availabilityFilter, setAvailabilityFilter] = useState("Open");
   const [selectedTask, setSelectedTask] = useState<FullTask | null>(null);
+  const [selectedMissionIds, setSelectedMissionIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(SELECTED_MISSIONS_KEY) || "[]");
+      if (Array.isArray(stored)) setSelectedMissionIds(stored.filter((id): id is number => Number.isInteger(id)));
+    } catch {
+      window.localStorage.removeItem(SELECTED_MISSIONS_KEY);
+    }
+  }, []);
+
+  const openTask = (task: Task) => setSelectedTask(task as FullTask);
+
+  const toggleMissionSelection = (task: Task) => {
+    const next = selectedMissionIds.includes(task.id)
+      ? selectedMissionIds.filter((id) => id !== task.id)
+      : [...selectedMissionIds, task.id];
+    window.localStorage.setItem(SELECTED_MISSIONS_KEY, JSON.stringify(next));
+    setSelectedMissionIds(next);
+    window.dispatchEvent(new Event("qeixova-mission-selection"));
+  };
 
   const loadTasks = useCallback(() => {
     setFetching(true); setFetchError(false);
@@ -84,6 +107,11 @@ export default function TasksPage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: true, completion_status: "pending" } : t));
+        setSelectedMissionIds((previous) => {
+          const next = previous.filter((missionId) => missionId !== id);
+          window.localStorage.setItem(SELECTED_MISSIONS_KEY, JSON.stringify(next));
+          return next;
+        });
         window.dispatchEvent(new CustomEvent("balanceUpdated", { detail: { newBalance: data.newBalance } }));
         return { ok: true, reward: data.reward, xpReward: data.xpReward };
       }
@@ -144,6 +172,7 @@ export default function TasksPage() {
     });
 
   const completedCount = tasks.filter(t => t.completed).length;
+  const selectedMissions = tasks.filter((task) => selectedMissionIds.includes(task.id) && !task.completed && !task.lockedByLevel && !task.lockedByType);
   const activeLabel = allCategoryFilters.find((filter) => filter.val === activeCategory)?.label ?? activeCategory;
 
   return (
@@ -168,6 +197,21 @@ export default function TasksPage() {
           </div>
         </div>
       </div>
+
+      {/* Compact entry point to the member's mission queue. */}
+      <section aria-labelledby="mission-submission-title" style={{ maxWidth: 1120, margin: "18px auto 0", padding: "0 16px", width: "100%" }}>
+        <div style={{ display: "grid", gap: 12, border: "1px solid #29332a", borderRadius: 16, background: "linear-gradient(135deg, rgba(26,239,34,.07), #101211 55%)", padding: 18 }}>
+          <div>
+            <p style={{ color: "#1AEF22", fontSize: 10, fontWeight: 900, letterSpacing: .8, textTransform: "uppercase" }}>Your workspace</p>
+            <h2 id="mission-submission-title" style={{ color: "#F5F5F5", fontSize: 18, marginTop: 5 }}>My Missions</h2>
+            <p style={{ color: "#bbbbbb", fontSize: 13, lineHeight: 1.5, marginTop: 5 }}>Keep selected missions together, pick up where you left off, and submit proof when you’re ready.</p>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <p style={{ color: "#aaaaaa", fontSize: 13 }}>{selectedMissions.length} mission{selectedMissions.length === 1 ? "" : "s"} selected</p>
+            <Link href="/tasks/submit" data-tour="my-missions-link" style={{ display: "inline-flex", justifyContent: "center", borderRadius: 10, background: "#1AEF22", color: "#000", padding: "12px 16px", textDecoration: "none", fontSize: 13, fontWeight: 900 }}>Open My Missions →</Link>
+          </div>
+        </div>
+      </section>
 
       {/* Mission category filters */}
       <div style={{ padding: "14px 16px", background: "#0b0c0c", borderBottom: "1px solid #222222" }}>
@@ -254,13 +298,13 @@ export default function TasksPage() {
           </div>
         ) : (
           filtered.map(task => (
-            <TaskCard key={task.id} task={task as Task} onStart={t => setSelectedTask(t as FullTask)} />
+            <TaskCard key={task.id} task={task as Task} onStart={openTask} onSelect={toggleMissionSelection} selected={selectedMissionIds.includes(task.id)} />
           ))
         )}
       </div>
 
       {selectedTask && (
-        <TaskModal task={selectedTask} onClose={() => setSelectedTask(null)} onComplete={handleComplete} />
+        <TaskModal key={selectedTask.id} task={selectedTask} isSelected={selectedMissionIds.includes(selectedTask.id)} onToggleSelection={() => toggleMissionSelection(selectedTask)} onClose={() => setSelectedTask(null)} onComplete={handleComplete} />
       )}
       <BottomNav />
       <style jsx>{`

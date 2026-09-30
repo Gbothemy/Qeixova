@@ -79,6 +79,8 @@ export interface Task {
 interface TaskCardProps {
   task: Task;
   onStart: (task: Task) => void;
+  onSelect: (task: Task) => void;
+  selected: boolean;
 }
 
 const MISSION_BADGE: Record<string, { label: string; color: string; bg: string }> = {
@@ -91,7 +93,7 @@ function joinList(values?: string[], fallback = "Not specified") {
   return values?.filter(Boolean).join(", ") || fallback;
 }
 
-export default function TaskCard({ task, onStart }: TaskCardProps) {
+export default function TaskCard({ task, onStart, onSelect, selected }: TaskCardProps) {
   const locked = task.lockedByLevel || task.lockedByType;
   const badge = MISSION_BADGE[task.mission_type ?? "engagement"] ?? MISSION_BADGE.engagement;
   const metadata = task.campaign_metadata ?? {};
@@ -173,7 +175,10 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
         ) : locked ? (
           <span className="missionLocked">Level {task.min_level} required</span>
         ) : (
-          <button type="button" onClick={() => onStart(task)}>{task.retry_allowed ? "Retry mission" : "View mission"}</button>
+          <div className="missionActions">
+            <button type="button" className="missionViewAction" onClick={() => onStart(task)}>View details</button>
+            <button type="button" className="missionSelectAction" data-tour={isAwarenessMission ? "welcome-select" : undefined} aria-pressed={selected} onClick={() => onSelect(task)}>{selected ? "Selected ✓" : "Select mission"}</button>
+          </div>
         )}
       </div>
 
@@ -363,7 +368,7 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
         .missionMeta strong {
           color: var(--text);
         }
-        .missionFooter button,
+        .missionActions button,
         .missionDone,
         .missionLocked {
           border: 0;
@@ -373,10 +378,30 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
           font-weight: 900;
           white-space: nowrap;
         }
-        .missionFooter button {
+        .missionActions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .missionActions button {
+          min-height: 40px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 9px 12px;
+          font-size: 12px;
+          font-weight: 900;
+          white-space: nowrap;
+          cursor: pointer;
+        }
+        .missionActions .missionViewAction {
+          background: transparent;
+          color: var(--text);
+        }
+        .missionActions .missionSelectAction {
           background: var(--accent-2);
           color: #000;
-          cursor: pointer;
+          border-color: transparent;
         }
         .missionDone {
           background: var(--mission-done-bg, rgba(245,166,35,.1));
@@ -398,12 +423,13 @@ export default function TaskCard({ task, onStart }: TaskCardProps) {
             align-items: stretch;
             flex-direction: column;
           }
-          .missionFooter button,
+          .missionActions,
           .missionDone,
           .missionLocked {
             width: 100%;
             text-align: center;
           }
+          .missionActions button { flex: 1; }
           .missionDetailGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }

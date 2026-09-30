@@ -17,12 +17,13 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav contributor-bottom-nav" aria-label="Growth Partner navigation">
       {nav.map((item) => {
-        const active = path === item.href;
+        const active = path === item.href || (item.href === "/tasks" && path.startsWith("/tasks/"));
         return (
           <Link
             key={item.href}
             href={item.href}
             className={`contributor-bottom-nav__item${active ? " active" : ""}`}
+            data-tour={item.href === "/tasks" ? "missions-link" : undefined}
             aria-current={active ? "page" : undefined}
           >
             {active && <span className="contributor-bottom-nav__indicator" aria-hidden="true" />}
