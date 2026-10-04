@@ -102,7 +102,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+    <div data-onboarding-flow="true" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflowY: "auto", boxSizing: "border-box" }}>
 
       {/* ── STEP 0: Welcome ── */}
       {step === 0 && (
@@ -125,7 +125,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
 
       {/* ── STEP 1: Profile ── */}
       {step === 1 && (
-        <div style={{ maxWidth: 420, width: "100%" }}>
+        <div style={{ maxWidth: 420, width: "100%", maxHeight: "calc(100dvh - 40px)", overflowY: "auto", margin: "auto" }}>
           <StepBar current={1} total={4} />
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#F5F5F5", marginBottom: 4 }}>Your Profile</h2>
           <p style={{ fontSize: 13, color: "#bbb", marginBottom: 20 }}>Helps us recommend relevant campaigns for you.</p>
@@ -207,7 +207,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
 
       {/* ── STEP 3: Bank Account ── */}
       {step === 3 && (
-        <div style={{ maxWidth: 420, width: "100%" }}>
+        <div style={{ maxWidth: 420, width: "100%", maxHeight: "calc(100dvh - 40px)", overflowY: "auto", margin: "auto" }}>
           <StepBar current={3} total={4} />
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#F5F5F5", marginBottom: 4 }}>Set Up Withdrawals</h2>
           <p style={{ fontSize: 13, color: "#bbb", marginBottom: 6 }}>Add your bank account so you can withdraw your earnings.</p>
@@ -240,7 +240,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
 
       {/* ── STEP 4: Referral ── */}
       {step === 4 && (
-        <div style={{ maxWidth: 420, width: "100%" }}>
+        <div style={{ maxWidth: 420, width: "100%", maxHeight: "calc(100dvh - 40px)", overflowY: "auto", margin: "auto" }}>
           <StepBar current={4} total={4} />
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#F5F5F5", marginBottom: 4 }}>Have a referral code?</h2>
           <p style={{ fontSize: 13, color: "#bbb", marginBottom: 24 }}>Optional — enter a code to get a welcome bonus.</p>

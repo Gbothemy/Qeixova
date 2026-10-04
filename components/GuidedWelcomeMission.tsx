@@ -43,7 +43,16 @@ export default function GuidedWelcomeMission() {
   const [popupPosition, setPopupPosition] = useState<PopupPosition>(null);
   const [stageRevision, setStageRevision] = useState(0);
   const [pageLoading, setPageLoading] = useState(true);
+  const [onboardingVisible, setOnboardingVisible] = useState(false);
   const guideCardRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const updateOnboardingState = () => setOnboardingVisible(Boolean(document.querySelector('[data-onboarding-flow="true"]')));
+    updateOnboardingState();
+    const observer = new MutationObserver(updateOnboardingState);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     setPageLoading(true);
@@ -115,7 +124,7 @@ export default function GuidedWelcomeMission() {
 
   const isApproved = Boolean(welcome?.completed && welcome.completion_status === "approved");
   const isPendingReview = submittedLocally || Boolean(welcome?.completed && welcome.completion_status === "pending");
-  const isActive = Boolean(user && welcome && !authLoading && preferencesLoaded && !pageLoading && !dismissed && !finished && !isApproved);
+  const isActive = Boolean(user && welcome && !authLoading && preferencesLoaded && !pageLoading && !onboardingVisible && !dismissed && !finished && !isApproved);
 
   useEffect(() => {
     if (!isActive) return;
@@ -231,7 +240,7 @@ export default function GuidedWelcomeMission() {
 
   if (!user || authLoading || !welcome) return null;
 
-  if (!pageLoading && isApproved && !completionDismissed) {
+  if (!pageLoading && !onboardingVisible && isApproved && !completionDismissed) {
     return <aside className="welcomeGuideComplete" role="status"><span aria-hidden="true">✓</span><div><strong>Welcome mission approved</strong><p>Regular matched missions are now available. Browse Missions to see campaigns matched to your profile.</p></div><button type="button" onClick={() => { window.localStorage.setItem(`qeixova-welcome-guide-complete-v1-${user.id}`, "1"); setCompletionDismissed(true); }} aria-label="Dismiss">×</button><style jsx>{`.welcomeGuideComplete{position:fixed;z-index:12000;right:18px;bottom:20px;width:min(420px,calc(100vw - 36px));display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border:1px solid rgba(26,239,34,.3);border-radius:14px;background:#101411;color:#f5f5f5;box-shadow:0 14px 38px #0008}.welcomeGuideComplete>span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#1aef22;color:#031003;font-weight:1000}.welcomeGuideComplete strong{font-size:14px}.welcomeGuideComplete p{margin-top:4px;color:#b8c1b8;font-size:12px;line-height:1.45}.welcomeGuideComplete button{margin-left:auto;border:0;background:none;color:#aeb4af;font-size:20px;cursor:pointer}`}</style></aside>;
   }
 
