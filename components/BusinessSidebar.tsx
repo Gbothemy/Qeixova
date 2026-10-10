@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const nav = [
   { href: "/business/dashboard", label: "Overview", icon: "/icon-home.svg", desc: "Account health" },
@@ -24,8 +24,26 @@ function isActivePath(path: string, href: string) {
 export default function BusinessSidebar({ name }: { name: string }) {
   const path = usePathname();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileHeaderRef = useRef<HTMLElement>(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const unreadAlertLabel = unreadAlerts > 99 ? "99+" : String(unreadAlerts);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (event.target instanceof Node && !mobileHeaderRef.current?.contains(event.target)) setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+    };
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     let mounted = true;
@@ -57,6 +75,7 @@ export default function BusinessSidebar({ name }: { name: string }) {
   }, []);
 
   return (
+    <>
     <aside className="businessAdsSidebar">
       <div className="businessAdsBrand">
         <Link href="/business/dashboard" className="businessAdsLogo">
@@ -109,5 +128,30 @@ export default function BusinessSidebar({ name }: { name: string }) {
         <button type="button" onClick={() => router.push("/business/profile")}>Profile</button>
       </div>
     </aside>
+    <header ref={mobileHeaderRef} className="businessMobileHeader">
+      <Link href="/business/dashboard" className="businessMobileBrand" aria-label="Qeixova Business overview">
+        <Image src="/qeixova-icon.png" alt="" width={34} height={34} />
+        <span><strong>Qeixova</strong><small>{name}</small></span>
+      </Link>
+      <button type="button" className="businessMobileMenuToggle" aria-expanded={mobileMenuOpen} aria-controls="business-mobile-menu" onClick={() => setMobileMenuOpen((open) => !open)}>
+        <span className="businessMobileMenuGlyph" aria-hidden="true">{mobileMenuOpen ? "×" : "☰"}</span>
+        <span>{mobileMenuOpen ? "Close" : "Menu"}</span>
+      </button>
+      {mobileMenuOpen && (
+        <nav id="business-mobile-menu" className="businessMobileMenuPanel" aria-label="All business navigation">
+          {nav.map((item) => {
+            const active = isActivePath(path, item.href);
+            return (
+              <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={active ? "active" : ""} onClick={() => setMobileMenuOpen(false)}>
+                <span className="businessMobileMenuIcon"><Image src={item.icon} alt="" width={20} height={20} /></span>
+                <span className="businessMobileMenuCopy"><strong>{item.label}</strong><small>{item.desc}</small></span>
+                {item.href === "/business/growth" && unreadAlerts > 0 && <span className="businessAlertBadge" aria-label={`${unreadAlertLabel} unread alerts`}>{unreadAlertLabel}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+    </header>
+    </>
   );
 }
