@@ -4448,7 +4448,16 @@ const pageStyles = `
     .pageShell,
     .successShell,
     .loadingShell {
+      width: 100%;
+      flex: none;
+      box-sizing: border-box;
       padding: 14px 14px 104px;
+    }
+
+    .pageShell *,
+    .successShell * {
+      min-width: 0;
+      box-sizing: border-box;
     }
 
     .heroBand,
@@ -4594,7 +4603,9 @@ const pageStyles = `
     }
 
     .locationTargetingHead > strong {
-      width: max-content;
+      width: fit-content;
+      max-width: 100%;
+      overflow-wrap: anywhere;
     }
 
     .locationMode {
@@ -4609,6 +4620,8 @@ const pageStyles = `
 
     .actionsBar {
       position: static;
+      display: flex;
+      flex-wrap: wrap;
       background: #0d0d0d;
       border: 1px solid #1b1b1b;
       border-radius: 8px;
@@ -4619,6 +4632,40 @@ const pageStyles = `
     .primaryButton,
     .secondaryButton {
       flex: 1;
+      min-width: 0;
+    }
+
+    .previewTopbar {
+      min-width: 0;
+    }
+
+    .successSummaryGrid strong,
+    .previewSplit strong,
+    .previewSplit span {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .pageShell,
+    .successShell,
+    .loadingShell {
+      padding-right: 10px;
+      padding-left: 10px;
+    }
+
+    .builderPanel {
+      padding: 12px;
+    }
+
+    .actionsBar {
+      gap: 8px;
+    }
+
+    .primaryButton,
+    .secondaryButton {
+      padding: 12px 10px;
+      font-size: 13px;
     }
   }
 `;
