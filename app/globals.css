@@ -602,11 +602,11 @@ input[type="number"] {
   .businessMobileMenuToggle {
     display: inline-flex;
     flex: none;
-    min-width: 84px;
+    width: 44px;
+    min-width: 44px;
     min-height: 42px;
     align-items: center;
     justify-content: center;
-    gap: 8px;
     border: 1px solid rgba(245, 166, 35, .3);
     border-radius: 12px;
     background: #11120f;
@@ -626,7 +626,7 @@ input[type="number"] {
     left: 12px;
     right: 12px;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
     max-height: min(68vh, 560px);
     max-height: min(68dvh, 560px);

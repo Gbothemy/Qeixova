@@ -133,9 +133,8 @@ export default function BusinessSidebar({ name }: { name: string }) {
         <Image src="/qeixova-icon.png" alt="" width={34} height={34} />
         <span><strong>Qeixova</strong><small>{name}</small></span>
       </Link>
-      <button type="button" className="businessMobileMenuToggle" aria-expanded={mobileMenuOpen} aria-controls="business-mobile-menu" onClick={() => setMobileMenuOpen((open) => !open)}>
+      <button type="button" className="businessMobileMenuToggle" aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileMenuOpen} aria-controls="business-mobile-menu" onClick={() => setMobileMenuOpen((open) => !open)}>
         <span className="businessMobileMenuGlyph" aria-hidden="true">{mobileMenuOpen ? "×" : "☰"}</span>
-        <span>{mobileMenuOpen ? "Close" : "Menu"}</span>
       </button>
       {mobileMenuOpen && (
         <nav id="business-mobile-menu" className="businessMobileMenuPanel" aria-label="All business navigation">
