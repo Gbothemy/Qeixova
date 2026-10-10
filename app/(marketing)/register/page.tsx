@@ -16,7 +16,7 @@ const PLATFORMS = ["WhatsApp Status","Facebook Story","Instagram Story","TikTok"
 const NIGERIAN_STATES = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT - Abuja","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const inp: React.CSSProperties = { width:"100%", marginTop:7, padding:"13px 14px", borderRadius:11, border:"1.5px solid #1e1e1e", fontSize:14, outline:"none", color:"#F5F5F5", background:"#0d0d0d" };
+const inp: React.CSSProperties = { width:"100%", marginTop:7, padding:"13px 14px", borderRadius:11, border:"1.5px solid var(--qeixova-color-e1-e1-e1)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-f2-f2-f2)" };
 
 function Chips({ options, selected, onChange, color="#1AEF22", max }: { options:string[]; selected:string[]; onChange:(v:string[])=>void; color?:string; max?:number }) {
   const toggle = (v:string) => {
@@ -29,11 +29,11 @@ function Chips({ options, selected, onChange, color="#1AEF22", max }: { options:
   };
   return (
     <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:8 }}>
-      {max && <p style={{ width:"100%", fontSize:11, color:"#bbb", marginBottom:2 }}>Select up to {max} · {selected.length}/{max} chosen</p>}
+      {max && <p style={{ width:"100%", fontSize:11, color:"var(--qeixova-color-44-44-44)", marginBottom:2 }}>Select up to {max} · {selected.length}/{max} chosen</p>}
       {options.map(o => {
         const on = selected.includes(o);
         const atLimit = !on && max !== undefined && selected.length >= max;
-        return <button key={o} type="button" onClick={()=>toggle(o)} disabled={atLimit} style={{ padding:"7px 14px", borderRadius:20, fontSize:12, cursor:atLimit?"not-allowed":"pointer", fontWeight:on?700:400, border:`1.5px solid ${on?color:atLimit?"#111":"#1e1e1e"}`, background:on?`${color}18`:"transparent", color:on?color:atLimit?"#444":"#bbb", opacity:atLimit?0.4:1, transition:"all 0.15s" }}>{o}</button>;
+        return <button key={o} type="button" onClick={()=>toggle(o)} disabled={atLimit} style={{ padding:"7px 14px", borderRadius:20, fontSize:12, cursor:atLimit?"not-allowed":"pointer", fontWeight:on?700:400, border:`1.5px solid ${on?color:atLimit?"var(--qeixova-color-ee-ee-ee)":"var(--qeixova-color-e1-e1-e1)"}`, background:on?`${color}18`:"transparent", color:on?color:atLimit?"var(--qeixova-color-bb-bb-bb)":"var(--qeixova-color-44-44-44)", opacity:atLimit?0.4:1, transition:"all 0.15s" }}>{o}</button>;
       })}
     </div>
   );
@@ -43,9 +43,9 @@ function StepBar({ current, total, color="#1AEF22" }: { current:number; total:nu
   return (
     <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:24 }}>
       {Array.from({length:total}).map((_,i) => (
-        <div key={i} style={{ flex:1, height:3, borderRadius:3, background:i<current?color:"#1a1a1a", transition:"background 0.3s" }} />
+        <div key={i} style={{ flex:1, height:3, borderRadius:3, background:i<current?color:"var(--qeixova-color-e5-e5-e5)", transition:"background 0.3s" }} />
       ))}
-      <span style={{ fontSize:11, color:"#aaa", flexShrink:0 }}>{current}/{total}</span>
+      <span style={{ fontSize:11, color:"var(--qeixova-color-55-55-55)", flexShrink:0 }}>{current}/{total}</span>
     </div>
   );
 }
@@ -63,16 +63,16 @@ function StateSearch({ value, onChange, color="#F5A623" }: { value:string; onCha
         value={value}
         onChange={(event)=>onChange(event.target.value)}
         onFocus={(event)=>{ setFocused(true); event.target.style.borderColor=color; }}
-        onBlur={(event)=>{ window.setTimeout(()=>setFocused(false), 120); event.target.style.borderColor="#333333"; }}
+        onBlur={(event)=>{ window.setTimeout(()=>setFocused(false), 120); event.target.style.borderColor="var(--qeixova-color-cc-cc-cc)"; }}
         placeholder="Type state"
         autoComplete="off"
         aria-autocomplete="list"
-        style={{ width:"100%", marginTop:8, padding:"13px 14px", borderRadius:12, border:"1.5px solid #333333", fontSize:14, outline:"none", color:"#F5F5F5", background:"#1a1a1a" }}
+        style={{ width:"100%", marginTop:8, padding:"13px 14px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)" }}
       />
       {focused && suggestions.length > 0 && (
-        <div role="listbox" style={{ position:"absolute", zIndex:20, top:"calc(100% + 6px)", left:0, right:0, display:"grid", gap:4, maxHeight:220, overflowY:"auto", padding:8, border:"1px solid #272727", borderRadius:10, background:"#0d0d0d", boxShadow:"0 18px 44px rgba(0,0,0,.36)" }}>
+        <div role="listbox" style={{ position:"absolute", zIndex:20, top:"calc(100% + 6px)", left:0, right:0, display:"grid", gap:4, maxHeight:220, overflowY:"auto", padding:8, border:"1px solid var(--qeixova-color-d8-d8-d8)", borderRadius:10, background:"var(--qeixova-color-f2-f2-f2)", boxShadow:"0 18px 44px rgba(0,0,0,.36)" }}>
           {suggestions.map((state)=>(
-            <button key={state} type="button" role="option" aria-selected={value === state} onMouseDown={(event)=>{ event.preventDefault(); onChange(state); setFocused(false); }} style={{ border:0, borderRadius:8, padding:"10px 11px", background:value === state ? `${color}18` : "transparent", color:value === state ? color : "#ededed", textAlign:"left", fontWeight:800, cursor:"pointer" }}>
+            <button key={state} type="button" role="option" aria-selected={value === state} onMouseDown={(event)=>{ event.preventDefault(); onChange(state); setFocused(false); }} style={{ border:0, borderRadius:8, padding:"10px 11px", background:value === state ? `${color}18` : "transparent", color:value === state ? color : "var(--qeixova-color-12-12-12)", textAlign:"left", fontWeight:800, cursor:"pointer" }}>
               {state}
             </button>
           ))}
@@ -224,22 +224,22 @@ export default function RegisterPage() {
                     <Image src="/qeixova-icon.png" alt="Qeixova" width={56} height={56} style={{ borderRadius:16, objectFit:"contain", boxShadow:"0 8px 32px rgba(26,239,34,0.4)" }} />
                   </div>
                   <div style={{ textAlign:"left" }}>
-                    <p style={{ fontWeight:900, fontSize:22, color:"#F5F5F5", letterSpacing:-0.5, lineHeight:1.1 }}>Qeixova</p>
+                    <p style={{ fontWeight:900, fontSize:22, color:"var(--qeixova-color-0a-0a-0a)", letterSpacing:-0.5, lineHeight:1.1 }}>Qeixova</p>
                     <p style={{ fontSize:11, color:"#1AEF22", fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>Tasks</p>
                   </div>
                 </div>
 
-                <h1 className="animate-fade-up delay-1" style={{ fontSize:"clamp(24px, 5vw, 36px)", fontWeight:900, color:"#F5F5F5", letterSpacing:-0.5, marginBottom:12 }}>
+                <h1 className="animate-fade-up delay-1" style={{ fontSize:"clamp(24px, 5vw, 36px)", fontWeight:900, color:"var(--qeixova-color-0a-0a-0a)", letterSpacing:-0.5, marginBottom:12 }}>
                   Welcome to <span className="shimmer-text">Qeixova Tasks</span>
                 </h1>
-                <p className="animate-fade-up delay-2" style={{ fontSize:14, color:"#ccc", lineHeight:1.7, marginBottom:36, maxWidth:380, margin:"0 auto 36px" }}>
+                <p className="animate-fade-up delay-2" style={{ fontSize:14, color:"var(--qeixova-color-33-33-33)", lineHeight:1.7, marginBottom:36, maxWidth:380, margin:"0 auto 36px" }}>
                   A community-powered growth platform where businesses gain visibility and growth partners earn through meaningful participation.
                 </p>
 
                 <div className="animate-fade-up delay-3" style={{ display:"flex", flexDirection:"column", gap:12 }}>
                   {/* Business button — white */}
                   <button onClick={()=>{ setAccountType("business"); setScreen("type"); }}
-                    style={{ width:"100%", background:"#ffffff", color:"#000", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer", boxShadow:"0 6px 20px rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all 0.2s ease" }}
+                    style={{ width:"100%", background:"var(--qeixova-color-00-00-00)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer", boxShadow:"0 6px 20px rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all 0.2s ease" }}
                     onMouseEnter={e=>(e.currentTarget.style.boxShadow="0 8px 28px rgba(255,255,255,0.25)")}
                     onMouseLeave={e=>(e.currentTarget.style.boxShadow="0 6px 20px rgba(255,255,255,0.15)")}>
                     <Image src="/icon-task.svg" alt="Business" width={18} height={18} style={{ objectFit:"contain", filter:"brightness(0)" }} />
@@ -248,7 +248,7 @@ export default function RegisterPage() {
 
                   {/* Growth Partner button — green */}
                   <button onClick={()=>{ setAccountType("contributor"); setScreen("type"); }}
-                    style={{ width:"100%", background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"#000", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer", boxShadow:"0 6px 20px rgba(26,239,34,0.28)", display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all 0.2s ease" }}
+                    style={{ width:"100%", background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer", boxShadow:"0 6px 20px rgba(26,239,34,0.28)", display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all 0.2s ease" }}
                     onMouseEnter={e=>(e.currentTarget.style.boxShadow="0 8px 28px rgba(26,239,34,0.45)")}
                     onMouseLeave={e=>(e.currentTarget.style.boxShadow="0 6px 20px rgba(26,239,34,0.28)")}>
                     <Image src="/icon-profile.svg" alt="Growth Partner" width={18} height={18} style={{ objectFit:"contain", filter:"brightness(0)" }} />
@@ -256,8 +256,8 @@ export default function RegisterPage() {
                   </button>
                 </div>
 
-                <p className="animate-fade-up delay-4" style={{ fontSize:12, color:"#999", marginTop:16 }}>You can switch account types later.</p>
-                <p className="animate-fade-up delay-5" style={{ fontSize:13, color:"#aaa", marginTop:10 }}>
+                <p className="animate-fade-up delay-4" style={{ fontSize:12, color:"var(--qeixova-color-66-66-66)", marginTop:16 }}>You can switch account types later.</p>
+                <p className="animate-fade-up delay-5" style={{ fontSize:13, color:"var(--qeixova-color-55-55-55)", marginTop:10 }}>
                   Already have an account? <Link href="/login" style={{ color:"#1AEF22", textDecoration:"none", fontWeight:600 }}>Login</Link>
                 </p>
               </div>
@@ -267,7 +267,7 @@ export default function RegisterPage() {
           {/* ── TYPE SELECTION ── */}
           {screen === "type" && accountType && (
             <div>
-              <button onClick={()=>setScreen("welcome")} style={{ background:"none", border:"none", color:"#bbb", fontSize:13, cursor:"pointer", marginBottom:20, padding:0 }}>← Back</button>
+              <button onClick={()=>setScreen("welcome")} style={{ background:"none", border:"none", color:"var(--qeixova-color-44-44-44)", fontSize:13, cursor:"pointer", marginBottom:20, padding:0 }}>← Back</button>
               {accountType === "business" ? (
                 <div>
                   <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
@@ -275,22 +275,22 @@ export default function RegisterPage() {
                     <img src="/icon-task.svg" width={26} height={26} style={{ filter:"brightness(0)" }} alt="" />
                   </div>
                     <div>
-                      <h2 style={{ fontSize:20, fontWeight:900, color:"#F5F5F5", marginBottom:3 }}>Business Account</h2>
-                      <p style={{ fontSize:13, color:"#bbb" }}>Grow your brand through real human participation</p>
+                      <h2 style={{ fontSize:20, fontWeight:900, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:3 }}>Business Account</h2>
+                      <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)" }}>Grow your brand through real human participation</p>
                     </div>
                   </div>
-                  <p style={{ fontSize:14, color:"#ccc", lineHeight:1.7, marginBottom:20 }}>
+                  <p style={{ fontSize:14, color:"var(--qeixova-color-33-33-33)", lineHeight:1.7, marginBottom:20 }}>
                     Promote your business, music, events, products, videos, apps, or campaigns through real human participation.
                   </p>
-                  <div style={{ background:"#0a0a0a", borderRadius:14, padding:"18px", border:"1px solid #1a1a1a", marginBottom:24 }}>
+                  <div style={{ background:"var(--qeixova-color-f5-f5-f5)", borderRadius:14, padding:"18px", border:"1px solid var(--qeixova-color-e5-e5-e5)", marginBottom:24 }}>
                     {["Launch awareness campaigns","Get reposts and shares","Run referral campaigns","Test products and apps","Gather feedback","Reach local communities"].map(f => (
                       <div key={f} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                         <div style={{ width:6, height:6, borderRadius:"50%", background:"#F5A623", flexShrink:0 }} />
-                        <span style={{ fontSize:13, color:"#ccc" }}>{f}</span>
+                        <span style={{ fontSize:13, color:"var(--qeixova-color-33-33-33)" }}>{f}</span>
                       </div>
                     ))}
                   </div>
-                  <button onClick={()=>setScreen("signup")} style={{ width:"100%", background:"linear-gradient(135deg, #F5A623, #d89420)", color:"#000", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer" }}>
+                  <button onClick={()=>setScreen("signup")} style={{ width:"100%", background:"linear-gradient(135deg, #F5A623, #d89420)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer" }}>
                     Create Business Account →
                   </button>
                 </div>
@@ -301,22 +301,22 @@ export default function RegisterPage() {
                     <img src="/icon-profile.svg" width={26} height={26} style={{ filter:"brightness(0)" }} alt="" />
                   </div>
                     <div>
-                      <h2 style={{ fontSize:20, fontWeight:900, color:"#F5F5F5", marginBottom:3 }}>Growth Partner Account</h2>
-                      <p style={{ fontSize:13, color:"#bbb" }}>Earn by helping businesses grow</p>
+                      <h2 style={{ fontSize:20, fontWeight:900, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:3 }}>Growth Partner Account</h2>
+                      <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)" }}>Earn by helping businesses grow</p>
                     </div>
                   </div>
-                  <p style={{ fontSize:14, color:"#ccc", lineHeight:1.7, marginBottom:20 }}>
+                  <p style={{ fontSize:14, color:"var(--qeixova-color-33-33-33)", lineHeight:1.7, marginBottom:20 }}>
                     Earn rewards by helping businesses and creators distribute content, test products, and grow online.
                   </p>
-                  <div style={{ background:"#0a0a0a", borderRadius:14, padding:"18px", border:"1px solid #1a1a1a", marginBottom:24 }}>
+                  <div style={{ background:"var(--qeixova-color-f5-f5-f5)", borderRadius:14, padding:"18px", border:"1px solid var(--qeixova-color-e5-e5-e5)", marginBottom:24 }}>
                     {["Complete participation tasks","Earn QLT rewards","Build growth partner level","Access better campaigns","Join growth communities"].map(f => (
                       <div key={f} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                         <div style={{ width:6, height:6, borderRadius:"50%", background:"#1AEF22", flexShrink:0 }} />
-                        <span style={{ fontSize:13, color:"#ccc" }}>{f}</span>
+                        <span style={{ fontSize:13, color:"var(--qeixova-color-33-33-33)" }}>{f}</span>
                       </div>
                     ))}
                   </div>
-                  <button onClick={()=>setScreen("signup")} style={{ width:"100%", background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"#000", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer" }}>
+                  <button onClick={()=>setScreen("signup")} style={{ width:"100%", background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"15px", fontWeight:800, fontSize:15, cursor:"pointer" }}>
                     Create Growth Partner Account →
                   </button>
                 </div>
@@ -335,15 +335,15 @@ export default function RegisterPage() {
               <div style={{ textAlign:"center", marginBottom:28 }}>
                 <Link href="/" style={{ textDecoration:"none", display:"inline-flex", flexDirection:"column", alignItems:"center", gap:8 }}>
                   <img src="/qeixova-icon.png" alt="Qeixova" style={{ width:52, height:52, borderRadius:14, objectFit:"contain", boxShadow:"0 8px 24px rgba(26,239,34,0.35)" }} />
-                  <span style={{ fontWeight:900, fontSize:20, color:"#fff", letterSpacing:-0.5 }}>Qeixova</span>
+                  <span style={{ fontWeight:900, fontSize:20, color:"var(--qeixova-color-00-00-00)", letterSpacing:-0.5 }}>Qeixova</span>
                 </Link>
               </div>
 
               {/* Card */}
-              <div style={{ background:"#111111", borderRadius:24, padding:"32px 28px", boxShadow:"0 20px 60px rgba(0,0,0,0.5)", border:"1px solid #222222" }}>
-                <button onClick={()=>setScreen("type")} style={{ background:"none", border:"none", color:"#bbb", fontSize:13, cursor:"pointer", marginBottom:16, padding:0 }}>← Back</button>
-                <h2 style={{ fontWeight:800, fontSize:22, color:"#F5F5F5", marginBottom:6 }}>Create Your Account</h2>
-                <p style={{ fontSize:13, color:"#bbbbbb", marginBottom:24 }}>
+              <div style={{ background:"var(--qeixova-color-ee-ee-ee)", borderRadius:24, padding:"32px 28px", boxShadow:"0 20px 60px rgba(0,0,0,0.5)", border:"1px solid var(--qeixova-color-dd-dd-dd)" }}>
+                <button onClick={()=>setScreen("type")} style={{ background:"none", border:"none", color:"var(--qeixova-color-44-44-44)", fontSize:13, cursor:"pointer", marginBottom:16, padding:0 }}>← Back</button>
+                <h2 style={{ fontWeight:800, fontSize:22, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:6 }}>Create Your Account</h2>
+                <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)", marginBottom:24 }}>
                   {accountType === "business" ? "Set up your business login." : "Set up your growth partner account."}
                 </p>
 
@@ -352,59 +352,59 @@ export default function RegisterPage() {
                 <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
                   {/* Name */}
                   <div>
-                    <label style={{ fontSize:12, fontWeight:700, color:"#bbbbbb", letterSpacing:0.5 }}>{accountType === "business" ? "BUSINESS NAME" : "FULL NAME"}</label>
+                    <label style={{ fontSize:12, fontWeight:700, color:"var(--qeixova-color-44-44-44)", letterSpacing:0.5 }}>{accountType === "business" ? "BUSINESS NAME" : "FULL NAME"}</label>
                     <div style={{ position:"relative", marginTop:8 }}>
                       <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", display:"flex", alignItems:"center", pointerEvents:"none" }}>
                         <img src="/icon-profile.svg" width={16} height={16} style={{ opacity:0.5 }} alt="" />
                       </span>
                       <input type="text" placeholder={accountType === "business" ? "Your company or brand name" : "Your full name"} value={form.fullName} onChange={e=>setForm(f=>({...f,fullName:e.target.value}))}
-                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid #333333", fontSize:14, outline:"none", color:"#F5F5F5", background:"#1a1a1a", transition:"border-color 0.2s" }}
-                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="#333333")} />
+                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)", transition:"border-color 0.2s" }}
+                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-cc-cc-cc)")} />
                     </div>
                   </div>
                   {/* Email */}
                   <div>
-                    <label style={{ fontSize:12, fontWeight:700, color:"#bbbbbb", letterSpacing:0.5 }}>EMAIL ADDRESS</label>
+                    <label style={{ fontSize:12, fontWeight:700, color:"var(--qeixova-color-44-44-44)", letterSpacing:0.5 }}>EMAIL ADDRESS</label>
                     <div style={{ position:"relative", marginTop:8 }}>
                       <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", display:"flex", alignItems:"center", pointerEvents:"none" }}>
                         <img src="/icon-email.svg" width={16} height={16} style={{ opacity:0.5 }} alt="" />
                       </span>
                       <input type="email" placeholder="your@email.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}
-                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid #333333", fontSize:14, outline:"none", color:"#F5F5F5", background:"#1a1a1a", transition:"border-color 0.2s" }}
-                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="#333333")} />
+                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)", transition:"border-color 0.2s" }}
+                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-cc-cc-cc)")} />
                     </div>
                   </div>
                   {/* Password */}
                   <div>
-                    <label style={{ fontSize:12, fontWeight:700, color:"#bbbbbb", letterSpacing:0.5 }}>PASSWORD</label>
+                    <label style={{ fontSize:12, fontWeight:700, color:"var(--qeixova-color-44-44-44)", letterSpacing:0.5 }}>PASSWORD</label>
                     <div style={{ position:"relative", marginTop:8 }}>
                       <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", display:"flex", alignItems:"center", pointerEvents:"none" }}>
                         <img src="/icon-lock.svg" width={16} height={16} style={{ opacity:0.5 }} alt="" />
                       </span>
                       <input type="password" placeholder="Create a strong password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))}
-                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid #333333", fontSize:14, outline:"none", color:"#F5F5F5", background:"#1a1a1a", transition:"border-color 0.2s" }}
-                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="#333333")} />
+                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)", transition:"border-color 0.2s" }}
+                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-cc-cc-cc)")} />
                     </div>
                   </div>
                   {/* Confirm Password */}
                   <div>
-                    <label style={{ fontSize:12, fontWeight:700, color:"#bbbbbb", letterSpacing:0.5 }}>CONFIRM PASSWORD</label>
+                    <label style={{ fontSize:12, fontWeight:700, color:"var(--qeixova-color-44-44-44)", letterSpacing:0.5 }}>CONFIRM PASSWORD</label>
                     <div style={{ position:"relative", marginTop:8 }}>
                       <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", display:"flex", alignItems:"center", pointerEvents:"none" }}>
                         <img src="/icon-lock.svg" width={16} height={16} style={{ opacity:0.5 }} alt="" />
                       </span>
                       <input type="password" placeholder="Repeat your password" value={form.confirmPassword} onChange={e=>setForm(f=>({...f,confirmPassword:e.target.value}))}
-                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid #333333", fontSize:14, outline:"none", color:"#F5F5F5", background:"#1a1a1a", transition:"border-color 0.2s" }}
-                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="#333333")} />
+                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)", transition:"border-color 0.2s" }}
+                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-cc-cc-cc)")} />
                     </div>
                   </div>
                   {/* Country + State */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                     <div>
-                      <label style={{ fontSize:12, fontWeight:700, color:"#bbbbbb", letterSpacing:0.5 }}>COUNTRY</label>
+                      <label style={{ fontSize:12, fontWeight:700, color:"var(--qeixova-color-44-44-44)", letterSpacing:0.5 }}>COUNTRY</label>
                       <select value={form.country} onChange={e=>setForm(f=>({...f,country:e.target.value}))}
-                        style={{ width:"100%", marginTop:8, padding:"13px 14px", borderRadius:12, border:"1.5px solid #333333", fontSize:14, outline:"none", color:"#F5F5F5", background:"#1a1a1a", cursor:"pointer" }}
-                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="#333333")}>
+                        style={{ width:"100%", marginTop:8, padding:"13px 14px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)", cursor:"pointer" }}
+                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-cc-cc-cc)")}>
                         <option value="Nigeria">Nigeria</option>
                         <option value="Ghana">Ghana</option>
                         <option value="Kenya">Kenya</option>
@@ -412,10 +412,10 @@ export default function RegisterPage() {
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize:12, fontWeight:700, color:"#bbbbbb", letterSpacing:0.5 }}>STATE</label>
+                      <label style={{ fontSize:12, fontWeight:700, color:"var(--qeixova-color-44-44-44)", letterSpacing:0.5 }}>STATE</label>
                       <select value={form.state} onChange={e=>setForm(f=>({...f,state:e.target.value}))}
-                        style={{ width:"100%", marginTop:8, padding:"13px 14px", borderRadius:12, border:"1.5px solid #333333", fontSize:14, outline:"none", color:"#F5F5F5", background:"#1a1a1a", cursor:"pointer" }}
-                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="#333333")}>
+                        style={{ width:"100%", marginTop:8, padding:"13px 14px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)", cursor:"pointer" }}
+                        onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-cc-cc-cc)")}>
                         <option value="">Select state</option>
                         {NIGERIAN_STATES.map(s=><option key={s} value={s}>{s}</option>)}
                       </select>
@@ -424,7 +424,7 @@ export default function RegisterPage() {
                   {/* Terms */}
                   <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
                     <input type="checkbox" id="terms" checked={termsAccepted} onChange={e=>setTermsAccepted(e.target.checked)} style={{ marginTop:3, accentColor, width:16, height:16, cursor:"pointer", flexShrink:0 }} />
-                    <label htmlFor="terms" style={{ fontSize:12, color:"#bbbbbb", lineHeight:1.5, cursor:"pointer" }}>
+                    <label htmlFor="terms" style={{ fontSize:12, color:"var(--qeixova-color-44-44-44)", lineHeight:1.5, cursor:"pointer" }}>
                       I agree to the <Link href="/#" style={{ color:accentColor, textDecoration:"none", fontWeight:600 }}>Terms of Service</Link> and <Link href="/#" style={{ color:accentColor, textDecoration:"none", fontWeight:600 }}>Privacy Policy</Link>
                     </label>
                   </div>
@@ -432,8 +432,8 @@ export default function RegisterPage() {
 
                 <button onClick={handleSignup} disabled={loading} style={{
                   width:"100%", marginTop:20,
-                  background: loading ? "#a0a0a0" : `linear-gradient(135deg, ${accentColor}, ${accountType==="business"?"#d89420":"#06B517"})`,
-                  color: loading ? "#fff" : "#000", border:"none", borderRadius:14, padding:"15px",
+                  background: loading ? "var(--qeixova-color-5f-5f-5f)" : `linear-gradient(135deg, ${accentColor}, ${accountType==="business"?"#d89420":"#06B517"})`,
+                  color: loading ? "var(--qeixova-color-00-00-00)" : "var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:14, padding:"15px",
                   fontWeight:800, fontSize:15, cursor:loading?"not-allowed":"pointer",
                   boxShadow: loading ? "none" : `0 6px 20px ${accentColor}55`,
                   transition:"all 0.2s", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
@@ -453,19 +453,19 @@ export default function RegisterPage() {
             <section style={{ textAlign:"center", maxWidth:420, margin:"0 auto" }} aria-live="polite">
               <div style={{ width:72, height:72, display:"grid", placeItems:"center", margin:"0 auto 20px", borderRadius:22, background:`${accentColor}18`, border:`1px solid ${accentColor}44`, color:accentColor, fontSize:34, fontWeight:900 }} aria-hidden="true">✉</div>
               <p style={{ color:accentColor, fontSize:11, fontWeight:900, letterSpacing:1.1, textTransform:"uppercase", marginBottom:9 }}>One last step</p>
-              <h2 style={{ color:"#F5F5F5", fontSize:24, fontWeight:900, letterSpacing:-0.5, marginBottom:12 }}>Verify your email</h2>
-              <p style={{ color:"#c4c4c4", fontSize:14, lineHeight:1.7, marginBottom:12 }}>
+              <h2 style={{ color:"var(--qeixova-color-0a-0a-0a)", fontSize:24, fontWeight:900, letterSpacing:-0.5, marginBottom:12 }}>Verify your email</h2>
+              <p style={{ color:"var(--qeixova-color-3b-3b-3b)", fontSize:14, lineHeight:1.7, marginBottom:12 }}>
                 {verifyNotice || "We sent a verification link to your email address."}
               </p>
-              <p style={{ color:"#F5F5F5", fontSize:14, fontWeight:800, wordBreak:"break-word", marginBottom:22 }}>{form.email}</p>
+              <p style={{ color:"var(--qeixova-color-0a-0a-0a)", fontSize:14, fontWeight:800, wordBreak:"break-word", marginBottom:22 }}>{form.email}</p>
               {error && <p role="alert" style={{ color:"#ff8a8a", background:"rgba(255,80,80,.08)", border:"1px solid rgba(255,80,80,.18)", borderRadius:12, padding:"11px 13px", fontSize:12, lineHeight:1.5, marginBottom:14 }}>{error}</p>}
               <button type="button" onClick={()=>void handleResendVerification()} disabled={resendingVerification} style={{ width:"100%", border:`1px solid ${accentColor}77`, borderRadius:13, background:"transparent", color:accentColor, padding:"13px 16px", fontWeight:900, fontSize:14, cursor:resendingVerification ? "not-allowed" : "pointer", opacity:resendingVerification ? .7 : 1 }}>
                 {resendingVerification ? "Sending verification email..." : "Resend verification email"}
               </button>
-              <Link href="/login" style={{ display:"block", width:"100%", boxSizing:"border-box", marginTop:10, borderRadius:13, background:`linear-gradient(135deg, ${accentColor}, ${accountType === "business" ? "#d89420" : "#06B517"})`, color:"#000", padding:"14px 16px", textDecoration:"none", fontWeight:900, fontSize:14 }}>
+              <Link href="/login" style={{ display:"block", width:"100%", boxSizing:"border-box", marginTop:10, borderRadius:13, background:`linear-gradient(135deg, ${accentColor}, ${accountType === "business" ? "#d89420" : "#06B517"})`, color:"var(--qeixova-color-ff-ff-ff)", padding:"14px 16px", textDecoration:"none", fontWeight:900, fontSize:14 }}>
                 Go to Login →
               </Link>
-              <p style={{ color:"#888", fontSize:12, lineHeight:1.55, marginTop:18 }}>After you verify your email, return to Login to access your account.</p>
+              <p style={{ color:"var(--qeixova-color-77-77-77)", fontSize:12, lineHeight:1.55, marginTop:18 }}>After you verify your email, return to Login to access your account.</p>
             </section>
           )}
 
@@ -475,44 +475,44 @@ export default function RegisterPage() {
               {onboardStep === 1 && (
                 <div>
                   <StepBar current={1} total={2} color="#F5A623" />
-                  <h2 style={{ fontSize:20, fontWeight:800, color:"#F5F5F5", marginBottom:4 }}>Business Setup</h2>
-                  <p style={{ fontSize:13, color:"#bbb", marginBottom:20 }}>Help us match you with the right growth partners.</p>
+                  <h2 style={{ fontSize:20, fontWeight:800, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:4 }}>Business Setup</h2>
+                  <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)", marginBottom:20 }}>Help us match you with the right growth partners.</p>
                   <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
                     <div>
-                      <label style={{ fontSize:11, fontWeight:700, color:"#aaa", letterSpacing:0.8, textTransform:"uppercase" }}>Business Category</label>
-                      <select value={bizCategory} onChange={e=>setBizCategory(e.target.value)} style={{ ...inp, cursor:"pointer" }} onFocus={e=>(e.target.style.borderColor="#F5A623")} onBlur={e=>(e.target.style.borderColor="#1e1e1e")}>
+                      <label style={{ fontSize:11, fontWeight:700, color:"var(--qeixova-color-55-55-55)", letterSpacing:0.8, textTransform:"uppercase" }}>Business Category</label>
+                      <select value={bizCategory} onChange={e=>setBizCategory(e.target.value)} style={{ ...inp, cursor:"pointer" }} onFocus={e=>(e.target.style.borderColor="#F5A623")} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-e1-e1-e1)")}>
                         <option value="">Select your category</option>
                         {BUSINESS_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize:11, fontWeight:700, color:"#aaa", letterSpacing:0.8, textTransform:"uppercase" }}>Business Description (optional)</label>
-                      <textarea value={bizDescription} onChange={e=>setBizDescription(e.target.value)} placeholder="Briefly describe your business or campaign..." rows={3} style={{ ...inp, resize:"vertical", lineHeight:1.6 }} onFocus={e=>(e.target.style.borderColor="#F5A623")} onBlur={e=>(e.target.style.borderColor="#1e1e1e")} />
+                      <label style={{ fontSize:11, fontWeight:700, color:"var(--qeixova-color-55-55-55)", letterSpacing:0.8, textTransform:"uppercase" }}>Business Description (optional)</label>
+                      <textarea value={bizDescription} onChange={e=>setBizDescription(e.target.value)} placeholder="Briefly describe your business or campaign..." rows={3} style={{ ...inp, resize:"vertical", lineHeight:1.6 }} onFocus={e=>(e.target.style.borderColor="#F5A623")} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-e1-e1-e1)")} />
                     </div>
                   </div>
-                  <button onClick={()=>setOnboardStep(2)} style={{ width:"100%", marginTop:20, background:"linear-gradient(135deg, #F5A623, #d89420)", color:"#000", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>Continue →</button>
-                  <button onClick={()=>setOnboardStep(2)} style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:12, border:"none", background:"transparent", color:"#aaa", fontSize:12, cursor:"pointer" }}>Skip for now</button>
+                  <button onClick={()=>setOnboardStep(2)} style={{ width:"100%", marginTop:20, background:"linear-gradient(135deg, #F5A623, #d89420)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>Continue →</button>
+                  <button onClick={()=>setOnboardStep(2)} style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:12, border:"none", background:"transparent", color:"var(--qeixova-color-55-55-55)", fontSize:12, cursor:"pointer" }}>Skip for now</button>
                 </div>
               )}
               {onboardStep === 2 && (
                 <div>
                   <StepBar current={2} total={2} color="#F5A623" />
-                  <h2 style={{ fontSize:20, fontWeight:800, color:"#F5F5F5", marginBottom:4 }}>What would you like to achieve?</h2>
-                  <p style={{ fontSize:13, color:"#bbb", marginBottom:16 }}>Select all that apply.</p>
+                  <h2 style={{ fontSize:20, fontWeight:800, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:4 }}>What would you like to achieve?</h2>
+                  <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)", marginBottom:16 }}>Select all that apply.</p>
                   <Chips options={BUSINESS_GOALS} selected={bizGoals} onChange={setBizGoals} color="#F5A623" />
-                  <div style={{ background:"#0a0a0a", borderRadius:14, padding:"16px", border:"1px solid #1a1a1a", marginTop:20, marginBottom:20 }}>
+                  <div style={{ background:"var(--qeixova-color-f5-f5-f5)", borderRadius:14, padding:"16px", border:"1px solid var(--qeixova-color-e5-e5-e5)", marginTop:20, marginBottom:20 }}>
                     <p style={{ fontSize:13, fontWeight:700, color:"#F5A623", marginBottom:8 }}>Create Your First Campaign</p>
-                    <p style={{ fontSize:12, color:"#bbb", lineHeight:1.6, marginBottom:12 }}>Qeixova campaigns help real people distribute and amplify your content across digital communities.</p>
+                    <p style={{ fontSize:12, color:"var(--qeixova-color-44-44-44)", lineHeight:1.6, marginBottom:12 }}>Qeixova campaigns help real people distribute and amplify your content across digital communities.</p>
                     <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                       {["WhatsApp Status","Facebook Repost","TikTok Promotion","Flyer Distribution","Referral Campaign","Music Promotion","App Testing"].map(t=>(
                         <span key={t} style={{ fontSize:11, color:"#F5A623", background:"rgba(245,166,35,0.08)", border:"1px solid rgba(245,166,35,0.15)", borderRadius:20, padding:"3px 10px" }}>{t}</span>
                       ))}
                     </div>
                   </div>
-                  <button onClick={handleFinishOnboarding} disabled={loading} style={{ width:"100%", background:"linear-gradient(135deg, #F5A623, #d89420)", color:"#000", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>
+                  <button onClick={handleFinishOnboarding} disabled={loading} style={{ width:"100%", background:"linear-gradient(135deg, #F5A623, #d89420)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>
                     {loading ? "Saving..." : "Launch My First Campaign →"}
                   </button>
-                  <button onClick={handleFinishOnboarding} style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:12, border:"none", background:"transparent", color:"#aaa", fontSize:12, cursor:"pointer" }}>Skip — go to dashboard</button>
+                  <button onClick={handleFinishOnboarding} style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:12, border:"none", background:"transparent", color:"var(--qeixova-color-55-55-55)", fontSize:12, cursor:"pointer" }}>Skip — go to dashboard</button>
                 </div>
               )}
             </div>
@@ -523,34 +523,34 @@ export default function RegisterPage() {
               {onboardStep === 1 && (
                 <div>
                   <StepBar current={1} total={3} />
-                  <h2 style={{ fontSize:20, fontWeight:800, color:"#F5F5F5", marginBottom:4 }}>Choose Your Interests</h2>
-                  <p style={{ fontSize:13, color:"#bbb", marginBottom:4 }}>Your interests help us recommend relevant campaigns and tasks.</p>
+                  <h2 style={{ fontSize:20, fontWeight:800, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:4 }}>Choose Your Interests</h2>
+                  <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)", marginBottom:4 }}>Your interests help us recommend relevant campaigns and tasks.</p>
                   <Chips options={CONTRIBUTOR_INTERESTS} selected={interests} onChange={setInterests} max={3} />
-                  <button onClick={()=>setOnboardStep(2)} style={{ width:"100%", marginTop:20, background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"#000", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>Continue →</button>
-                  <button onClick={()=>setOnboardStep(2)} style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:12, border:"none", background:"transparent", color:"#aaa", fontSize:12, cursor:"pointer" }}>Skip for now</button>
+                  <button onClick={()=>setOnboardStep(2)} style={{ width:"100%", marginTop:20, background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>Continue →</button>
+                  <button onClick={()=>setOnboardStep(2)} style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:12, border:"none", background:"transparent", color:"var(--qeixova-color-55-55-55)", fontSize:12, cursor:"pointer" }}>Skip for now</button>
                 </div>
               )}
               {onboardStep === 2 && (
                 <div>
                   <StepBar current={2} total={3} />
-                  <h2 style={{ fontSize:20, fontWeight:800, color:"#F5F5F5", marginBottom:4 }}>Connect Your Platforms</h2>
-                  <p style={{ fontSize:13, color:"#bbb", marginBottom:4 }}>Campaigns are matched to platforms you&apos;re active on.</p>
-                  <p style={{ fontSize:11, color:"#999", marginBottom:8 }}>Accounts may be reviewed for authenticity and activity quality.</p>
+                  <h2 style={{ fontSize:20, fontWeight:800, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:4 }}>Connect Your Platforms</h2>
+                  <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)", marginBottom:4 }}>Campaigns are matched to platforms you&apos;re active on.</p>
+                  <p style={{ fontSize:11, color:"var(--qeixova-color-66-66-66)", marginBottom:8 }}>Accounts may be reviewed for authenticity and activity quality.</p>
                   <Chips options={PLATFORMS} selected={platforms} onChange={setPlatforms} max={4} />
-                  <button onClick={()=>setOnboardStep(3)} style={{ width:"100%", marginTop:20, background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"#000", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>Continue →</button>
-                  <button onClick={()=>setOnboardStep(3)} style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:12, border:"none", background:"transparent", color:"#aaa", fontSize:12, cursor:"pointer" }}>Skip for now</button>
+                  <button onClick={()=>setOnboardStep(3)} style={{ width:"100%", marginTop:20, background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>Continue →</button>
+                  <button onClick={()=>setOnboardStep(3)} style={{ width:"100%", marginTop:8, padding:"10px", borderRadius:12, border:"none", background:"transparent", color:"var(--qeixova-color-55-55-55)", fontSize:12, cursor:"pointer" }}>Skip for now</button>
                 </div>
               )}
               {onboardStep === 3 && (
                 <div>
                   <StepBar current={3} total={3} />
-                  <h2 style={{ fontSize:20, fontWeight:800, color:"#F5F5F5", marginBottom:4 }}>Growth Partner Verification</h2>
-                  <p style={{ fontSize:13, color:"#bbb", marginBottom:20 }}>We verify growth partners to protect campaign quality and ensure businesses receive authentic participation.</p>
-                  <div style={{ background:"#0a0a0a", borderRadius:14, padding:"18px", border:"1px solid #1a1a1a", marginBottom:20 }}>
+                  <h2 style={{ fontSize:20, fontWeight:800, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:4 }}>Growth Partner Verification</h2>
+                  <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)", marginBottom:20 }}>We verify growth partners to protect campaign quality and ensure businesses receive authentic participation.</p>
+                  <div style={{ background:"var(--qeixova-color-f5-f5-f5)", borderRadius:14, padding:"18px", border:"1px solid var(--qeixova-color-e5-e5-e5)", marginBottom:20 }}>
                     {["Active account history","Real profile photo","Engagement consistency","Spam prevention review"].map(c=>(
                       <div key={c} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                         <div style={{ width:6, height:6, borderRadius:"50%", background:"#1AEF22", flexShrink:0 }} />
-                        <span style={{ fontSize:13, color:"#ccc" }}>{c}</span>
+                        <span style={{ fontSize:13, color:"var(--qeixova-color-33-33-33)" }}>{c}</span>
                       </div>
                     ))}
                   </div>
@@ -559,11 +559,11 @@ export default function RegisterPage() {
                     {["Recommended Campaigns","Available Tasks","Earnings Wallet","Performance Level","Referral System"].map(s=>(
                       <div key={s} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
                         <span style={{ color:"#1AEF22", fontSize:10 }}>→</span>
-                        <span style={{ fontSize:12, color:"#ccc" }}>{s}</span>
+                        <span style={{ fontSize:12, color:"var(--qeixova-color-33-33-33)" }}>{s}</span>
                       </div>
                     ))}
                   </div>
-                  <button onClick={handleFinishOnboarding} disabled={loading} style={{ width:"100%", background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"#000", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>
+                  <button onClick={handleFinishOnboarding} disabled={loading} style={{ width:"100%", background:"linear-gradient(135deg, #1AEF22, #06B517)", color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"14px", fontWeight:800, fontSize:14, cursor:"pointer" }}>
                     {loading ? "Saving..." : "Explore Campaigns →"}
                   </button>
                 </div>
@@ -577,13 +577,13 @@ export default function RegisterPage() {
               <div style={{ width:80, height:80, borderRadius:22, background: accountType === "business" ? "linear-gradient(135deg, #F5A623, #d89420)" : "linear-gradient(135deg, #1AEF22, #06B517)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 20px", boxShadow: accountType === "business" ? "0 8px 28px rgba(245,166,35,0.35)" : "0 8px 28px rgba(26,239,34,0.35)" }}>
                 <img src={accountType === "business" ? "/icon-task.svg" : "/icon-check-circle.svg"} width={40} height={40} style={{ filter:"brightness(0)" }} alt="" />
               </div>
-              <h2 style={{ fontSize:24, fontWeight:900, color:"#F5F5F5", marginBottom:12, letterSpacing:-0.5 }}>
+              <h2 style={{ fontSize:24, fontWeight:900, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:12, letterSpacing:-0.5 }}>
                 {accountType === "business" ? "Welcome to a smarter way to grow visibility through real human participation." : "Welcome to a new way to earn through meaningful digital participation."}
               </h2>
-              <p style={{ fontSize:14, color:"#bbb", lineHeight:1.7, marginBottom:32 }}>
+              <p style={{ fontSize:14, color:"var(--qeixova-color-44-44-44)", lineHeight:1.7, marginBottom:32 }}>
                 {accountType === "business" ? "Your business account is ready. Create your first campaign and start reaching real people." : "Your growth partner account is ready. Start completing tasks and earning QLT rewards."}
               </p>
-              <button onClick={()=>router.push(accountType === "business" ? "/business/dashboard" : "/tasks")} style={{ width:"100%", background:`linear-gradient(135deg, ${accountType==="business"?"#F5A623, #d89420":"#1AEF22, #06B517"})`, color:"#000", border:"none", borderRadius:13, padding:"16px", fontWeight:800, fontSize:16, cursor:"pointer" }}>
+              <button onClick={()=>router.push(accountType === "business" ? "/business/dashboard" : "/tasks")} style={{ width:"100%", background:`linear-gradient(135deg, ${accountType==="business"?"#F5A623, #d89420":"#1AEF22, #06B517"})`, color:"var(--qeixova-color-ff-ff-ff)", border:"none", borderRadius:13, padding:"16px", fontWeight:800, fontSize:16, cursor:"pointer" }}>
                 {accountType === "business" ? "Launch Your First Campaign →" : "Start Completing Tasks →"}
               </button>
             </div>

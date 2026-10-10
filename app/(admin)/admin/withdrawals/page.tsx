@@ -14,8 +14,8 @@ interface Withdrawal {
 
 type StatusFilter = "all" | "pending" | "processing" | "completed" | "failed";
 
-const TH: React.CSSProperties = { padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" };
-const TD: React.CSSProperties = { padding: "14px 16px", fontSize: 14, color: "#374151", borderBottom: "1px solid #eef0f3", verticalAlign: "middle" };
+const TH: React.CSSProperties = { padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid var(--qeixova-color-e5-e7-eb)", whiteSpace: "nowrap" };
+const TD: React.CSSProperties = { padding: "14px 16px", fontSize: 14, color: "#374151", borderBottom: "1px solid var(--qeixova-color-ee-f0-f3)", verticalAlign: "middle" };
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   pending:    { bg: "#fff8e1", color: "#e67e22" },
   processing: { bg: "#e3f2fd", color: "#1565c0" },
@@ -84,12 +84,12 @@ export default function WithdrawalsPage() {
 
   return (
     <div className="adminPage">
-      <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 700, color: "#1A1A1A" }}>Withdrawals</h1>
+      <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 700, color: "var(--qeixova-color-1a-1a-1a)" }}>Withdrawals</h1>
       <p style={{ margin: "0 0 24px", color: "#5f6876", fontSize: 14 }}>Manage withdrawal requests</p>
 
       <div className="adminFilterBar" style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {(["all", "pending", "processing", "completed", "failed"] as StatusFilter[]).map((f) => (
-          <button key={f} onClick={() => setFilter(f)} style={{ padding: "8px 18px", borderRadius: 20, border: "1.5px solid", borderColor: filter === f ? "#1AEF22" : "#d8dde5", background: filter === f ? "#1AEF22" : "#fff", color: filter === f ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 13, fontWeight: 700, textTransform: "capitalize" }}>
+          <button key={f} onClick={() => setFilter(f)} style={{ padding: "8px 18px", borderRadius: 20, border: "1.5px solid", borderColor: filter === f ? "#1AEF22" : "#d8dde5", background: filter === f ? "#1AEF22" : "var(--qeixova-color-ff-ff-ff)", color: filter === f ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 13, fontWeight: 700, textTransform: "capitalize" }}>
             {f}
           </button>
         ))}
@@ -102,10 +102,10 @@ export default function WithdrawalsPage() {
         </div>
       )}
 
-      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
           <thead>
-            <tr style={{ background: "#fafafa" }}>
+            <tr style={{ background: "var(--qeixova-color-fa-fa-fa)" }}>
               <th style={TH}>ID</th>
               <th style={TH}>User</th>
               <th style={TH}>QLT</th>
@@ -122,7 +122,7 @@ export default function WithdrawalsPage() {
             ) : withdrawals.length === 0 ? (
               <tr><td colSpan={8} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>No withdrawals found</td></tr>
             ) : withdrawals.map((w) => {
-              const sc = STATUS_COLORS[w.status] ?? { bg: "#f3f4f6", color: "#4b5563" };
+              const sc = STATUS_COLORS[w.status] ?? { bg: "var(--qeixova-color-f3-f4-f6)", color: "#4b5563" };
               return (
                 <tr key={w.id}>
                   <td style={TD}>{w.id}</td>
@@ -137,7 +137,7 @@ export default function WithdrawalsPage() {
                       if (parts.length >= 3) {
                         return (
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: 13, color: "#1A1A1A" }}>{parts[0]}</div>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: "var(--qeixova-color-1a-1a-1a)" }}>{parts[0]}</div>
                             <div style={{ fontSize: 12, color: "#5f6876", marginTop: 2 }}>{parts[1]}</div>
                             <div style={{ fontSize: 12, color: "#5f6876", marginTop: 1 }}>{parts[2]}</div>
                           </div>
@@ -156,11 +156,11 @@ export default function WithdrawalsPage() {
                     {w.status === "pending" && (
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                         <button onClick={() => handleAction(w.id, "processing")} disabled={actionLoading === w.id}
-                          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#1565c0", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#1565c0", color: "var(--qeixova-color-ff-ff-ff)", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                           Processing
                         </button>
                         <button onClick={() => handleAction(w.id, "reject")} disabled={actionLoading === w.id}
-                          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#cc0000", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#cc0000", color: "var(--qeixova-color-ff-ff-ff)", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                           Reject
                         </button>
                       </div>
@@ -168,17 +168,17 @@ export default function WithdrawalsPage() {
                     {w.status === "processing" && (
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => handleAction(w.id, "approve")} disabled={actionLoading === w.id}
-                          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#1AEF22", color: "#000", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#1AEF22", color: "var(--qeixova-color-00-00-00)", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
                           Mark Paid
                         </button>
                         <button onClick={() => handleAction(w.id, "reject")} disabled={actionLoading === w.id}
-                          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#cc0000", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                          style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#cc0000", color: "var(--qeixova-color-ff-ff-ff)", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                           Reject
                         </button>
                       </div>
                     )}
                     {(w.status === "completed" || w.status === "failed") && (
-                      w.status === "failed" ? <button onClick={()=>handleAction(w.id,"retry")} disabled={actionLoading===w.id} style={{padding:"5px 12px",borderRadius:6,border:"none",background:"#1565c0",color:"#fff",fontWeight:700,cursor:"pointer"}}>Retry payout</button> : <span style={{ color: "#667085", fontSize: 12 }}>{w.reconciliation?.provider_reference ? `Ref: ${w.reconciliation.provider_reference}` : "—"}</span>
+                      w.status === "failed" ? <button onClick={()=>handleAction(w.id,"retry")} disabled={actionLoading===w.id} style={{padding:"5px 12px",borderRadius:6,border:"none",background:"#1565c0",color:"var(--qeixova-color-ff-ff-ff)",fontWeight:700,cursor:"pointer"}}>Retry payout</button> : <span style={{ color: "#667085", fontSize: 12 }}>{w.reconciliation?.provider_reference ? `Ref: ${w.reconciliation.provider_reference}` : "—"}</span>
                     )}
                   </td>
                 </tr>

@@ -124,10 +124,10 @@ export default function TasksPage() {
   if (loading || fetching) return <ContributorLoading label="Loading missions" detail="Finding approved campaigns that match your profile." />;
 
   if (fetchError) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000000", flexDirection: "column", gap: 16, padding: 24 }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--qeixova-color-ff-ff-ff)", flexDirection: "column", gap: 16, padding: 24 }}>
       <img src="/icon-alert.svg" width={48} height={48} style={{ opacity:0.5, filter:"invert(40%) sepia(100%) saturate(500%) hue-rotate(320deg)" }} alt="" />
-      <p style={{ fontWeight: 700, color: "#F5F5F5", fontSize: 16 }}>Couldn&apos;t load missions</p>
-      <button onClick={loadTasks} style={{ background: "linear-gradient(135deg, #1AEF22, #06B517)", color: "#000", border: "none", borderRadius: 12, padding: "12px 28px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Retry</button>
+      <p style={{ fontWeight: 700, color: "var(--qeixova-color-0a-0a-0a)", fontSize: 16 }}>Couldn&apos;t load missions</p>
+      <button onClick={loadTasks} style={{ background: "linear-gradient(135deg, #1AEF22, #06B517)", color: "var(--qeixova-color-ff-ff-ff)", border: "none", borderRadius: 12, padding: "12px 28px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Retry</button>
     </div>
   );
 
@@ -176,22 +176,22 @@ export default function TasksPage() {
   const activeLabel = allCategoryFilters.find((filter) => filter.val === activeCategory)?.label ?? activeCategory;
 
   return (
-    <div className="page-body" style={{ background: "#000000", minHeight: "100vh", paddingBottom: 88 }}>
+    <div className="page-body" style={{ background: "var(--qeixova-color-ff-ff-ff)", minHeight: "100vh", paddingBottom: 88 }}>
       {/* Header */}
-      <div className="page-header" style={{ background: "#080909", borderBottom: "1px solid #222222", padding: "48px 16px 16px", position: "relative", overflow: "hidden" }}>
+      <div className="page-header" style={{ background: "var(--qeixova-color-f7-f6-f6)", borderBottom: "1px solid var(--qeixova-color-dd-dd-dd)", padding: "48px 16px 16px", position: "relative", overflow: "hidden" }}>
         <div style={{ maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 16, alignItems: "start" }}>
             <div>
               <p style={{ color: "#F5A623", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>Matched mission board</p>
-              <h1 style={{ color: "#F5F5F5", fontSize: 28, lineHeight: 1.1, fontWeight: 950, letterSpacing: 0, margin: 0 }}>Missions matching your profile</h1>
-              <p style={{ color: "#aaaaaa", fontSize: 13, marginTop: 8, lineHeight: 1.6, maxWidth: 560 }}>Only campaigns aligned with your selected interests and state are shown here.</p>
+              <h1 style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 28, lineHeight: 1.1, fontWeight: 950, letterSpacing: 0, margin: 0 }}>Missions matching your profile</h1>
+              <p style={{ color: "var(--qeixova-color-55-55-55)", fontSize: 13, marginTop: 8, lineHeight: 1.6, maxWidth: 560 }}>Only campaigns aligned with your selected interests and state are shown here.</p>
             </div>
             {meta && (
-              <div style={{ minWidth: 190, border: "1px solid #242826", borderRadius: 14, background: "#0d0f0e", padding: 12 }}>
-                <span style={{ display: "inline-flex", fontSize: 11, fontWeight: 900, padding: "4px 9px", borderRadius: 999, background: (meta.badgeColor ?? "#ccc") + "22", color: meta.badgeColor ?? "#ccc" }}>
+              <div style={{ minWidth: 190, border: "1px solid var(--qeixova-color-db-d7-d9)", borderRadius: 14, background: "var(--qeixova-color-f2-f0-f1)", padding: 12 }}>
+                <span style={{ display: "inline-flex", fontSize: 11, fontWeight: 900, padding: "4px 9px", borderRadius: 999, background: (meta.badgeColor ?? "var(--qeixova-color-33-33-33)") + "22", color: meta.badgeColor ?? "var(--qeixova-color-33-33-33)" }}>
                   L{meta.userLevel} {meta.levelName}
                 </span>
-                <p style={{ marginTop: 9, color: "#bbbbbb", fontSize: 12 }}>Trust: <strong style={{ color: "#F5F5F5" }}>{meta.trustScore}%</strong></p>
+                <p style={{ marginTop: 9, color: "var(--qeixova-color-44-44-44)", fontSize: 12 }}>Trust: <strong style={{ color: "var(--qeixova-color-0a-0a-0a)" }}>{meta.trustScore}%</strong></p>
               </div>
             )}
           </div>
@@ -200,21 +200,21 @@ export default function TasksPage() {
 
       {/* Compact entry point to the member's mission queue. */}
       <section aria-labelledby="mission-submission-title" style={{ maxWidth: 1120, margin: "18px auto 0", padding: "0 16px", width: "100%" }}>
-        <div style={{ display: "grid", gap: 12, border: "1px solid #29332a", borderRadius: 16, background: "linear-gradient(135deg, rgba(26,239,34,.07), #101211 55%)", padding: 18 }}>
+        <div style={{ display: "grid", gap: 12, border: "1px solid var(--qeixova-color-d6-cc-d5)", borderRadius: 16, background: "linear-gradient(135deg, rgba(26,239,34,.07), var(--qeixova-color-ef-ed-ee) 55%)", padding: 18 }}>
           <div>
             <p style={{ color: "#1AEF22", fontSize: 10, fontWeight: 900, letterSpacing: .8, textTransform: "uppercase" }}>Your workspace</p>
-            <h2 id="mission-submission-title" style={{ color: "#F5F5F5", fontSize: 18, marginTop: 5 }}>My Missions</h2>
-            <p style={{ color: "#bbbbbb", fontSize: 13, lineHeight: 1.5, marginTop: 5 }}>Keep selected missions together, pick up where you left off, and submit proof when you’re ready.</p>
+            <h2 id="mission-submission-title" style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 18, marginTop: 5 }}>My Missions</h2>
+            <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 13, lineHeight: 1.5, marginTop: 5 }}>Keep selected missions together, pick up where you left off, and submit proof when you’re ready.</p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <p style={{ color: "#aaaaaa", fontSize: 13 }}>{selectedMissions.length} mission{selectedMissions.length === 1 ? "" : "s"} selected</p>
-            <Link href="/tasks/submit" data-tour="my-missions-link" style={{ display: "inline-flex", justifyContent: "center", borderRadius: 10, background: "#1AEF22", color: "#000", padding: "12px 16px", textDecoration: "none", fontSize: 13, fontWeight: 900 }}>Open My Missions →</Link>
+            <p style={{ color: "var(--qeixova-color-55-55-55)", fontSize: 13 }}>{selectedMissions.length} mission{selectedMissions.length === 1 ? "" : "s"} selected</p>
+            <Link href="/tasks/submit" data-tour="my-missions-link" style={{ display: "inline-flex", justifyContent: "center", borderRadius: 10, background: "#1AEF22", color: "var(--qeixova-color-ff-ff-ff)", padding: "12px 16px", textDecoration: "none", fontSize: 13, fontWeight: 900 }}>Open My Missions →</Link>
           </div>
         </div>
       </section>
 
       {/* Mission category filters */}
-      <div style={{ padding: "14px 16px", background: "#0b0c0c", borderBottom: "1px solid #222222" }}>
+      <div style={{ padding: "14px 16px", background: "var(--qeixova-color-f4-f3-f3)", borderBottom: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
         <div style={{ maxWidth: 1120, margin: "0 auto" }}>
         <div style={{ display: "grid", gap: 12, marginBottom: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 1fr) repeat(3, minmax(120px, 160px))", gap: 8 }} className="missionToolbar">
@@ -222,20 +222,20 @@ export default function TasksPage() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search by title, business, platform, location..."
-              style={{ width: "100%", border: "1px solid #303030", borderRadius: 12, background: "#080909", color: "#F5F5F5", padding: "12px 14px", fontSize: 13, outline: "none" }}
+              style={{ width: "100%", border: "1px solid var(--qeixova-color-cf-cf-cf)", borderRadius: 12, background: "var(--qeixova-color-f7-f6-f6)", color: "var(--qeixova-color-0a-0a-0a)", padding: "12px 14px", fontSize: 13, outline: "none" }}
             />
-            <select value={proofFilter} onChange={(event) => setProofFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 12, background: "#080909", color: "#cccccc", padding: "11px 10px", fontSize: 12 }}>
+            <select value={proofFilter} onChange={(event) => setProofFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid var(--qeixova-color-cf-cf-cf)", borderRadius: 12, background: "var(--qeixova-color-f7-f6-f6)", color: "var(--qeixova-color-33-33-33)", padding: "11px 10px", fontSize: 12 }}>
               <option>All proof</option>
               <option>Screenshot</option>
               <option>Url</option>
               <option>Text</option>
             </select>
-            <select value={rewardFilter} onChange={(event) => setRewardFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 12, background: "#080909", color: "#cccccc", padding: "11px 10px", fontSize: 12 }}>
+            <select value={rewardFilter} onChange={(event) => setRewardFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid var(--qeixova-color-cf-cf-cf)", borderRadius: 12, background: "var(--qeixova-color-f7-f6-f6)", color: "var(--qeixova-color-33-33-33)", padding: "11px 10px", fontSize: 12 }}>
               <option>Any reward</option>
               <option>High reward</option>
               <option>Quick earn</option>
             </select>
-            <select value={availabilityFilter} onChange={(event) => setAvailabilityFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid #303030", borderRadius: 12, background: "#080909", color: "#cccccc", padding: "11px 10px", fontSize: 12 }}>
+            <select value={availabilityFilter} onChange={(event) => setAvailabilityFilter(event.target.value)} style={{ minWidth: 0, border: "1px solid var(--qeixova-color-cf-cf-cf)", borderRadius: 12, background: "var(--qeixova-color-f7-f6-f6)", color: "var(--qeixova-color-33-33-33)", padding: "11px 10px", fontSize: 12 }}>
               <option>Open</option>
               <option>Pending</option>
               <option>All</option>
@@ -248,16 +248,16 @@ export default function TasksPage() {
             return (
               <button key={filter.val} onClick={() => setActiveCategory(filter.val)} style={{
                 flexShrink: 0, padding: "8px 14px", borderRadius: 20,
-                border: active ? "none" : "1.5px solid #333333",
-                background: active ? filter.accent : "#1a1a1a",
-                color: active ? "#000" : "#cccccc",
+                border: active ? "none" : "1.5px solid var(--qeixova-color-cc-cc-cc)",
+                background: active ? filter.accent : "var(--qeixova-color-e5-e5-e5)",
+                color: active ? "var(--qeixova-color-ff-ff-ff)" : "var(--qeixova-color-33-33-33)",
                 fontWeight: active ? 800 : 600, fontSize: 12, cursor: "pointer",
               }}>{filter.label}</button>
             );
           })}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
-          <p style={{ color: "#bbbbbb", fontSize: 12, fontWeight: 700 }}>
+          <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 12, fontWeight: 700 }}>
             {filtered.length.toLocaleString()} {activeCategory === "All" ? "available mission" : activeLabel.toLowerCase() + " mission"}{filtered.length === 1 ? "" : "s"}
           </p>
         </div>
@@ -267,12 +267,12 @@ export default function TasksPage() {
       {/* Progress */}
       {completedCount > 0 && (
         <div style={{ padding: "12px 16px 0" }}>
-          <div style={{ background: "#111111", borderRadius: 12, padding: "12px 16px", border: "1px solid #222222" }}>
+          <div style={{ background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 12, padding: "12px 16px", border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#F5F5F5" }}>{completedCount} of {tasks.length} missions completed</p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)" }}>{completedCount} of {tasks.length} missions completed</p>
               <p style={{ fontSize: 12, fontWeight: 700, color: "#1AEF22" }}>{Math.round((completedCount / tasks.length) * 100)}%</p>
             </div>
-            <div style={{ height: 5, background: "#222222", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ height: 5, background: "var(--qeixova-color-dd-dd-dd)", borderRadius: 10, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${(completedCount / tasks.length) * 100}%`, background: "linear-gradient(90deg, #1AEF22, #F5A623)", borderRadius: 10 }} />
             </div>
           </div>
@@ -282,19 +282,19 @@ export default function TasksPage() {
       {/* Mission list */}
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 12 }} className="missionList">
         {tasks.length === 0 ? (
-          <div className="missionsEmptyState" style={{ width: "100%", minHeight: 260, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "34px 18px", background: "#0f1110", borderRadius: 18, border: "1px solid #242826" }}>
+          <div className="missionsEmptyState" style={{ width: "100%", minHeight: 260, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "34px 18px", background: "var(--qeixova-color-f0-ee-ef)", borderRadius: 18, border: "1px solid var(--qeixova-color-db-d7-d9)" }}>
             <div style={{ width: "min(100%, 430px)", margin: "0 auto" }}>
               <p style={{ fontSize: 44, marginBottom: 14 }}>🎯</p>
-              <p style={{ fontWeight: 900, fontSize: 18, color: "#F5F5F5", marginBottom: 10, lineHeight: 1.3 }}>No matched missions are live yet</p>
-              <p style={{ color: "#bbbbbb", fontSize: 14, lineHeight: 1.65, margin: "0 auto" }}>When an approved campaign matches your selected interests and state, it will appear here.</p>
+              <p style={{ fontWeight: 900, fontSize: 18, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 10, lineHeight: 1.3 }}>No matched missions are live yet</p>
+              <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 14, lineHeight: 1.65, margin: "0 auto" }}>When an approved campaign matches your selected interests and state, it will appear here.</p>
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 20px", background: "#111111", borderRadius: 16, border: "1px solid #222222" }}>
+          <div style={{ textAlign: "center", padding: "40px 20px", background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 16, border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
             <img src="/icon-check-circle.svg" width={40} height={40} style={{ opacity:0.4, filter:"invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)", marginBottom:8 }} alt="" />
-            <p style={{ color: "#F5F5F5", fontWeight: 800, marginTop: 8 }}>No missions match the current filters</p>
-            <p style={{ color: "#bbbbbb", fontSize: 13, lineHeight: 1.6, marginTop: 6 }}>Clear the extra filters to return to your matched mission list.</p>
-            <button type="button" onClick={() => { setActiveCategory("All"); setQuery(""); setProofFilter("All proof"); setRewardFilter("Any reward"); setAvailabilityFilter("Open"); }} style={{ marginTop: 14, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #1AEF22, #06B517)", color: "#000", padding: "11px 18px", fontSize: 13, fontWeight: 900, cursor: "pointer" }}>Clear filters</button>
+            <p style={{ color: "var(--qeixova-color-0a-0a-0a)", fontWeight: 800, marginTop: 8 }}>No missions match the current filters</p>
+            <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 13, lineHeight: 1.6, marginTop: 6 }}>Clear the extra filters to return to your matched mission list.</p>
+            <button type="button" onClick={() => { setActiveCategory("All"); setQuery(""); setProofFilter("All proof"); setRewardFilter("Any reward"); setAvailabilityFilter("Open"); }} style={{ marginTop: 14, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #1AEF22, #06B517)", color: "var(--qeixova-color-ff-ff-ff)", padding: "11px 18px", fontSize: 13, fontWeight: 900, cursor: "pointer" }}>Clear filters</button>
           </div>
         ) : (
           filtered.map(task => (

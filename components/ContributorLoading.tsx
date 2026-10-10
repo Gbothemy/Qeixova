@@ -49,7 +49,7 @@ export default function ContributorLoading({
           place-items: center;
           border-radius: 12px;
           background: linear-gradient(135deg, var(--accent), var(--accent-2));
-          color: #050505;
+          color: var(--qeixova-color-fa-fa-fa);
           font-size: 20px;
           font-weight: 950;
         }

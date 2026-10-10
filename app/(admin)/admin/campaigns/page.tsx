@@ -82,8 +82,8 @@ const statusColors: Record<string, { bg: string; color: string }> = {
   live: { bg: "#e8f5e9", color: "#2e7d32" },
   paused: { bg: "#eef2ff", color: "#3f51b5" },
   rejected: { bg: "#fce4ec", color: "#c62828" },
-  closed: { bg: "#f3f4f6", color: "#4b5563" },
-  expired: { bg: "#f3f4f6", color: "#6b7280" },
+  closed: { bg: "var(--qeixova-color-f3-f4-f6)", color: "#4b5563" },
+  expired: { bg: "var(--qeixova-color-f3-f4-f6)", color: "#6b7280" },
 };
 
 function formatTimeLeft(endDate: string | null | undefined, now: number) {
@@ -233,9 +233,9 @@ export default function AdminCampaignsPage() {
             type="button"
             onClick={() => setStatus(filter.value)}
             style={{
-              border: status === filter.value ? "1px solid #111" : "1px solid #e5e5e5",
-              background: status === filter.value ? "#111" : "#fff",
-              color: status === filter.value ? "#fff" : "#555",
+              border: status === filter.value ? "1px solid var(--qeixova-color-11-11-11)" : "1px solid var(--qeixova-color-e5-e5-e5)",
+              background: status === filter.value ? "var(--qeixova-color-11-11-11)" : "var(--qeixova-color-ff-ff-ff)",
+              color: status === filter.value ? "var(--qeixova-color-ff-ff-ff)" : "var(--qeixova-color-55-55-55)",
               borderRadius: 999,
               padding: "9px 14px",
               fontWeight: 700,
@@ -288,11 +288,11 @@ export default function AdminCampaignsPage() {
                     <span style={{ display: "inline-block", padding: "4px 10px", borderRadius: 999, background: colors.bg, color: colors.color, fontSize: 12, fontWeight: 800 }}>
                       {campaign.status.replace("_", " ")}
                     </span>
-                    <h2 style={{ margin: "10px 0 4px", fontSize: 19, color: "#111" }}>{campaign.title}</h2>
+                    <h2 style={{ margin: "10px 0 4px", fontSize: 19, color: "var(--qeixova-color-11-11-11)" }}>{campaign.title}</h2>
                     <p style={{ margin: 0, color: "#5f6876", fontSize: 13 }}>{campaign.business_name || "Business"} · {campaign.business_email || "No email"} · Task #{campaign.task_id}</p>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <strong style={{ display: "block", color: "#111" }}>{Number(campaign.total_budget).toLocaleString()} QLT</strong>
+                    <strong style={{ display: "block", color: "var(--qeixova-color-11-11-11)" }}>{Number(campaign.total_budget).toLocaleString()} QLT</strong>
                     <span style={{ color: "#5f6876", fontSize: 12 }}>{Number(campaign.task_reward ?? 0).toLocaleString()} QLT per growth partner</span>
                   </div>
                 </div>
@@ -326,7 +326,7 @@ export default function AdminCampaignsPage() {
                 {canManage&&<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {campaign.status === "pending_review" && (
                     <>
-                      <button type="button" onClick={() => campaignAction(campaign, "approve", "Approved by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("#1AEF22", "#000")}>Approve & Launch</button>
+                      <button type="button" onClick={() => campaignAction(campaign, "approve", "Approved by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("#1AEF22", "var(--qeixova-color-00-00-00)")}>Approve & Launch</button>
                       <button type="button" onClick={() => setRejecting(campaign)} disabled={actionLoading === campaign.task_id} style={primaryButton("#fce4ec", "#c62828")}>Reject</button>
                     </>
                   )}
@@ -334,10 +334,10 @@ export default function AdminCampaignsPage() {
                     <button type="button" onClick={() => campaignAction(campaign, "pause", "Paused by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("#fff8e1", "#b77900")}>Pause</button>
                   )}
                   {campaign.status === "paused" && (
-                    <button type="button" onClick={() => campaignAction(campaign, "resume", "Resumed by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("#1AEF22", "#000")}>Resume</button>
+                    <button type="button" onClick={() => campaignAction(campaign, "resume", "Resumed by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("#1AEF22", "var(--qeixova-color-00-00-00)")}>Resume</button>
                   )}
                   {["live", "paused"].includes(campaign.status) && (
-                    <button type="button" onClick={() => campaignAction(campaign, "close", "Closed by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("#f5f5f5", "#555")}>Close</button>
+                    <button type="button" onClick={() => campaignAction(campaign, "close", "Closed by admin")} disabled={actionLoading === campaign.task_id} style={primaryButton("var(--qeixova-color-f5-f5-f5)", "var(--qeixova-color-55-55-55)")}>Close</button>
                   )}
                 </div>}
               </article>
@@ -348,14 +348,14 @@ export default function AdminCampaignsPage() {
 
       {rejecting && (
         <div className="adminModalBackdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }} onClick={(event) => { if (event.target === event.currentTarget) setRejecting(null); }}>
-          <div className="adminModalCard" style={{ width: "min(460px, calc(100vw - 32px))", background: "#fff", borderRadius: 16, padding: 22 }}>
-            <h2 style={{ margin: "0 0 6px", color: "#111" }}>Reject business campaign</h2>
+          <div className="adminModalCard" style={{ width: "min(460px, calc(100vw - 32px))", background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 16, padding: 22 }}>
+            <h2 style={{ margin: "0 0 6px", color: "var(--qeixova-color-11-11-11)" }}>Reject business campaign</h2>
             <p style={{ margin: "0 0 16px", color: "#5f6876", fontSize: 13 }}>{rejecting.title}</p>
             <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", marginBottom: 6 }}>Message to business</label>
-            <textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Tell the business exactly what to fix before resubmitting." style={{ width: "100%", minHeight: 120, border: "1px solid #ddd", borderRadius: 10, padding: 12, resize: "vertical" }} />
+            <textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Tell the business exactly what to fix before resubmitting." style={{ width: "100%", minHeight: 120, border: "1px solid var(--qeixova-color-dd-dd-dd)", borderRadius: 10, padding: 12, resize: "vertical" }} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button type="button" onClick={() => setRejecting(null)} style={primaryButton("#f5f5f5", "#555")}>Cancel</button>
-              <button type="button" onClick={() => campaignAction(rejecting, "reject", reason)} disabled={actionLoading === rejecting.task_id || !reason.trim()} style={primaryButton("#c62828", "#fff")}>Reject Campaign</button>
+              <button type="button" onClick={() => setRejecting(null)} style={primaryButton("var(--qeixova-color-f5-f5-f5)", "var(--qeixova-color-55-55-55)")}>Cancel</button>
+              <button type="button" onClick={() => campaignAction(rejecting, "reject", reason)} disabled={actionLoading === rejecting.task_id || !reason.trim()} style={primaryButton("#c62828", "var(--qeixova-color-ff-ff-ff)")}>Reject Campaign</button>
             </div>
           </div>
         </div>
@@ -366,9 +366,9 @@ export default function AdminCampaignsPage() {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: "#fafafa", border: "1px solid #eee", borderRadius: 10, padding: 12 }}>
+    <div style={{ background: "var(--qeixova-color-fa-fa-fa)", border: "1px solid var(--qeixova-color-ee-ee-ee)", borderRadius: 10, padding: 12 }}>
       <span style={{ display: "block", color: "#4b5563", fontSize: 11, fontWeight: 800, textTransform: "uppercase", marginBottom: 5 }}>{label}</span>
-      <strong style={{ color: "#222", fontSize: 13, lineHeight: 1.4 }}>{value || "Not set"}</strong>
+      <strong style={{ color: "var(--qeixova-color-22-22-22)", fontSize: 13, lineHeight: 1.4 }}>{value || "Not set"}</strong>
     </div>
   );
 }
@@ -379,21 +379,21 @@ function SubmittedContentPreview({ content, taskId }: { content: SubmittedConten
   const hasReviewEvidence = Boolean(content.validContentLink || hasSubmittedFile || content.instructions.length || content.metadata.objective || content.contentCaption);
 
   return (
-    <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16, border: "1px solid #d9eadb", borderRadius: 12, background: "#fbfffb", padding: 14 }}>
+    <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16, border: "1px solid #d9eadb", borderRadius: 12, background: "var(--qeixova-color-fb-ff-fb)", padding: 14 }}>
       <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
         <span style={{ color: "#166534", fontSize: 11, fontWeight: 900, letterSpacing: 0, textTransform: "uppercase" }}>Content preview for review</span>
 
         {hasVisualPreview ? (
-          <a href={content.assetDataUrl || content.validContentLink} target="_blank" rel="noreferrer" style={{ display: "block", border: "1px solid #d8e7d8", borderRadius: 10, background: "#fff", padding: 8 }}>
+          <a href={content.assetDataUrl || content.validContentLink} target="_blank" rel="noreferrer" style={{ display: "block", border: "1px solid #d8e7d8", borderRadius: 10, background: "var(--qeixova-color-ff-ff-ff)", padding: 8 }}>
             <img
               src={content.assetDataUrl || content.validContentLink}
               alt={content.assetName || "Submitted campaign content"}
-              style={{ display: "block", width: "100%", maxHeight: 280, objectFit: "contain", borderRadius: 7, background: "#f8faf8" }}
+              style={{ display: "block", width: "100%", maxHeight: 280, objectFit: "contain", borderRadius: 7, background: "var(--qeixova-color-f8-fa-f8)" }}
             />
           </a>
         ) : (
-          <div style={{ minHeight: 160, display: "grid", placeItems: "center", alignContent: "center", gap: 8, border: "1px dashed #cfe3d1", borderRadius: 10, background: "#fff", padding: 18, textAlign: "center" }}>
-            <strong style={{ color: "#111", fontSize: 15 }}>{hasSubmittedFile ? "File submitted" : content.validContentLink ? "Link submitted" : "No visual preview"}</strong>
+          <div style={{ minHeight: 160, display: "grid", placeItems: "center", alignContent: "center", gap: 8, border: "1px dashed #cfe3d1", borderRadius: 10, background: "var(--qeixova-color-ff-ff-ff)", padding: 18, textAlign: "center" }}>
+            <strong style={{ color: "var(--qeixova-color-11-11-11)", fontSize: 15 }}>{hasSubmittedFile ? "File submitted" : content.validContentLink ? "Link submitted" : "No visual preview"}</strong>
             <span style={{ color: "#667085", fontSize: 13, lineHeight: 1.45 }}>
               {hasSubmittedFile ? content.assetName : content.validContentLink ? "Open the submitted content link to inspect it." : "The business did not attach a previewable image or file."}
             </span>
@@ -417,11 +417,11 @@ function SubmittedContentPreview({ content, taskId }: { content: SubmittedConten
       <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
         <div>
           <span style={{ display: "block", color: "#6b7280", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 5 }}>Submitted by business</span>
-          <strong style={{ color: "#111", fontSize: 16 }}>{content.contentType}</strong>
+          <strong style={{ color: "var(--qeixova-color-11-11-11)", fontSize: 16 }}>{content.contentType}</strong>
         </div>
 
         {content.metadata.objective ? (
-          <p style={{ margin: 0, color: "#222", lineHeight: 1.5, fontWeight: 700 }}>{content.metadata.objective}</p>
+          <p style={{ margin: 0, color: "var(--qeixova-color-22-22-22)", lineHeight: 1.5, fontWeight: 700 }}>{content.metadata.objective}</p>
         ) : null}
 
         {content.contentCaption ? (
@@ -432,14 +432,14 @@ function SubmittedContentPreview({ content, taskId }: { content: SubmittedConten
         ) : null}
 
         {content.assetName ? (
-          <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", padding: 11 }}>
+          <div style={{ border: "1px solid var(--qeixova-color-e5-e7-eb)", borderRadius: 10, background: "var(--qeixova-color-ff-ff-ff)", padding: 11 }}>
             <span style={{ display: "block", color: "#6b7280", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 4 }}>Uploaded asset</span>
-            <strong style={{ color: "#222", fontSize: 13, overflowWrap: "anywhere" }}>{content.assetName}</strong>
+            <strong style={{ color: "var(--qeixova-color-22-22-22)", fontSize: 13, overflowWrap: "anywhere" }}>{content.assetName}</strong>
           </div>
         ) : null}
 
         {content.validContentLink ? (
-          <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", padding: 11 }}>
+          <div style={{ border: "1px solid var(--qeixova-color-e5-e7-eb)", borderRadius: 10, background: "var(--qeixova-color-ff-ff-ff)", padding: 11 }}>
             <span style={{ display: "block", color: "#6b7280", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 4 }}>Submitted URL</span>
             <a href={content.validContentLink} target="_blank" rel="noreferrer" style={{ color: "#0f7a17", fontSize: 13, fontWeight: 800, overflowWrap: "anywhere" }}>{content.contentLink}</a>
           </div>
@@ -449,7 +449,7 @@ function SubmittedContentPreview({ content, taskId }: { content: SubmittedConten
           <div style={{ display: "grid", gap: 7 }}>
             <span style={{ color: "#6b7280", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Business instructions</span>
             {content.instructions.map((line, index) => (
-              <p key={`${taskId}-instruction-${index}`} style={{ margin: 0, color: "#444", fontSize: 13, lineHeight: 1.45, overflowWrap: "anywhere" }}>{line}</p>
+              <p key={`${taskId}-instruction-${index}`} style={{ margin: 0, color: "var(--qeixova-color-44-44-44)", fontSize: 13, lineHeight: 1.45, overflowWrap: "anywhere" }}>{line}</p>
             ))}
           </div>
         ) : null}

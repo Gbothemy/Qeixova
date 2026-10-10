@@ -42,7 +42,7 @@ const TH: React.CSSProperties = {
   color: "#4b5563",
   textTransform: "uppercase",
   letterSpacing: 0.5,
-  borderBottom: "1px solid #e5e7eb",
+  borderBottom: "1px solid var(--qeixova-color-e5-e7-eb)",
   whiteSpace: "nowrap",
 };
 
@@ -50,7 +50,7 @@ const TD: React.CSSProperties = {
   padding: "14px 16px",
   fontSize: 14,
   color: "#374151",
-  borderBottom: "1px solid #eef0f3",
+  borderBottom: "1px solid var(--qeixova-color-ee-f0-f3)",
   verticalAlign: "middle",
 };
 
@@ -151,7 +151,7 @@ export default function UsersPage() {
 
   return (
     <div className="adminPage">
-      <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 700, color: "#1A1A1A" }}>Users</h1>
+      <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 700, color: "var(--qeixova-color-1a-1a-1a)" }}>Users</h1>
       <p style={{ margin: "0 0 24px", color: "#5f6876", fontSize: 14 }}>
         {total.toLocaleString()} total registered accounts
       </p>
@@ -167,7 +167,7 @@ export default function UsersPage() {
           }}
           style={{
             padding: "10px 16px",
-            border: "1.5px solid #e0e0e0",
+            border: "1.5px solid var(--qeixova-color-e0-e0-e0)",
             borderRadius: 8,
             fontSize: 14,
             width: 360,
@@ -189,10 +189,10 @@ export default function UsersPage() {
         </div>
       )}
 
-      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1040 }}>
           <thead>
-            <tr style={{ background: "#fafafa" }}>
+            <tr style={{ background: "var(--qeixova-color-fa-fa-fa)" }}>
               <th style={TH}>ID</th>
               <th style={TH}>Account</th>
               <th style={TH}>Email</th>
@@ -225,11 +225,11 @@ export default function UsersPage() {
                 const rowKey = `${u.account_type ?? "contributor"}-${u.id}`;
 
                 return (
-                  <tr key={rowKey} style={{ background: u.banned ? "#fff8f8" : "transparent" }}>
+                  <tr key={rowKey} style={{ background: u.banned ? "var(--qeixova-color-ff-f8-f8)" : "transparent" }}>
                     <td style={TD}>{u.id}</td>
                     <td style={{ ...TD, fontWeight: 500 }}>
                       <div style={{ display: "grid", gap: 6 }}>
-                        <span style={{ color: "#222" }}>{u.full_name}</span>
+                        <span style={{ color: "var(--qeixova-color-22-22-22)" }}>{u.full_name}</span>
                         <span
                           style={{
                             width: "fit-content",
@@ -254,7 +254,7 @@ export default function UsersPage() {
                     </td>
                     <td style={{ ...TD, minWidth: 170 }}>
                       <div style={{ display: "grid", gap: 4, fontSize: 12, lineHeight: 1.35 }}>
-                        <strong style={{ color: "#222" }}>{u.country || "Not specified"}</strong>
+                        <strong style={{ color: "var(--qeixova-color-22-22-22)" }}>{u.country || "Not specified"}</strong>
                         <span>{[u.city, u.state].filter(Boolean).join(", ") || "State/region not specified"}</span>
                         <small style={{ color: u.state ? "#2e7d32" : "#b56d00", fontWeight: 700 }}>{u.state ? "Classified" : "Incomplete location"}</small>
                       </div>
@@ -262,14 +262,14 @@ export default function UsersPage() {
                     <td style={{ ...TD, minWidth: 220 }}>
                       {isBusiness ? (
                         <div style={{ display: "grid", gap: 4, fontSize: 12, lineHeight: 1.35 }}>
-                          <span><strong style={{ color: "#555" }}>Industry:</strong> {u.industry || "Not set"}</span>
-                          <span><strong style={{ color: "#555" }}>Website:</strong> {u.website || "Not set"}</span>
+                          <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Industry:</strong> {u.industry || "Not set"}</span>
+                          <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Website:</strong> {u.website || "Not set"}</span>
                         </div>
                       ) : (
                         <div style={{ display: "grid", gap: 4, fontSize: 12, lineHeight: 1.35 }}>
-                          <span><strong style={{ color: "#555" }}>State:</strong> {u.state || "Not set"}</span>
-                          <span><strong style={{ color: "#555" }}>Interests:</strong> {compactList(u.interests)}</span>
-                          <span><strong style={{ color: "#555" }}>Demo:</strong> {[u.age_range, u.gender].filter(Boolean).join(" / ") || "Not set"}</span>
+                          <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>State:</strong> {u.state || "Not set"}</span>
+                          <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Interests:</strong> {compactList(u.interests)}</span>
+                          <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Demo:</strong> {[u.age_range, u.gender].filter(Boolean).join(" / ") || "Not set"}</span>
                         </div>
                       )}
                     </td>
@@ -317,7 +317,7 @@ export default function UsersPage() {
                           fontSize: 12,
                           fontWeight: 600,
                           background: u.banned ? "#1AEF22" : "#cc0000",
-                          color: "#fff",
+                          color: "var(--qeixova-color-ff-ff-ff)",
                           opacity: actionLoading === rowKey ? 0.6 : 1,
                         }}
                       >
@@ -337,7 +337,7 @@ export default function UsersPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer", background: "#fff" }}
+            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid var(--qeixova-color-dd-dd-dd)", cursor: "pointer", background: "var(--qeixova-color-ff-ff-ff)" }}
           >
             Prev
           </button>
@@ -347,7 +347,7 @@ export default function UsersPage() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer", background: "#fff" }}
+            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid var(--qeixova-color-dd-dd-dd)", cursor: "pointer", background: "var(--qeixova-color-ff-ff-ff)" }}
           >
             Next
           </button>

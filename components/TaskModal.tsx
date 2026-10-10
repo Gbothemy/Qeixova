@@ -457,7 +457,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
                   href="/tasks/submit"
                   data-tour="my-missions-link"
                   className="myMissionsLink"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, width: "100%", minHeight: 44, boxSizing: "border-box", border: "1px solid rgba(255,255,255,.12)", borderRadius: 12, background: "rgba(255,255,255,.035)", color: "#c3c9c4", padding: "0 14px", fontSize: 12, fontWeight: 850, textDecoration: "none" }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, width: "100%", minHeight: 44, boxSizing: "border-box", border: "1px solid rgba(255,255,255,.12)", borderRadius: 12, background: "rgba(255,255,255,.035)", color: "var(--qeixova-color-3c-36-3b)", padding: "0 14px", fontSize: 12, fontWeight: 850, textDecoration: "none" }}
                 >
                   <span aria-hidden="true" style={{ color: "#1aef22", fontSize: 15, lineHeight: 1 }}>←</span>
                   <span>Back to My Missions</span>
@@ -773,7 +773,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           width: fit-content;
           border-radius: 10px;
           background: linear-gradient(135deg, var(--accent-2), var(--accent-2));
-          color: var(--button-text, #000);
+          color: var(--button-text, var(--qeixova-color-ff-ff-ff));
           padding: 9px 12px;
           font-size: 12px;
           font-weight: 950;
@@ -799,7 +799,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           place-items: center;
           border-radius: 9px;
           background: var(--accent-2);
-          color: var(--step-number-text, var(--button-text, #000));
+          color: var(--step-number-text, var(--button-text, var(--qeixova-color-ff-ff-ff)));
           font-size: 12px;
           font-weight: 950;
         }
@@ -821,7 +821,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           border: 0;
           border-radius: 13px;
           background: linear-gradient(135deg, var(--accent-2), var(--accent-2));
-          color: var(--button-text, #000);
+          color: var(--button-text, var(--qeixova-color-ff-ff-ff));
           padding: 15px;
           font-size: 15px;
           font-weight: 950;
@@ -892,7 +892,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
         }
         .missionDetailActions { display: grid; gap: 9px; }
         .myMissionsLink { transition: border-color .16s ease, background .16s ease, color .16s ease; }
-        .myMissionsLink:hover { border-color: rgba(26,239,34,.48) !important; background: rgba(26,239,34,.07) !important; color: #f5f5f5 !important; }
+        .myMissionsLink:hover { border-color: rgba(26,239,34,.48) !important; background: rgba(26,239,34,.07) !important; color: var(--qeixova-color-0a-0a-0a) !important; }
         .removeSelectionAction { width: 100%; border: 1px solid var(--border); border-radius: 11px; background: transparent; color: var(--muted); padding: 11px; font-size: 12px; font-weight: 850; cursor: pointer; }
         .platformChoice.active {
           border-color: rgba(26,239,34,.45);
@@ -904,7 +904,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           accent-color: var(--accent);
         }
         .platformChoice span {
-          color: #f5f5f5;
+          color: var(--qeixova-color-0a-0a-0a);
           font-size: 12px;
           font-weight: 850;
           overflow-wrap: anywhere;
@@ -1005,7 +1005,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           border: 0;
           border-radius: 13px;
           background: linear-gradient(135deg, var(--accent-2), #d89420);
-          color: #000;
+          color: var(--qeixova-color-ff-ff-ff);
           padding: 14px 18px;
           font-weight: 950;
           cursor: pointer;

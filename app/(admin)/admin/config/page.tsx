@@ -65,7 +65,7 @@ export default function ConfigPage() {
   return (
     <div className="adminPage">
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "#1A1A1A" }}>Economy Config</h1>
+        <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "var(--qeixova-color-1a-1a-1a)" }}>Economy Config</h1>
         <p style={{ margin: 0, color: "#5f6876", fontSize: 13 }}>Tune platform economics without redeploying.</p>
       </div>
 
@@ -75,24 +75,24 @@ export default function ConfigPage() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {loading ? <div className="adminPanel">Loading economy settings…</div> : configs.length === 0 ? <div className="adminPanel">No economy settings are available.</div> : configs.map(c => (
-          <div key={c.key} className="adminConfigCard" style={{ background: "#fff", borderRadius: 12, padding: "18px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div key={c.key} className="adminConfigCard" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 12, padding: "18px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", marginBottom: 3 }}>{LABELS[c.key] ?? c.key}</p>
+              <p style={{ fontSize: 14, fontWeight: 700, color: "var(--qeixova-color-1a-1a-1a)", marginBottom: 3 }}>{LABELS[c.key] ?? c.key}</p>
               <p style={{ fontSize: 12, color: "#4b5563" }}>{c.description}</p>
               <p style={{ fontSize: 10, color: "#5f6876", marginTop: 3 }}>Updated: {new Date(c.updated_at).toLocaleString()}</p>
             </div>
             <div className="adminConfigControls" style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input type="text" value={editing[c.key] ?? c.value} onChange={e => setEditing(v => ({ ...v, [c.key]: e.target.value }))}
-                style={{ padding: "8px 12px", border: "1.5px solid #e0e0e0", borderRadius: 8, fontSize: 14, width: 120, outline: "none", textAlign: "right", fontWeight: 700 }} />
+                style={{ padding: "8px 12px", border: "1.5px solid var(--qeixova-color-e0-e0-e0)", borderRadius: 8, fontSize: 14, width: 120, outline: "none", textAlign: "right", fontWeight: 700 }} />
               <button onClick={() => save(c.key)} disabled={saving === c.key}
-                style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: saved === c.key ? "#1AEF22" : "#1A1A1A", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", minWidth: 70 }}>
+                style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: saved === c.key ? "#1AEF22" : "var(--qeixova-color-1a-1a-1a)", color: "var(--qeixova-color-ff-ff-ff)", fontWeight: 700, fontSize: 13, cursor: "pointer", minWidth: 70 }}>
                 {saved === c.key ? "✓ Saved" : saving === c.key ? "..." : "Save"}
               </button>
             </div>
           </div>
         ))}
       </div>
-      <div className="adminPanel" style={{marginTop:20}}><h2 style={{marginTop:0,fontSize:18}}>Configuration history</h2><p style={{color:"#667085",fontSize:12}}>Every economy change is recorded for review and rollback.</p><div style={{display:"grid",gap:8}}>{history.map(item=><div key={item.id} style={{display:"flex",justifyContent:"space-between",gap:12,padding:10,border:"1px solid #edf0f4",borderRadius:9,fontSize:12}}><div><b>{LABELS[item.config_key]??item.config_key}</b><div style={{color:"#667085"}}>{item.old_value} → {item.new_value} · {item.reason}</div></div><span>{item.admin_email}<br/>{new Date(item.created_at).toLocaleString()}</span></div>)}</div></div>
+      <div className="adminPanel" style={{marginTop:20}}><h2 style={{marginTop:0,fontSize:18}}>Configuration history</h2><p style={{color:"#667085",fontSize:12}}>Every economy change is recorded for review and rollback.</p><div style={{display:"grid",gap:8}}>{history.map(item=><div key={item.id} style={{display:"flex",justifyContent:"space-between",gap:12,padding:10,border:"1px solid var(--qeixova-color-ed-f0-f4)",borderRadius:9,fontSize:12}}><div><b>{LABELS[item.config_key]??item.config_key}</b><div style={{color:"#667085"}}>{item.old_value} → {item.new_value} · {item.reason}</div></div><span>{item.admin_email}<br/>{new Date(item.created_at).toLocaleString()}</span></div>)}</div></div>
     </div>
   );
 }

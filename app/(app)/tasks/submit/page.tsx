@@ -98,51 +98,51 @@ export default function MyMissionsPage() {
   if (authLoading || loading) return <ContributorLoading label="Loading My Missions" detail="Getting your selected missions and review status." />;
 
   return (
-    <main className="page-body" style={{ minHeight: "100vh", background: "#080909", paddingBottom: 104 }}>
+    <main className="page-body" style={{ minHeight: "100vh", background: "var(--qeixova-color-f7-f6-f6)", paddingBottom: 104 }}>
       <div style={{ width: "min(100%, 820px)", margin: "0 auto" }}>
         <header style={{ display: "flex", alignItems: "end", justifyContent: "space-between", gap: 16, padding: "8px 0 20px" }}>
           <div>
             <span style={{ color: "#1AEF22", fontSize: 10, fontWeight: 950, letterSpacing: 1, textTransform: "uppercase" }}>Mission workspace</span>
-            <h1 style={{ marginTop: 6, color: "#f5f5f5", fontSize: "clamp(27px, 5vw, 36px)", lineHeight: 1.08, fontWeight: 950 }}>My Missions</h1>
-            <p style={{ maxWidth: 560, marginTop: 8, color: "#b8bdb9", fontSize: 13, lineHeight: 1.6 }}>Your selected work, ready when you are. Start a mission for its instructions, then submit proof here when you finish.</p>
+            <h1 style={{ marginTop: 6, color: "var(--qeixova-color-0a-0a-0a)", fontSize: "clamp(27px, 5vw, 36px)", lineHeight: 1.08, fontWeight: 950 }}>My Missions</h1>
+            <p style={{ maxWidth: 560, marginTop: 8, color: "var(--qeixova-color-47-42-46)", fontSize: 13, lineHeight: 1.6 }}>Your selected work, ready when you are. Start a mission for its instructions, then submit proof here when you finish.</p>
           </div>
-          <Link href="/tasks" style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40, border: "1px solid #303630", borderRadius: 10, background: "#111411", color: "#e5e8e5", padding: "0 13px", textDecoration: "none", fontSize: 12, fontWeight: 850 }}>Browse missions</Link>
+          <Link href="/tasks" style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40, border: "1px solid var(--qeixova-color-cf-c9-cf)", borderRadius: 10, background: "var(--qeixova-color-ee-eb-ee)", color: "var(--qeixova-color-1a-17-1a)", padding: "0 13px", textDecoration: "none", fontSize: 12, fontWeight: 850 }}>Browse missions</Link>
         </header>
 
         {error && <div role="alert" style={{ marginBottom: 14, border: "1px solid rgba(229,62,62,.35)", borderRadius: 12, background: "rgba(229,62,62,.08)", color: "#ffaaaa", padding: 14 }}>{error}<button onClick={() => void loadTasks()} style={{ marginLeft: 12, color: "inherit", textDecoration: "underline", border: 0, background: "none", cursor: "pointer" }}>Try again</button></div>}
 
         <section aria-labelledby="selected-missions-heading" style={{ display: "grid", gap: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "4px 2px" }}>
-            <h2 id="selected-missions-heading" style={{ color: "#f2f4f2", fontSize: 16, fontWeight: 900 }}>Selected</h2>
-            <span style={{ color: "#929993", fontSize: 11 }}>{selectedMissions.length} active</span>
+            <h2 id="selected-missions-heading" style={{ color: "var(--qeixova-color-0d-0b-0d)", fontSize: 16, fontWeight: 900 }}>Selected</h2>
+            <span style={{ color: "var(--qeixova-color-6d-66-6c)", fontSize: 11 }}>{selectedMissions.length} active</span>
           </div>
 
           {selectedMissions.length === 0 ? (
-            <div style={{ display: "grid", justifyItems: "start", gap: 9, padding: "22px 20px", border: "1px solid #252925", borderRadius: 15, background: "#101211" }}>
-              <strong style={{ color: "#f3f5f3", fontSize: 14 }}>No missions selected yet</strong>
-              <p style={{ color: "#aeb4af", fontSize: 12, lineHeight: 1.55 }}>Preview missions on the board, then select the ones you want to take on. They’ll appear here.</p>
+            <div style={{ display: "grid", justifyItems: "start", gap: 9, padding: "22px 20px", border: "1px solid var(--qeixova-color-da-d6-da)", borderRadius: 15, background: "var(--qeixova-color-ef-ed-ee)" }}>
+              <strong style={{ color: "var(--qeixova-color-0c-0a-0c)", fontSize: 14 }}>No missions selected yet</strong>
+              <p style={{ color: "var(--qeixova-color-51-4b-50)", fontSize: 12, lineHeight: 1.55 }}>Preview missions on the board, then select the ones you want to take on. They’ll appear here.</p>
               <Link href="/tasks" style={{ color: "#1aef22", textDecoration: "none", fontSize: 12, fontWeight: 900 }}>Explore missions →</Link>
             </div>
           ) : selectedMissions.map((task) => {
             const started = startedIds.includes(task.id);
             return (
-              <article key={task.id} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "center", gap: 14, padding: "15px 16px", border: "1px solid #292e2a", borderRadius: 14, background: "linear-gradient(120deg, rgba(255,255,255,.018), #101211 55%)" }}>
+              <article key={task.id} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "center", gap: 14, padding: "15px 16px", border: "1px solid var(--qeixova-color-d6-d1-d5)", borderRadius: 14, background: "linear-gradient(120deg, rgba(255,255,255,.018), var(--qeixova-color-ef-ed-ee) 55%)" }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, marginBottom: 7 }}>
                     <span style={{ border: "1px solid rgba(26,239,34,.23)", borderRadius: 999, background: "rgba(26,239,34,.07)", color: "#1aef22", padding: "4px 8px", fontSize: 9, fontWeight: 950, letterSpacing: .35, textTransform: "uppercase" }}>{started ? "In progress" : "Selected"}</span>
-                    <span style={{ color: "#929993", fontSize: 10 }}>{task.category}</span>
+                    <span style={{ color: "var(--qeixova-color-6d-66-6c)", fontSize: 10 }}>{task.category}</span>
                   </div>
-                  <h3 style={{ overflowWrap: "anywhere", color: "#f5f5f5", fontSize: 15, fontWeight: 900 }}>{task.title}</h3>
-                  <p style={{ marginTop: 6, color: "#aeb4af", fontSize: 11, lineHeight: 1.45 }}>+{Number(task.reward).toLocaleString()} QLT <span aria-hidden="true">·</span> {task.duration} <span aria-hidden="true">·</span> {task.proof_label || task.proof_type} proof</p>
+                  <h3 style={{ overflowWrap: "anywhere", color: "var(--qeixova-color-0a-0a-0a)", fontSize: 15, fontWeight: 900 }}>{task.title}</h3>
+                  <p style={{ marginTop: 6, color: "var(--qeixova-color-51-4b-50)", fontSize: 11, lineHeight: 1.45 }}>+{Number(task.reward).toLocaleString()} QLT <span aria-hidden="true">·</span> {task.duration} <span aria-hidden="true">·</span> {task.proof_label || task.proof_type} proof</p>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 7 }}>
                   <button type="button" onClick={() => {
                     if (started && task.mission_key !== "qeixova-awareness-verification") { setActiveMode("proof"); setActiveTask(task); }
                     else if (started) startMission(task);
                     else startMission(task);
-                  }} data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-start" : undefined} style={{ minWidth: 132, minHeight: 40, border: 0, borderRadius: 10, background: "#1aef22", color: "#061006", padding: "0 12px", fontSize: 12, fontWeight: 950, cursor: "pointer" }}>{started && task.mission_key !== "qeixova-awareness-verification" ? "Submit proof" : started ? "Review instructions" : "Start mission"}</button>
-                  {started && <button type="button" data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-view-instructions" : undefined} onClick={() => startMission(task)} style={{ border: 0, background: "transparent", color: "#aeb4af", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>View instructions</button>}
-                  <button type="button" onClick={() => removeMission(task.id)} style={{ border: 0, background: "transparent", color: "#8c928d", fontSize: 10, cursor: "pointer" }}>Remove</button>
+                  }} data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-start" : undefined} style={{ minWidth: 132, minHeight: 40, border: 0, borderRadius: 10, background: "#1aef22", color: "var(--qeixova-color-f9-ef-f9)", padding: "0 12px", fontSize: 12, fontWeight: 950, cursor: "pointer" }}>{started && task.mission_key !== "qeixova-awareness-verification" ? "Submit proof" : started ? "Review instructions" : "Start mission"}</button>
+                  {started && <button type="button" data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-view-instructions" : undefined} onClick={() => startMission(task)} style={{ border: 0, background: "transparent", color: "var(--qeixova-color-51-4b-50)", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>View instructions</button>}
+                  <button type="button" onClick={() => removeMission(task.id)} style={{ border: 0, background: "transparent", color: "var(--qeixova-color-73-6d-72)", fontSize: 10, cursor: "pointer" }}>Remove</button>
                 </div>
               </article>
             );
@@ -152,10 +152,10 @@ export default function MyMissionsPage() {
         {pendingMissions.length > 0 && (
           <section aria-labelledby="pending-missions-heading" style={{ display: "grid", gap: 9, marginTop: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 2px" }}>
-              <h2 id="pending-missions-heading" style={{ color: "#f2f4f2", fontSize: 15, fontWeight: 900 }}>Pending review</h2>
-              <span style={{ color: "#929993", fontSize: 11 }}>{pendingMissions.length}</span>
+              <h2 id="pending-missions-heading" style={{ color: "var(--qeixova-color-0d-0b-0d)", fontSize: 15, fontWeight: 900 }}>Pending review</h2>
+              <span style={{ color: "var(--qeixova-color-6d-66-6c)", fontSize: 11 }}>{pendingMissions.length}</span>
             </div>
-            {pendingMissions.map((task) => <div key={task.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "13px 15px", border: "1px solid #302d25", borderRadius: 12, background: "#11110f" }}><span style={{ color: "#dedfdb", fontSize: 12, fontWeight: 800 }}>{task.title}</span><span style={{ flexShrink: 0, color: "#f5a623", fontSize: 10, fontWeight: 900 }}>Awaiting review</span></div>)}
+            {pendingMissions.map((task) => <div key={task.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "13px 15px", border: "1px solid #302d25", borderRadius: 12, background: "var(--qeixova-color-ee-ee-f0)" }}><span style={{ color: "var(--qeixova-color-21-20-24)", fontSize: 12, fontWeight: 800 }}>{task.title}</span><span style={{ flexShrink: 0, color: "#f5a623", fontSize: 10, fontWeight: 900 }}>Awaiting review</span></div>)}
           </section>
         )}
       </div>

@@ -39,8 +39,8 @@ const MISSION_COLORS: Record<string, { bg: string; color: string }> = {
   premium:       { bg: "#f3e5f5", color: "#7b1fa2" },
 };
 
-const TH: React.CSSProperties = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" };
-const TD: React.CSSProperties = { padding: "12px 14px", fontSize: 13, color: "#374151", borderBottom: "1px solid #eef0f3", verticalAlign: "middle" };
+const TH: React.CSSProperties = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid var(--qeixova-color-e5-e7-eb)", whiteSpace: "nowrap" };
+const TD: React.CSSProperties = { padding: "12px 14px", fontSize: 13, color: "#374151", borderBottom: "1px solid var(--qeixova-color-ee-f0-f3)", verticalAlign: "middle" };
 
 function list(values: string[] | undefined, fallback = "Broad") {
   return values?.length ? values.join(", ") : fallback;
@@ -154,17 +154,17 @@ export default function TasksPage() {
     } finally { setActionLoading(null); }
   }
 
-  const inp: React.CSSProperties = { width: "100%", padding: "9px 12px", border: "1.5px solid #e0e0e0", borderRadius: 7, fontSize: 13, outline: "none", boxSizing: "border-box" };
+  const inp: React.CSSProperties = { width: "100%", padding: "9px 12px", border: "1.5px solid var(--qeixova-color-e0-e0-e0)", borderRadius: 7, fontSize: 13, outline: "none", boxSizing: "border-box" };
   const lbl: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 800, color: "#4b5563", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.4 };
 
   return (
     <div className="adminPage">
       <div className="adminActionHeader" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "#1A1A1A" }}>Missions</h1>
+          <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "var(--qeixova-color-1a-1a-1a)" }}>Missions</h1>
           <p style={{ margin: 0, color: "#5f6876", fontSize: 13 }}>{tasks.length} missions total</p>
         </div>
-        <button onClick={openAdd} style={{ padding: "9px 18px", background: "#1AEF22", color: "#000", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+        <button onClick={openAdd} style={{ padding: "9px 18px", background: "#1AEF22", color: "var(--qeixova-color-00-00-00)", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
           + Add Mission
         </button>
       </div>
@@ -176,10 +176,10 @@ export default function TasksPage() {
         </div>
       )}
 
-      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1180 }}>
           <thead>
-            <tr style={{ background: "#fafafa" }}>
+            <tr style={{ background: "var(--qeixova-color-fa-fa-fa)" }}>
               <th style={TH}>ID</th>
               <th style={TH}>Title</th>
               <th style={TH}>Type</th>
@@ -209,9 +209,9 @@ export default function TasksPage() {
                   <td style={TD}>{t.category}</td>
                   <td style={{ ...TD, minWidth: 250 }}>
                     <div style={{ display: "grid", gap: 4, fontSize: 11, lineHeight: 1.35 }}>
-                      <span><strong style={{ color: "#555" }}>Location:</strong> {getLocation(t)}</span>
-                      <span><strong style={{ color: "#555" }}>Interests:</strong> {getInterests(t)}</span>
-                      <span><strong style={{ color: "#555" }}>Platforms:</strong> {getPlatforms(t)}</span>
+                      <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Location:</strong> {getLocation(t)}</span>
+                      <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Interests:</strong> {getInterests(t)}</span>
+                      <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Platforms:</strong> {getPlatforms(t)}</span>
                     </div>
                   </td>
                   <td style={{ ...TD, fontWeight: 600 }}>{Number(t.reward).toLocaleString()}</td>
@@ -219,7 +219,7 @@ export default function TasksPage() {
                     {t.total_budget > 0 ? (
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{Number(t.total_budget).toLocaleString()}</div>
-                        <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, marginTop: 3, width: 60 }}>
+                        <div style={{ height: 4, background: "var(--qeixova-color-f0-f0-f0)", borderRadius: 2, marginTop: 3, width: 60 }}>
                           <div style={{ height: "100%", borderRadius: 2, background: t.budget_used >= t.total_budget ? "#cc0000" : "#1AEF22", width: `${Math.min(100, (t.budget_used / t.total_budget) * 100)}%` }} />
                         </div>
                         <div style={{ fontSize: 11, color: "#5f6876", marginTop: 3 }}>
@@ -230,7 +230,7 @@ export default function TasksPage() {
                   </td>
                   <td style={TD}>
                     <div style={{ display: "grid", gap: 4 }}>
-                      <span style={{ display: "inline-block", width: "fit-content", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: t.is_active ? "#e8f5e9" : "#f3f4f6", color: t.is_active ? "#2e7d32" : "#4b5563" }}>
+                      <span style={{ display: "inline-block", width: "fit-content", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: t.is_active ? "#e8f5e9" : "var(--qeixova-color-f3-f4-f6)", color: t.is_active ? "#2e7d32" : "#4b5563" }}>
                         {(t.campaign_status === "live" ? "active" : t.campaign_status) ?? t.task_status ?? (t.is_active ? "active" : "inactive")}
                       </span>
                       <span style={{ fontSize: 11, color: "#5f6876" }}>{t.pending_count ?? 0} pending proof</span>
@@ -240,7 +240,7 @@ export default function TasksPage() {
                     <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={() => openEdit(t)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #1AEF22", background: "transparent", color: "#1AEF22", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Edit</button>
                       <button onClick={() => toggleActive(t)} disabled={actionLoading === t.id}
-                        style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: t.is_active ? "#e67e22" : "#1AEF22", color: "#fff", cursor: "pointer", fontSize: 11, fontWeight: 700, opacity: actionLoading === t.id ? 0.6 : 1 }}>
+                        style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: t.is_active ? "#e67e22" : "#1AEF22", color: "var(--qeixova-color-ff-ff-ff)", cursor: "pointer", fontSize: 11, fontWeight: 700, opacity: actionLoading === t.id ? 0.6 : 1 }}>
                         {t.is_active ? "Pause" : (t.campaign_status === "expired" || t.task_status === "expired") ? "Renew" : "Activate"}
                       </button>
                     </div>
@@ -255,7 +255,7 @@ export default function TasksPage() {
       {showModal && (
         <div className="adminModalBackdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div className="adminModalCard" style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}>
+          <div className="adminModalCard" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 16, padding: 28, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}>
             <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700 }}>{editTask ? "Edit Mission" : "Add New Mission"}</h2>
 
             <div className="adminFormGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -341,9 +341,9 @@ export default function TasksPage() {
             </div>
 
             <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-              <button onClick={() => setShowModal(false)} style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", cursor: "pointer", fontSize: 13 }}>Cancel</button>
+              <button onClick={() => setShowModal(false)} style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid var(--qeixova-color-dd-dd-dd)", background: "var(--qeixova-color-ff-ff-ff)", cursor: "pointer", fontSize: 13 }}>Cancel</button>
               <button onClick={handleSave} disabled={saving || !form.title || !form.category || !form.reward}
-                style={{ padding: "10px 22px", borderRadius: 8, border: "none", background: "#1AEF22", color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
+                style={{ padding: "10px 22px", borderRadius: 8, border: "none", background: "#1AEF22", color: "var(--qeixova-color-00-00-00)", cursor: "pointer", fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
                 {saving ? "Saving…" : editTask ? "Save Changes" : "Create Mission"}
               </button>
             </div>

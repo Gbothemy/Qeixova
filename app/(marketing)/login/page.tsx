@@ -146,11 +146,11 @@ function PasswordVisibilityButton({ visible, onClick, label }: { visible: boolea
 const styles = `
   .loginPage {
     min-height: 100vh;
-    color: #f5f5f5;
+    color: var(--qeixova-color-0a-0a-0a);
     background:
       radial-gradient(circle at 50% 12%, rgba(26, 239, 34, 0.1), transparent 26%),
       radial-gradient(circle at 50% 100%, rgba(26, 239, 34, 0.06), transparent 34%),
-      #050505;
+      var(--qeixova-color-fa-fa-fa);
   }
 
   .brandLink,
@@ -174,7 +174,7 @@ const styles = `
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.075);
     border-radius: 26px;
-    background: linear-gradient(180deg, rgba(12, 12, 12, 0.94), rgba(5, 5, 5, 0.96));
+    background: linear-gradient(180deg, var(--qeixova-color-f3-f3-f3-a0_94), var(--qeixova-color-fa-fa-fa-a0_96));
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(26, 239, 34, 0.03) inset;
     backdrop-filter: blur(18px);
   }
@@ -194,7 +194,7 @@ const styles = `
 
   .formHeader h2 {
     margin: 0;
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
     font-size: 28px;
     line-height: 1.1;
     letter-spacing: 0;
@@ -203,7 +203,7 @@ const styles = `
   .formHeader span {
     display: block;
     margin-top: 10px;
-    color: #a8a8a8;
+    color: var(--qeixova-color-57-57-57);
     font-size: 13px;
     line-height: 1.55;
   }
@@ -250,7 +250,7 @@ const styles = `
   .loginForm label {
     display: grid;
     gap: 8px;
-    color: #b8b8b8;
+    color: var(--qeixova-color-47-47-47);
     font-size: 11px;
     font-weight: 850;
     letter-spacing: .75px;
@@ -290,10 +290,10 @@ const styles = `
   .loginForm input {
     width: 100%;
     min-height: 54px;
-    border: 1px solid #272727;
+    border: 1px solid var(--qeixova-color-d8-d8-d8);
     border-radius: 14px;
     background: #f1f6ff;
-    color: #050505;
+    color: var(--qeixova-color-fa-fa-fa);
     padding: 14px 15px 14px 48px;
     font: inherit;
     font-size: 14px;
@@ -311,7 +311,7 @@ const styles = `
 
   .loginForm input:focus {
     border-color: rgba(26, 239, 34, .78);
-    background: #f5f8ff;
+    background: var(--qeixova-color-0a-07-00);
     box-shadow: 0 0 0 4px rgba(26, 239, 34, .12);
   }
 
@@ -349,7 +349,7 @@ const styles = `
     justify-content: center;
     gap: 9px;
     background: linear-gradient(135deg, #1aef22, #08b818);
-    color: #050505;
+    color: var(--qeixova-color-fa-fa-fa);
     cursor: pointer;
     font-size: 16px;
     font-weight: 950;
@@ -366,7 +366,7 @@ const styles = `
     width: 16px;
     height: 16px;
     border: 2px solid rgba(0,0,0,.24);
-    border-top-color: #050505;
+    border-top-color: var(--qeixova-color-fa-fa-fa);
     border-radius: 50%;
     animation: spin .8s linear infinite;
   }
@@ -374,7 +374,7 @@ const styles = `
   .createText {
     margin: 22px 0 0;
     text-align: center;
-    color: #b8b8b8;
+    color: var(--qeixova-color-47-47-47);
     font-size: 13px;
   }
 
@@ -402,7 +402,7 @@ const styles = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #f5f5f5;
+    color: var(--qeixova-color-0a-0a-0a);
     background: rgba(255, 255, 255, 0.035);
     font-size: 12px;
     font-weight: 850;
@@ -463,8 +463,8 @@ void String.raw`
               type="submit"
               disabled={loading}
               style={{
-                background: loading ? "#a0a0a0" : "linear-gradient(135deg, #1AEF22, #06B517)",
-                color: "#fff", border: "none",
+                background: loading ? "var(--qeixova-color-5f-5f-5f)" : "linear-gradient(135deg, #1AEF22, #06B517)",
+                color: "var(--qeixova-color-00-00-00)", border: "none",
                 borderRadius: 14, padding: "15px",
                 fontWeight: 800, fontSize: 15, cursor: loading ? "not-allowed" : "pointer",
                 boxShadow: loading ? "none" : "0 6px 20px rgba(26,239,34,0.35)",
@@ -490,12 +490,12 @@ void String.raw`
         </p>
 
         {/* Account type switcher */}
-        <div style={{ marginTop: 20, background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ marginTop: 20, background: "var(--qeixova-color-f2-f2-f2)", border: "1px solid var(--qeixova-color-e5-e5-e5)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(26,239,34,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img src="/icon-profile.svg" width={14} height={14} style={{ filter: "invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)" }} alt="" />
             </div>
-            <span style={{ fontSize: 12, color: "#bbb" }}>Growth Partner Login</span>
+            <span style={{ fontSize: 12, color: "var(--qeixova-color-44-44-44)" }}>Growth Partner Login</span>
           </div>
           <Link href="/business/login" style={{ fontSize: 12, color: "#F5A623", fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 24, height: 24, borderRadius: 6, background: "rgba(245,166,35,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>

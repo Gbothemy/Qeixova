@@ -19,8 +19,8 @@ interface Completion {
   xp_reward: number;
 }
 
-const TH: React.CSSProperties = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" };
-const TD: React.CSSProperties = { padding: "12px 14px", fontSize: 13, color: "#374151", borderBottom: "1px solid #eef0f3", verticalAlign: "middle" };
+const TH: React.CSSProperties = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid var(--qeixova-color-e5-e7-eb)", whiteSpace: "nowrap" };
+const TD: React.CSSProperties = { padding: "12px 14px", fontSize: 13, color: "#374151", borderBottom: "1px solid var(--qeixova-color-ee-f0-f3)", verticalAlign: "middle" };
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   pending:  { bg: "#fff8e1", color: "#e67e22" },
@@ -113,7 +113,7 @@ function ProofCell({ type, value, onPreview }: { type: string; value: string | n
         <button
           type="button"
           onClick={() => onPreview(shots)}
-          style={{ display: "flex", alignItems: "center", gap: 8, maxWidth: 180, border: "1px solid #d7f3d8", borderRadius: 12, background: "#f2fbf2", padding: 6, cursor: "pointer", textAlign: "left" }}
+          style={{ display: "flex", alignItems: "center", gap: 8, maxWidth: 180, border: "1px solid #d7f3d8", borderRadius: 12, background: "var(--qeixova-color-f2-fb-f2)", padding: 6, cursor: "pointer", textAlign: "left" }}
         >
           <img src={shots[0].dataUrl} alt={shots[0].name} style={{ width: 42, height: 42, objectFit: "cover", borderRadius: 9, border: "1px solid #d9ead9", flexShrink: 0 }} />
           <span style={{ display: "grid", gap: 2, minWidth: 0 }}>
@@ -234,7 +234,7 @@ export default function CompletionsPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
-          <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "#1A1A1A" }}>User Mission Proof Approval</h1>
+          <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "var(--qeixova-color-1a-1a-1a)" }}>User Mission Proof Approval</h1>
           <p style={{ margin: 0, color: "#5f6876", fontSize: 13 }}>{total.toLocaleString()} total · {pendingCount} pending review</p>
         </div>
         {statusFilter === "pending" && pendingCount > 0 && (
@@ -248,14 +248,14 @@ export default function CompletionsPage() {
       <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         {[{ val: "pending", label: "Pending" }, { val: "approved", label: "Approved" }, { val: "rejected", label: "Rejected" }, { val: "", label: "All" }].map(f => (
           <button key={f.val} onClick={() => { setStatusFilter(f.val); setPage(1); }}
-            style={{ padding: "7px 16px", borderRadius: 20, border: "1.5px solid", borderColor: statusFilter === f.val ? "#1AEF22" : "#d8dde5", background: statusFilter === f.val ? "#1AEF22" : "#fff", color: statusFilter === f.val ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+            style={{ padding: "7px 16px", borderRadius: 20, border: "1.5px solid", borderColor: statusFilter === f.val ? "#1AEF22" : "#d8dde5", background: statusFilter === f.val ? "#1AEF22" : "var(--qeixova-color-ff-ff-ff)", color: statusFilter === f.val ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
             {f.label}
           </button>
         ))}
-        <div style={{ width: 1, background: "#eee", margin: "0 4px" }} />
+        <div style={{ width: 1, background: "var(--qeixova-color-ee-ee-ee)", margin: "0 4px" }} />
         {["", "screenshot", "url", "text"].map(f => (
           <button key={f} onClick={() => { setProofFilter(f); setPage(1); }}
-            style={{ padding: "7px 14px", borderRadius: 20, border: "1.5px solid", borderColor: proofFilter === f ? "#4b5563" : "#d8dde5", background: proofFilter === f ? "#4b5563" : "#fff", color: proofFilter === f ? "#fff" : "#4b5563", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+            style={{ padding: "7px 14px", borderRadius: 20, border: "1.5px solid", borderColor: proofFilter === f ? "#4b5563" : "#d8dde5", background: proofFilter === f ? "#4b5563" : "var(--qeixova-color-ff-ff-ff)", color: proofFilter === f ? "var(--qeixova-color-ff-ff-ff)" : "#4b5563", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
             {f === "" ? "All Proof" : f}
           </button>
         ))}
@@ -268,10 +268,10 @@ export default function CompletionsPage() {
         </div>
       )}
 
-      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1000 }}>
           <thead>
-            <tr style={{ background: "#fafafa" }}>
+            <tr style={{ background: "var(--qeixova-color-fa-fa-fa)" }}>
               <th style={TH}>ID</th>
               <th style={TH}>User / Trust</th>
               <th style={TH}>Mission</th>
@@ -291,7 +291,7 @@ export default function CompletionsPage() {
             ) : completions.map(c => {
               const mt = MISSION_COLORS[c.mission_type] ?? MISSION_COLORS.engagement;
               return (
-                <tr key={c.id} style={{ background: c.status === "pending" ? "#fffdf5" : "white" }}>
+                <tr key={c.id} style={{ background: c.status === "pending" ? "var(--qeixova-color-ff-fd-f5)" : "white" }}>
                   <td style={{ ...TD, color: "#667085" }}>{c.id}</td>
                   <td style={TD}>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{c.user_name}</div>
@@ -324,7 +324,7 @@ export default function CompletionsPage() {
                     {c.status === "pending" ? (
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => handleApprove(c.id)} disabled={actionLoading === c.id}
-                          style={{ padding: "6px 12px", borderRadius: 7, border: "none", background: "#1AEF22", color: "#000", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                          style={{ padding: "6px 12px", borderRadius: 7, border: "none", background: "#1AEF22", color: "var(--qeixova-color-00-00-00)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                           {actionLoading === c.id ? "…" : "✓ Approve"}
                         </button>
                         <button onClick={() => setRejectModal({ id: c.id, title: c.task_title })} disabled={actionLoading === c.id}
@@ -343,29 +343,29 @@ export default function CompletionsPage() {
 
       {totalPages > 1 && (
         <div style={{ display: "flex", gap: 8, marginTop: 16, alignItems: "center" }}>
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer", background: "#fff" }}>← Prev</button>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid var(--qeixova-color-dd-dd-dd)", cursor: "pointer", background: "var(--qeixova-color-ff-ff-ff)" }}>← Prev</button>
           <span style={{ fontSize: 13, color: "#5f6876" }}>Page {page} of {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer", background: "#fff" }}>Next →</button>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid var(--qeixova-color-dd-dd-dd)", cursor: "pointer", background: "var(--qeixova-color-ff-ff-ff)" }}>Next →</button>
         </div>
       )}
 
       {/* Reject Modal */}
       {rejectModal && (
         <div className="adminModalBackdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div className="adminModalCard" style={{ background: "#fff", borderRadius: 16, padding: 28, maxWidth: 460, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+          <div className="adminModalCard" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 16, padding: 28, maxWidth: 460, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <h3 style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 700 }}>Reject completed mission proof</h3>
             <p style={{ margin: "0 0 20px", fontSize: 13, color: "#5f6876" }}>{rejectModal.title}</p>
             <label style={{ fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5 }}>Reason</label>
             <select value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-              style={{ width: "100%", marginTop: 6, marginBottom: 12, padding: "10px 12px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 13, outline: "none" }}>
+              style={{ width: "100%", marginTop: 6, marginBottom: 12, padding: "10px 12px", borderRadius: 8, border: "1.5px solid var(--qeixova-color-dd-dd-dd)", fontSize: 13, outline: "none" }}>
               {REJECTION_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
             <label style={{ fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5 }}>Custom (optional)</label>
             <input value={customReason} onChange={e => setCustomReason(e.target.value)} placeholder="Override with custom reason..."
-              style={{ width: "100%", marginTop: 6, marginBottom: 20, padding: "10px 12px", borderRadius: 8, border: "1.5px solid #ddd", fontSize: 13, outline: "none" }} />
+              style={{ width: "100%", marginTop: 6, marginBottom: 20, padding: "10px 12px", borderRadius: 8, border: "1.5px solid var(--qeixova-color-dd-dd-dd)", fontSize: 13, outline: "none" }} />
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { setRejectModal(null); setCustomReason(""); }} style={{ flex: 1, padding: "11px", borderRadius: 9, border: "1.5px solid #ddd", background: "#fff", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleReject} disabled={actionLoading !== null} style={{ flex: 1, padding: "11px", borderRadius: 9, border: "none", background: "#c62828", color: "#fff", cursor: "pointer", fontWeight: 700 }}>
+              <button onClick={() => { setRejectModal(null); setCustomReason(""); }} style={{ flex: 1, padding: "11px", borderRadius: 9, border: "1.5px solid var(--qeixova-color-dd-dd-dd)", background: "var(--qeixova-color-ff-ff-ff)", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+              <button onClick={handleReject} disabled={actionLoading !== null} style={{ flex: 1, padding: "11px", borderRadius: 9, border: "none", background: "#c62828", color: "var(--qeixova-color-ff-ff-ff)", cursor: "pointer", fontWeight: 700 }}>
                 {actionLoading !== null ? "Rejecting…" : "Confirm Reject"}
               </button>
             </div>
@@ -375,18 +375,18 @@ export default function CompletionsPage() {
 
       {previewShots && (
         <div className="adminModalBackdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 1200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setPreviewShots(null)}>
-          <div className="adminModalCard adminPreviewModal" style={{ width: "min(980px, 100%)", maxHeight: "92vh", overflow: "auto", background: "#fff", borderRadius: 18, padding: 20, boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }} onClick={(event) => event.stopPropagation()}>
+          <div className="adminModalCard adminPreviewModal" style={{ width: "min(980px, 100%)", maxHeight: "92vh", overflow: "auto", background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 18, padding: 20, boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }} onClick={(event) => event.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 18, color: "#111827" }}>Proof screenshots</h3>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280" }}>{previewShots.length} image{previewShots.length === 1 ? "" : "s"} submitted by growth partner</p>
               </div>
-              <button type="button" onClick={() => setPreviewShots(null)} style={{ border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", padding: "9px 12px", fontWeight: 700, cursor: "pointer" }}>Close</button>
+              <button type="button" onClick={() => setPreviewShots(null)} style={{ border: "1px solid var(--qeixova-color-e5-e7-eb)", borderRadius: 10, background: "var(--qeixova-color-ff-ff-ff)", padding: "9px 12px", fontWeight: 700, cursor: "pointer" }}>Close</button>
             </div>
             <div style={{ display: "grid", gap: 14 }}>
               {previewShots.map((shot, index) => (
-                <figure key={`${shot.name}-${index}`} style={{ margin: 0, border: "1px solid #eef0f3", borderRadius: 14, padding: 10, background: "#f9fafb" }}>
-                  <img src={shot.dataUrl} alt={shot.name} style={{ display: "block", width: "100%", maxHeight: "72vh", objectFit: "contain", borderRadius: 10, background: "#111" }} />
+                <figure key={`${shot.name}-${index}`} style={{ margin: 0, border: "1px solid var(--qeixova-color-ee-f0-f3)", borderRadius: 14, padding: 10, background: "var(--qeixova-color-f9-fa-fb)" }}>
+                  <img src={shot.dataUrl} alt={shot.name} style={{ display: "block", width: "100%", maxHeight: "72vh", objectFit: "contain", borderRadius: 10, background: "var(--qeixova-color-11-11-11)" }} />
                   <figcaption style={{ marginTop: 8, color: "#4b5563", fontSize: 12 }}>{shot.name}</figcaption>
                 </figure>
               ))}

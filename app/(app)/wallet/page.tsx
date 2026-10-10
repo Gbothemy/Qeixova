@@ -84,26 +84,26 @@ export default function WalletPage() {
   const missionQltNeeded = Math.max(0, WITHDRAWAL_UNLOCK_QLT - Number(user?.total_earned_qlt ?? 0));
 
   return (
-    <div className="page-body" style={{ background: "#000000", minHeight: "100vh" }}>
+    <div className="page-body" style={{ background: "var(--qeixova-color-ff-ff-ff)", minHeight: "100vh" }}>
       {/* Header */}
-      <div className="page-header" style={{ background: "#0a0a0a", borderBottom: "1px solid #222222", padding: "52px 20px 32px", position: "relative", overflow: "hidden" }}>
+      <div className="page-header" style={{ background: "var(--qeixova-color-f5-f5-f5)", borderBottom: "1px solid var(--qeixova-color-dd-dd-dd)", padding: "52px 20px 32px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(26,239,34,0.03)" }} />
-        <p style={{ color: "#bbbbbb", fontSize: 13, marginBottom: 4 }}>Points Balance</p>
+        <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 13, marginBottom: 4 }}>Points Balance</p>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <Image src="/icon-wallet.svg" alt="wallet" width={24} height={24} style={{ objectFit: "contain", marginBottom: -4 }} />
-          <p style={{ color: "#F5F5F5", fontSize: 38, fontWeight: 800, letterSpacing: -2, lineHeight: 1 }}>{balance.toLocaleString()}</p>
-          <span style={{ color: "#bbbbbb", fontSize: 14 }}>QLT</span>
+          <p style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 38, fontWeight: 800, letterSpacing: -2, lineHeight: 1 }}>{balance.toLocaleString()}</p>
+          <span style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 14 }}>QLT</span>
         </div>
-        <p style={{ color: "#cccccc", fontSize: 14, fontWeight: 600, marginTop: 6 }}>≈ ₦{(balance / 100).toLocaleString()} cash value</p>
+        <p style={{ color: "var(--qeixova-color-33-33-33)", fontSize: 14, fontWeight: 600, marginTop: 6 }}>≈ ₦{(balance / 100).toLocaleString()} cash value</p>
         <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
           <span style={{ color: "#1AEF22", fontSize: 12, fontWeight: 700 }}>{missionEarnedQlt.toLocaleString()} mission QLT</span>
           <span style={{ color: "#F5A623", fontSize: 12, fontWeight: 700 }}>{bonusEarnedQlt.toLocaleString()} bonus QLT</span>
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
           {[{ label: "Min. Withdrawal", value: "100,000 QLT" }, { label: "Rate", value: "100 QLT = ₦1" }, { label: "Fee", value: "Free" }].map(item => (
-            <div key={item.label} style={{ flex: 1, background: "#111111", border: "1px solid #222222", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
-              <p style={{ color: "#bbbbbb", fontSize: 10, marginBottom: 3 }}>{item.label}</p>
-              <p style={{ color: "#F5F5F5", fontWeight: 700, fontSize: 13 }}>{item.value}</p>
+            <div key={item.label} style={{ flex: 1, background: "var(--qeixova-color-ee-ee-ee)", border: "1px solid var(--qeixova-color-dd-dd-dd)", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
+              <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 10, marginBottom: 3 }}>{item.label}</p>
+              <p style={{ color: "var(--qeixova-color-0a-0a-0a)", fontWeight: 700, fontSize: 13 }}>{item.value}</p>
             </div>
           ))}
         </div>
@@ -117,7 +117,7 @@ export default function WalletPage() {
               <div>
                 <p style={{ fontSize: 12, color: "#F5A623", fontWeight: 700, marginBottom: 2 }}>Pending QLT</p>
                 <p style={{ fontSize: 20, fontWeight: 800, color: "#F5A623" }}>+{pendingQlt.toLocaleString()} QLT</p>
-                <p style={{ fontSize: 11, color: "#999999", marginTop: 2 }}>{pendingCount} submission{pendingCount !== 1 ? "s" : ""} under review</p>
+                <p style={{ fontSize: 11, color: "var(--qeixova-color-66-66-66)", marginTop: 2 }}>{pendingCount} submission{pendingCount !== 1 ? "s" : ""} under review</p>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ background: "rgba(245,166,35,0.15)", borderRadius: 10, padding: "6px 12px" }}>
@@ -131,11 +131,11 @@ export default function WalletPage() {
         {/* Rejected Tasks */}
         {rejected.length > 0 && (
           <div style={{ padding: "16px 16px 0" }}>
-            <p style={{ fontWeight: 700, fontSize: 14, color: "#F5F5F5", marginBottom: 10 }}>Rejected Submissions</p>
+            <p style={{ fontWeight: 700, fontSize: 14, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 10 }}>Rejected Submissions</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {rejected.map((r, i) => (
                 <div key={i} style={{ background: "rgba(229,62,62,0.06)", border: "1px solid rgba(229,62,62,0.2)", borderRadius: 12, padding: "12px 14px" }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#F5F5F5", marginBottom: 4 }}>{r.title}</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 4 }}>{r.title}</p>
                   <p style={{ fontSize: 12, color: "#e53e3e" }}>Reason: {r.rejection_reason}</p>
                 </div>
               ))}
@@ -144,12 +144,12 @@ export default function WalletPage() {
         )}
         {/* Withdraw form */}
         <div style={{ padding: "20px 16px 0" }}>
-          <div style={{ background: "#111111", borderRadius: 20, padding: "22px 20px", border: "1px solid #222222" }}>
+          <div style={{ background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 20, padding: "22px 20px", border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#1a1a1a", border: "1px solid #222222", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--qeixova-color-e5-e5-e5)", border: "1px solid var(--qeixova-color-dd-dd-dd)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Image src="/icon-wallet.svg" alt="withdraw" width={20} height={20} style={{ objectFit: "contain" }} />
               </div>
-              <p style={{ fontWeight: 800, fontSize: 16, color: "#F5F5F5" }}>Withdraw Funds</p>
+              <p style={{ fontWeight: 800, fontSize: 16, color: "var(--qeixova-color-0a-0a-0a)" }}>Withdraw Funds</p>
             </div>
 
             {!withdrawalUnlocked && (
@@ -157,7 +157,7 @@ export default function WalletPage() {
                 <span style={{ fontSize: 18 }}>🔒</span>
                 <div>
                   <p style={{ color: "#e87373", fontSize: 13, fontWeight: 800 }}>Withdrawals are locked</p>
-                  <p style={{ color: "#cccccc", fontSize: 12, lineHeight: 1.5, marginTop: 3 }}>
+                  <p style={{ color: "var(--qeixova-color-33-33-33)", fontSize: 12, lineHeight: 1.5, marginTop: 3 }}>
                     Earn {missionQltNeeded.toLocaleString()} more approved mission QLT to reach 50,001 QLT. Bonus QLT does not count.
                   </p>
                 </div>
@@ -173,28 +173,28 @@ export default function WalletPage() {
 
             <form onSubmit={handleWithdraw} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <label style={{ fontSize: 12, color: "#bbbbbb", fontWeight: 700, letterSpacing: 0.5 }}>QLT POINTS TO CONVERT</label>
+                <label style={{ fontSize: 12, color: "var(--qeixova-color-44-44-44)", fontWeight: 700, letterSpacing: 0.5 }}>QLT POINTS TO CONVERT</label>
                 <div style={{ position: "relative", marginTop: 8 }}>
                   <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder={withdrawalUnlocked ? "Min. 100,000 QLT" : "Locked until 50,001 mission QLT"}
                     disabled={!withdrawalUnlocked}
-                    style={{ width: "100%", padding: "14px 16px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 16, outline: "none", color: "#F5F5F5", background: "#1a1a1a", opacity: withdrawalUnlocked ? 1 : 0.55, cursor: withdrawalUnlocked ? "text" : "not-allowed" }}
+                    style={{ width: "100%", padding: "14px 16px", borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize: 16, outline: "none", color: "var(--qeixova-color-0a-0a-0a)", background: "var(--qeixova-color-e5-e5-e5)", opacity: withdrawalUnlocked ? 1 : 0.55, cursor: withdrawalUnlocked ? "text" : "not-allowed" }}
                     onFocus={e => (e.target.style.borderColor = "#1AEF22")}
-                    onBlur={e => (e.target.style.borderColor = "#999999")}
+                    onBlur={e => (e.target.style.borderColor = "var(--qeixova-color-66-66-66)")}
                   />
                 </div>
                 {Number(amount) > 0 && (
                   <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, background: "rgba(26,239,34,0.1)", borderRadius: 8, padding: "7px 12px" }}>
                     <span style={{ fontSize: 14 }}>⭐</span>
                     <span style={{ fontSize: 13, color: "#1AEF22", fontWeight: 600 }}>{Number(amount).toLocaleString()} QLT</span>
-                    <span style={{ color: "#aaaaaa" }}>→</span>
+                    <span style={{ color: "var(--qeixova-color-55-55-55)" }}>→</span>
                     <span style={{ fontSize: 13, color: "#1AEF22", fontWeight: 700 }}>₦{(Number(amount) / 100).toLocaleString()}</span>
                   </div>
                 )}
               </div>
               <div>
-                <label style={{ fontSize: 12, color: "#bbbbbb", fontWeight: 700, letterSpacing: 0.5 }}>BANK ACCOUNT</label>
+                <label style={{ fontSize: 12, color: "var(--qeixova-color-44-44-44)", fontWeight: 700, letterSpacing: 0.5 }}>BANK ACCOUNT</label>
                 <select value={bank} onChange={e => setBank(e.target.value)} disabled={!withdrawalUnlocked}
-                  style={{ width: "100%", marginTop: 8, padding: "14px 16px", borderRadius: 12, border: "1.5px solid #333333", fontSize: 14, outline: "none", color: "#F5F5F5", background: "#1a1a1a", cursor: withdrawalUnlocked ? "pointer" : "not-allowed", opacity: withdrawalUnlocked ? 1 : 0.55 }}>
+                  style={{ width: "100%", marginTop: 8, padding: "14px 16px", borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize: 14, outline: "none", color: "var(--qeixova-color-0a-0a-0a)", background: "var(--qeixova-color-e5-e5-e5)", cursor: withdrawalUnlocked ? "pointer" : "not-allowed", opacity: withdrawalUnlocked ? 1 : 0.55 }}>
                   <option value="">Select bank account</option>
                   {bankAccounts.length > 0 ? (
                     bankAccounts.map(acc => (
@@ -208,8 +208,8 @@ export default function WalletPage() {
                 </select>
               </div>
               <button type="submit" disabled={submitting || !withdrawalUnlocked} style={{
-                background: submitting || !withdrawalUnlocked ? "#555555" : "linear-gradient(135deg, #F5A623, #d89420)",
-                color: "#000", border: "none", borderRadius: 14, padding: "16px",
+                background: submitting || !withdrawalUnlocked ? "var(--qeixova-color-aa-aa-aa)" : "linear-gradient(135deg, #F5A623, #d89420)",
+                color: "var(--qeixova-color-ff-ff-ff)", border: "none", borderRadius: 14, padding: "16px",
                 fontWeight: 800, fontSize: 15, cursor: submitting || !withdrawalUnlocked ? "not-allowed" : "pointer",
                 boxShadow: submitting || !withdrawalUnlocked ? "none" : "0 6px 20px rgba(245,166,35,0.35)", marginTop: 4,
               }}>
@@ -221,24 +221,24 @@ export default function WalletPage() {
 
         {/* Transactions */}
         <div style={{ padding: "24px 16px 0" }}>
-          <p style={{ fontWeight: 800, fontSize: 17, color: "#F5F5F5", marginBottom: 14 }}>Transaction History</p>
+          <p style={{ fontWeight: 800, fontSize: 17, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 14 }}>Transaction History</p>
           {transactions.length === 0 ? (
-            <div style={{ background: "#111111", borderRadius: 16, padding: "32px", textAlign: "center", border: "1px solid #222222" }}>
+            <div style={{ background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 16, padding: "32px", textAlign: "center", border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
               <p style={{ fontSize: 32 }}>📊</p>
-              <p style={{ color: "#bbbbbb", marginTop: 8, fontSize: 14 }}>No transactions yet</p>
+              <p style={{ color: "var(--qeixova-color-44-44-44)", marginTop: 8, fontSize: 14 }}>No transactions yet</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {transactions.map((tx, i) => (
-                <div key={i} style={{ background: "#111111", borderRadius: 16, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #222222" }}>
+                <div key={i} style={{ background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 16, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ width: 42, height: 42, borderRadius: 13, background: tx.type === "credit" ? "rgba(26,239,34,0.12)" : "rgba(229,62,62,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Image src={tx.label.startsWith("Withdrawal") ? "/icon-wallet.svg" : "/icon-task.svg"} alt="tx" width={22} height={22} style={{ objectFit: "contain" }} />
                     </div>
                     <div>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "#F5F5F5" }}>{tx.label}</p>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)" }}>{tx.label}</p>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
-                        <p style={{ fontSize: 11, color: "#bbbbbb" }}>{timeAgo(tx.created_at)}</p>
+                        <p style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)" }}>{timeAgo(tx.created_at)}</p>
                         {tx.status === "pending" && (
                           <span style={{ fontSize: 10, background: "rgba(245,166,35,0.12)", color: "#F5A623", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>Pending</span>
                         )}
@@ -266,7 +266,7 @@ export default function WalletPage() {
 
 function _LoadingScreen() {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000000" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--qeixova-color-ff-ff-ff)" }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>💰</div>
         <p style={{ color: "#1AEF22", fontWeight: 700 }}>Loading wallet...</p>

@@ -100,7 +100,7 @@ export default function TutorialFlow({ onComplete }: Props) {
 
           <button onClick={onComplete} style={{
           width: "100%", background: "linear-gradient(135deg, var(--accent-2), var(--accent-2))",
-            color: "#000", border: "none", borderRadius: 14, padding: "17px",
+            color: "var(--qeixova-color-ff-ff-ff)", border: "none", borderRadius: 14, padding: "17px",
             fontWeight: 800, fontSize: 16, cursor: "pointer",
             boxShadow: "0 6px 20px rgba(245,166,35,0.18)",
             marginBottom: 12,
@@ -187,7 +187,7 @@ export default function TutorialFlow({ onComplete }: Props) {
           }} style={{
             flex: 2, padding: "14px", borderRadius: 12, border: "none",
             background: isLast ? "linear-gradient(135deg, var(--accent-2), var(--accent-2))" : "linear-gradient(135deg, var(--accent), var(--accent))",
-            color: "var(--button-text, #000)", fontWeight: 800, fontSize: 15, cursor: "pointer",
+            color: "var(--button-text, var(--qeixova-color-ff-ff-ff))", fontWeight: 800, fontSize: 15, cursor: "pointer",
             boxShadow: isLast ? "0 6px 20px rgba(245,166,35,0.18)" : "0 6px 20px rgba(26,239,34,0.18)",
           }}>
             {isLast ? "I'm ready →" : "Next →"}

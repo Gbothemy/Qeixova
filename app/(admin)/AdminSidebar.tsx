@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminRole, roleCan } from "@/lib/adminRoles";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", description: "Operations overview", icon: "OV", permission: "dashboard.read" },
@@ -62,6 +63,7 @@ function SidebarContent({
         <span>Signed in as</span>
         <strong>{name}</strong>
         <small>{role.replaceAll("_", " ")}</small>
+        <ThemeToggle />
         <button type="button" onClick={onLogout}>Log out</button>
       </footer>
     </>

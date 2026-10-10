@@ -400,7 +400,7 @@ export default function TaskCard({ task, onStart, onSelect, selected }: TaskCard
         }
         .missionActions .missionSelectAction {
           background: var(--accent-2);
-          color: #000;
+          color: var(--qeixova-color-ff-ff-ff);
           border-color: transparent;
         }
         .missionDone {

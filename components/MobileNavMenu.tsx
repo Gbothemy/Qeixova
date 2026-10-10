@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const links = [
   { href: "/dashboard", label: "Home", icon: "/icon-home.svg" },
@@ -38,7 +39,6 @@ export default function MobileNavMenu() {
         </Link>
         <button type="button" className="mobile-nav-menu__toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="mobile-nav-menu-links" onClick={() => setOpen((value) => !value)}>
           <span className="mobile-nav-menu__toggle-icon" aria-hidden="true">{open ? "×" : "☰"}</span>
-          <span>{open ? "Close" : "Menu"}</span>
         </button>
       </div>
       {open && (
@@ -52,6 +52,7 @@ export default function MobileNavMenu() {
                 <span>{link.label}</span>
               </Link>;
             })}
+            <div className="mobile-nav-menu__theme"><ThemeToggle /></div>
           </nav>
         </>
       )}

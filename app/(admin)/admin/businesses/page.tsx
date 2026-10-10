@@ -39,7 +39,7 @@ const TH: React.CSSProperties = {
   color: "#4b5563",
   textTransform: "uppercase",
   letterSpacing: 0.5,
-  borderBottom: "1px solid #e5e7eb",
+  borderBottom: "1px solid var(--qeixova-color-e5-e7-eb)",
   whiteSpace: "nowrap",
 };
 
@@ -47,7 +47,7 @@ const TD: React.CSSProperties = {
   padding: "14px 16px",
   fontSize: 14,
   color: "#374151",
-  borderBottom: "1px solid #eef0f3",
+  borderBottom: "1px solid var(--qeixova-color-ee-f0-f3)",
   verticalAlign: "middle",
 };
 
@@ -74,15 +74,15 @@ function StatCard({ label, value, detail }: { label: string; value: string; deta
   return (
     <article
       style={{
-        background: "#fff",
-        border: "1px solid #eee",
+        background: "var(--qeixova-color-ff-ff-ff)",
+        border: "1px solid var(--qeixova-color-ee-ee-ee)",
         borderRadius: 14,
         padding: 18,
         boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
       }}
     >
-      <span style={{ display: "block", color: "#888", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7 }}>{label}</span>
-      <strong style={{ display: "block", color: "#151515", fontSize: 28, lineHeight: 1.1, marginTop: 10 }}>{value}</strong>
+      <span style={{ display: "block", color: "var(--qeixova-color-88-88-88)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7 }}>{label}</span>
+      <strong style={{ display: "block", color: "var(--qeixova-color-15-15-15)", fontSize: 28, lineHeight: 1.1, marginTop: 10 }}>{value}</strong>
       <small style={{ display: "block", color: "#5f6876", fontSize: 12, marginTop: 6 }}>{detail}</small>
     </article>
   );
@@ -148,7 +148,7 @@ export default function AdminBusinessesPage() {
 
   return (
     <div className="adminPage">
-      <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 700, color: "#1A1A1A" }}>Businesses</h1>
+      <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 700, color: "var(--qeixova-color-1a-1a-1a)" }}>Businesses</h1>
       <p style={{ margin: "0 0 24px", color: "#5f6876", fontSize: 14 }}>
         View and manage registered business accounts on Qeixova.
       </p>
@@ -187,7 +187,7 @@ export default function AdminBusinessesPage() {
           }}
           style={{
             padding: "10px 16px",
-            border: "1.5px solid #e0e0e0",
+            border: "1.5px solid var(--qeixova-color-e0-e0-e0)",
             borderRadius: 8,
             fontSize: 14,
             width: 420,
@@ -204,10 +204,10 @@ export default function AdminBusinessesPage() {
         </div>
       )}
 
-      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1060 }}>
           <thead>
-            <tr style={{ background: "#fafafa" }}>
+            <tr style={{ background: "var(--qeixova-color-fa-fa-fa)" }}>
               <th style={TH}>ID</th>
               <th style={TH}>Business</th>
               <th style={TH}>Email</th>
@@ -234,9 +234,9 @@ export default function AdminBusinessesPage() {
               businesses.map((business) => {
                 const active = business.status === "active";
                 return (
-                  <tr key={business.id} style={{ background: active ? "transparent" : "#fff8f8" }}>
+                  <tr key={business.id} style={{ background: active ? "transparent" : "var(--qeixova-color-ff-f8-f8)" }}>
                     <td style={TD}>{business.id}</td>
-                    <td style={{ ...TD, fontWeight: 600, color: "#222" }}>
+                    <td style={{ ...TD, fontWeight: 600, color: "var(--qeixova-color-22-22-22)" }}>
                       <div style={{ display: "grid", gap: 5 }}>
                         <span>{business.name}</span>
                         <small style={{ color: "#b56d00", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4 }}>Business account</small>
@@ -246,23 +246,23 @@ export default function AdminBusinessesPage() {
                     <td style={TD}>{Number(business.balance).toLocaleString()} QLT</td>
                     <td style={TD}>
                       <div style={{ display: "grid", gap: 4, fontSize: 12, lineHeight: 1.35 }}>
-                        <span><strong style={{ color: "#555" }}>{business.campaign_count}</strong> total</span>
+                        <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>{business.campaign_count}</strong> total</span>
                         <span><strong style={{ color: "#b56d00" }}>{business.pending_campaigns}</strong> pending review</span>
                         <span><strong style={{ color: "#2e7d32" }}>{business.live_campaigns}</strong> live</span>
                       </div>
                     </td>
                     <td style={{ ...TD, minWidth: 180 }}>
                       <div style={{ display: "grid", gap: 4, fontSize: 12, lineHeight: 1.35 }}>
-                        <strong style={{ color: "#222" }}>{business.country || "Not specified"}</strong>
+                        <strong style={{ color: "var(--qeixova-color-22-22-22)" }}>{business.country || "Not specified"}</strong>
                         <span>{[business.city, business.state].filter(Boolean).join(", ") || "State/region not specified"}</span>
                         <small style={{ color: business.state ? "#2e7d32" : "#b56d00", fontWeight: 700 }}>{business.state ? "Classified" : "Incomplete location"}</small>
                       </div>
                     </td>
                     <td style={{ ...TD, minWidth: 210 }}>
                       <div style={{ display: "grid", gap: 4, fontSize: 12, lineHeight: 1.35 }}>
-                        <span><strong style={{ color: "#555" }}>Industry:</strong> {business.industry || "Not set"}</span>
-                        <span><strong style={{ color: "#555" }}>Website:</strong> {business.website || "Not set"}</span>
-                        <span><strong style={{ color: "#555" }}>Reserved:</strong> {Number(business.reserved_budget).toLocaleString()} QLT</span>
+                        <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Industry:</strong> {business.industry || "Not set"}</span>
+                        <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Website:</strong> {business.website || "Not set"}</span>
+                        <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Reserved:</strong> {Number(business.reserved_budget).toLocaleString()} QLT</span>
                       </div>
                     </td>
                     <td style={TD}>
@@ -287,7 +287,7 @@ export default function AdminBusinessesPage() {
                           fontSize: 12,
                           fontWeight: 700,
                           background: active ? "#cc0000" : "#1AEF22",
-                          color: active ? "#fff" : "#000",
+                          color: active ? "var(--qeixova-color-ff-ff-ff)" : "var(--qeixova-color-00-00-00)",
                           opacity: actionLoading === business.id ? 0.6 : 1,
                         }}
                       >
@@ -307,7 +307,7 @@ export default function AdminBusinessesPage() {
           <button
             onClick={() => setPage((current) => Math.max(1, current - 1))}
             disabled={page === 1}
-            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer", background: "#fff" }}
+            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid var(--qeixova-color-dd-dd-dd)", cursor: "pointer", background: "var(--qeixova-color-ff-ff-ff)" }}
           >
             Prev
           </button>
@@ -315,7 +315,7 @@ export default function AdminBusinessesPage() {
           <button
             onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
             disabled={page === totalPages}
-            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer", background: "#fff" }}
+            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid var(--qeixova-color-dd-dd-dd)", cursor: "pointer", background: "var(--qeixova-color-ff-ff-ff)" }}
           >
             Next
           </button>

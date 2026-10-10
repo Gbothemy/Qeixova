@@ -17,12 +17,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const themeScript = `
     try {
       const STORAGE_KEY = 'qeixova:theme';
-      window.localStorage.setItem(STORAGE_KEY, 'dark');
-      document.documentElement.dataset.theme = 'dark';
-      document.documentElement.style.colorScheme = 'dark';
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      const theme = saved === 'dark' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
     } catch (e) {
-      document.documentElement.dataset.theme = 'dark';
-      document.documentElement.style.colorScheme = 'dark';
+      document.documentElement.dataset.theme = 'light';
+      document.documentElement.style.colorScheme = 'light';
     }
   `;
 

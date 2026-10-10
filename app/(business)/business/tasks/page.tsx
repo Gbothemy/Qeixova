@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import BusinessLoading from "@/components/BusinessLoading";
 import BusinessSidebar from "@/components/BusinessSidebar";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface Task {
   id: number;
@@ -139,7 +140,10 @@ export default function BusinessTasksPage() {
                 <h1 className="businessPageTitle">Campaigns</h1>
                 <p className="businessIdentityLine">{tasks.length} campaigns / {totals.active} active / {totals.pending} pending submissions</p>
               </div>
-              <Link href="/business/tasks/new" className="businessPrimaryLink">New Campaign</Link>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
+                <ThemeToggle />
+                <Link href="/business/tasks/new" className="businessPrimaryLink">New Campaign</Link>
+              </div>
             </div>
           </section>
 
@@ -155,10 +159,10 @@ export default function BusinessTasksPage() {
           </section>
 
           <section className="businessCampaignTable">
-            {templates.length>0&&<div style={{padding:14,borderBottom:'1px solid #222'}}><strong style={{color:'#fff'}}>Saved templates</strong><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:9}}>{templates.map(t=><button key={t.id} type="button" onClick={()=>t.metadata?.sourceTaskId&&void duplicate({id:t.metadata.sourceTaskId} as Task)} style={{padding:'8px 11px',borderRadius:9,border:'1px solid #333',background:'#111',color:'#F5A623'}}>{t.title}</button>)}</div></div>}
-            <div style={{display:"flex",gap:10,padding:14,flexWrap:"wrap",background:"#0a0a0a",borderBottom:"1px solid #1b1b1b"}}>
-              <input aria-label="Search campaigns" value={search} onChange={(e)=>{setSearch(e.target.value);setPage(1);}} placeholder="Search campaigns..." style={{flex:"1 1 220px",padding:"11px 13px",borderRadius:10,border:"1px solid #262626",background:"#111",color:"#fff"}} />
-              <select aria-label="Filter campaign status" value={statusFilter} onChange={(e)=>{setStatusFilter(e.target.value);setPage(1);}} style={{padding:"11px 13px",borderRadius:10,border:"1px solid #262626",background:"#111",color:"#fff"}}>
+            {templates.length>0&&<div style={{padding:14,borderBottom:'1px solid var(--qeixova-color-dd-dd-dd)'}}><strong style={{color:'var(--qeixova-color-00-00-00)'}}>Saved templates</strong><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:9}}>{templates.map(t=><button key={t.id} type="button" onClick={()=>t.metadata?.sourceTaskId&&void duplicate({id:t.metadata.sourceTaskId} as Task)} style={{padding:'8px 11px',borderRadius:9,border:'1px solid var(--qeixova-color-cc-cc-cc)',background:'var(--qeixova-color-ee-ee-ee)',color:'#F5A623'}}>{t.title}</button>)}</div></div>}
+            <div style={{display:"flex",gap:10,padding:14,flexWrap:"wrap",background:"var(--qeixova-color-f5-f5-f5)",borderBottom:"1px solid var(--qeixova-color-e4-e4-e4)"}}>
+              <input aria-label="Search campaigns" value={search} onChange={(e)=>{setSearch(e.target.value);setPage(1);}} placeholder="Search campaigns..." style={{flex:"1 1 220px",padding:"11px 13px",borderRadius:10,border:"1px solid var(--qeixova-color-d9-d9-d9)",background:"var(--qeixova-color-ee-ee-ee)",color:"var(--qeixova-color-00-00-00)"}} />
+              <select aria-label="Filter campaign status" value={statusFilter} onChange={(e)=>{setStatusFilter(e.target.value);setPage(1);}} style={{padding:"11px 13px",borderRadius:10,border:"1px solid var(--qeixova-color-d9-d9-d9)",background:"var(--qeixova-color-ee-ee-ee)",color:"var(--qeixova-color-00-00-00)"}}>
                 <option value="all">All statuses</option><option value="active">Active</option><option value="pending_review">Under review</option><option value="paused">Paused</option><option value="expired">Expired</option><option value="rejected">Rejected</option>
               </select>
             </div>
@@ -205,7 +209,7 @@ export default function BusinessTasksPage() {
                 );
               })
             )}
-            {pagination.pages > 1 && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:14,background:"#0a0a0a"}}><button type="button" disabled={page<=1} onClick={()=>setPage(v=>v-1)}>Previous</button><span style={{color:"#aaa",fontSize:12}}>Page {pagination.page} of {pagination.pages} · {pagination.total} campaigns</span><button type="button" disabled={page>=pagination.pages} onClick={()=>setPage(v=>v+1)}>Next</button></div>}
+            {pagination.pages > 1 && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:14,background:"var(--qeixova-color-f5-f5-f5)"}}><button type="button" disabled={page<=1} onClick={()=>setPage(v=>v-1)}>Previous</button><span style={{color:"var(--qeixova-color-55-55-55)",fontSize:12}}>Page {pagination.page} of {pagination.pages} · {pagination.total} campaigns</span><button type="button" disabled={page>=pagination.pages} onClick={()=>setPage(v=>v+1)}>Next</button></div>}
           </section>
         </div>
       </main>

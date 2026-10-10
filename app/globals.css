@@ -10,12 +10,13 @@ html {
 }
 
 :root {
-  --bg: #000000;
-  --text: #F5F5F5;
-  --muted: #bbbbbb;
-  --muted-2: #aaaaaa;
-  --card-bg: #111111;
-  --border: #222222;
+  color-scheme: light;
+  --bg: var(--qeixova-color-ff-ff-ff);
+  --text: var(--qeixova-color-11-11-11);
+  --muted: var(--qeixova-color-55-55-55);
+  --muted-2: var(--qeixova-color-66-66-66);
+  --card-bg: var(--qeixova-color-f4-f4-f4);
+  --border: var(--qeixova-color-dd-dd-dd);
   --accent: #1AEF22;
   --accent-2: #F5A623;
   --blue: #38BDF8;
@@ -24,15 +25,15 @@ html {
   --danger-light-border: rgba(229,62,62,0.32);
 }
 
-[data-theme="dark"] {
-  --bg: #000000;
-  --text: #F5F5F5;
-  --muted: #bbbbbb;
-  --card-bg: #111111;
-  --border: #222222;
+[data-theme="light"] {
+  --bg: var(--qeixova-color-ff-ff-ff);
+  --text: var(--qeixova-color-11-11-11);
+  --muted: var(--qeixova-color-55-55-55);
+  --card-bg: var(--qeixova-color-f4-f4-f4);
+  --border: var(--qeixova-color-dd-dd-dd);
   --accent: #1AEF22;
   --accent-2: #F5A623;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -101,7 +102,7 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
     z-index: 90;
     isolation: isolate;
     border-bottom: 1px solid var(--border);
-    background: rgba(8, 9, 9, .96);
+    background: var(--qeixova-color-f7-f6-f6-a0_96);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
@@ -119,7 +120,7 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    color: #f5f5f5 !important;
+    color: var(--qeixova-color-0a-0a-0a) !important;
     text-decoration: none !important;
     font-size: 15px;
     font-weight: 900;
@@ -129,14 +130,15 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 9px;
-    min-width: 82px;
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
     min-height: 42px;
     border: 1px solid rgba(26,239,34,.3);
     border-radius: 12px;
-    background: #101411;
-    color: #f5f5f5;
-    padding: 0 13px;
+    background: var(--qeixova-color-ef-eb-ee);
+    color: var(--qeixova-color-0a-0a-0a);
+    padding: 0;
     font: inherit;
     font-size: 12px;
     font-weight: 850;
@@ -165,9 +167,9 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
     max-height: min(62dvh, 440px);
     overflow-y: auto;
     padding: 12px;
-    border: 1px solid #2b302c;
+    border: 1px solid var(--qeixova-color-d4-cf-d3);
     border-radius: 16px;
-    background: #101311;
+    background: var(--qeixova-color-ef-ec-ee);
     box-shadow: 0 20px 56px rgba(0,0,0,.62);
   }
   .mobile-nav-menu__link,
@@ -177,11 +179,11 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid #262c27;
+    border: 1px solid var(--qeixova-color-d9-d3-d8);
     border-radius: 11px;
-    background: #0b0e0c;
+    background: var(--qeixova-color-f4-f1-f3);
     padding: 10px 11px;
-    color: #d7dbd8 !important;
+    color: var(--qeixova-color-28-24-27) !important;
     text-decoration: none !important;
     font-size: 13px;
     font-weight: 750;
@@ -230,8 +232,11 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
 .theme-icon {
   transition: filter 160ms ease, opacity 160ms ease;
 }
-[data-theme="dark"] .theme-icon {
+[data-theme="light"] .theme-icon {
   filter: invert(40%) brightness(60%);
+}
+[data-theme="dark"] .theme-icon {
+  filter: none;
 }
 .theme-icon.active {
   filter: brightness(0) !important;
@@ -252,7 +257,7 @@ textarea::placeholder {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #F5A623 #111111;
+  scrollbar-color: #F5A623 var(--qeixova-color-ee-ee-ee);
 }
 *::-webkit-scrollbar {
   width: 4px;
@@ -316,8 +321,8 @@ input[type="number"] {
     flex-direction: column;
     width: 260px;
     min-height: 100vh;
-    background: #080808;
-    border-right: 1px solid #1a1a1a;
+    background: var(--qeixova-color-f7-f7-f7);
+    border-right: 1px solid var(--qeixova-color-e5-e5-e5);
     position: sticky;
     top: 0;
     height: 100vh;
@@ -402,21 +407,21 @@ input[type="number"] {
 
 /* ── Business portal — dark theme, fully responsive ── */
 .business-sidebar {
-  background: #080808 !important;
+  background: var(--qeixova-color-f7-f7-f7) !important;
   border-right: 1px solid rgba(245,166,35,0.12) !important;
 }
 
 /* Remove all light theme overrides */
 .business-page-pro {
-  background: #000 !important;
-  color: #F5F5F5 !important;
+  background: var(--qeixova-color-ff-ff-ff) !important;
+  color: var(--qeixova-color-0a-0a-0a) !important;
 }
 
 .businessPortalShell {
   min-height: 100vh;
   width: 100%;
   align-items: stretch;
-  background: #000;
+  background: var(--qeixova-color-ff-ff-ff);
 }
 
 .businessMobileHeader {
@@ -434,7 +439,7 @@ input[type="number"] {
   width: min(calc(100% - 24px), 720px);
   margin-inline: auto;
   gap: 4px;
-  background: rgba(10, 10, 10, 0.96);
+  background: var(--qeixova-color-f5-f5-f5-a0_96);
   border: 1px solid rgba(245, 166, 35, 0.2);
   border-radius: 18px;
   padding: 8px max(8px, env(safe-area-inset-right)) 8px max(8px, env(safe-area-inset-left));
@@ -445,7 +450,7 @@ input[type="number"] {
 .businessMobileNav a,
 .businessMobileNavAction {
   position: relative;
-  color: #666;
+  color: var(--qeixova-color-99-99-99);
   text-decoration: none;
   display: grid;
   place-items: center;
@@ -476,7 +481,7 @@ input[type="number"] {
 }
 
 .businessMobileNav a.active {
-  color: #000;
+  color: var(--qeixova-color-ff-ff-ff);
   background: #F5A623;
 }
 
@@ -526,8 +531,8 @@ input[type="number"] {
   justify-content: center;
   border-radius: 999px;
   background: #e53e3e;
-  color: #fff;
-  border: 2px solid #080808;
+  color: var(--qeixova-color-00-00-00);
+  border: 2px solid var(--qeixova-color-f7-f7-f7);
   font-size: 10px;
   font-weight: 950;
   line-height: 1;
@@ -560,7 +565,7 @@ input[type="number"] {
     gap: 12px;
     padding: env(safe-area-inset-top) 14px 0;
     border-bottom: 1px solid rgba(245, 166, 35, .18);
-    background: rgba(8, 9, 9, .97);
+    background: var(--qeixova-color-f7-f6-f6-a0_97);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
@@ -576,7 +581,7 @@ input[type="number"] {
     min-width: 0;
     align-items: center;
     gap: 9px;
-    color: #f5f5f5;
+    color: var(--qeixova-color-0a-0a-0a);
     text-decoration: none;
   }
 
@@ -597,7 +602,7 @@ input[type="number"] {
   }
 
   .businessMobileBrand strong { font-size: 14px; font-weight: 900; }
-  .businessMobileBrand small { max-width: min(48vw, 220px); margin-top: 2px; color: #929994; font-size: 10px; }
+  .businessMobileBrand small { max-width: min(48vw, 220px); margin-top: 2px; color: var(--qeixova-color-6d-66-6b); font-size: 10px; }
 
   .businessMobileMenuToggle {
     display: inline-flex;
@@ -609,8 +614,8 @@ input[type="number"] {
     justify-content: center;
     border: 1px solid rgba(245, 166, 35, .3);
     border-radius: 12px;
-    background: #11120f;
-    color: #f5f5f5;
+    background: var(--qeixova-color-ee-ed-f0);
+    color: var(--qeixova-color-0a-0a-0a);
     font: inherit;
     font-size: 12px;
     font-weight: 850;
@@ -633,9 +638,9 @@ input[type="number"] {
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 12px;
-    border: 1px solid #34302a;
+    border: 1px solid var(--qeixova-color-cb-cf-d5);
     border-radius: 16px;
-    background: #101110;
+    background: var(--qeixova-color-ef-ee-ef);
     box-shadow: 0 20px 56px rgba(0, 0, 0, .68);
   }
 
@@ -647,10 +652,10 @@ input[type="number"] {
     align-items: center;
     gap: 9px;
     padding: 9px;
-    border: 1px solid #292a27;
+    border: 1px solid var(--qeixova-color-d6-d5-d8);
     border-radius: 12px;
-    background: #0a0b0a;
-    color: #ddd;
+    background: var(--qeixova-color-f5-f4-f5);
+    color: var(--qeixova-color-22-22-22);
     text-decoration: none;
   }
 
@@ -667,7 +672,7 @@ input[type="number"] {
     height: 34px;
     place-items: center;
     border-radius: 10px;
-    background: #171815;
+    background: var(--qeixova-color-e8-e7-ea);
   }
 
   .businessMobileMenuIcon img { width: 19px; height: 19px; object-fit: contain; filter: invert(70%); }
@@ -678,7 +683,7 @@ input[type="number"] {
   .businessMobileMenuCopy strong,
   .businessMobileMenuCopy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .businessMobileMenuCopy strong { font-size: 12px; font-weight: 850; }
-  .businessMobileMenuCopy small { margin-top: 3px; color: #858a85; font-size: 10px; }
+  .businessMobileMenuCopy small { margin-top: 3px; color: var(--qeixova-color-7a-75-7a); font-size: 10px; }
 
   .businessMobileMenuPanel .businessAlertBadge { top: 3px; right: 3px; }
 }
@@ -705,8 +710,8 @@ input[type="number"] {
   gap: 14px;
   align-items: center;
   margin-bottom: 18px;
-  background: #0a0a0a;
-  border: 1px solid #1a1a1a;
+  background: var(--qeixova-color-f5-f5-f5);
+  border: 1px solid var(--qeixova-color-e5-e5-e5);
   border-radius: 16px;
   padding: 12px;
 }
@@ -717,9 +722,9 @@ input[type="number"] {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #666;
-  background: #111;
-  border: 1px solid #1a1a1a;
+  color: var(--qeixova-color-99-99-99);
+  background: var(--qeixova-color-ee-ee-ee);
+  border: 1px solid var(--qeixova-color-e5-e5-e5);
   border-radius: 12px;
   padding: 10px 12px;
   font-size: 13px;
@@ -734,9 +739,9 @@ input[type="number"] {
 
 .businessAdsActions a,
 .businessAdsActions button {
-  border: 1px solid #1a1a1a;
-  background: #0d0d0d;
-  color: #F5F5F5;
+  border: 1px solid var(--qeixova-color-e5-e5-e5);
+  background: var(--qeixova-color-f2-f2-f2);
+  color: var(--qeixova-color-0a-0a-0a);
   border-radius: 11px;
   padding: 10px 13px;
   font-size: 12px;
@@ -748,7 +753,7 @@ input[type="number"] {
 .businessAdsActions .primary {
   border-color: #F5A623;
   background: #F5A623;
-  color: #000;
+  color: var(--qeixova-color-ff-ff-ff);
 }
 
 .businessWorkspace {
@@ -761,8 +766,8 @@ input[type="number"] {
 .adsPanel {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
-    #0a0b0b;
-  border: 1px solid #202423;
+    var(--qeixova-color-f5-f4-f4);
+  border: 1px solid var(--qeixova-color-df-db-dc);
   border-radius: 14px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, .24);
 }
@@ -781,7 +786,7 @@ input[type="number"] {
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  color: #cfcfcf;
+  color: var(--qeixova-color-30-30-30);
   font-size: 13px;
   font-weight: 800;
 }
@@ -799,7 +804,7 @@ input[type="number"] {
 }
 
 .businessPageTitle {
-  color: #fff;
+  color: var(--qeixova-color-00-00-00);
   font-size: clamp(30px, 4vw, 46px);
   line-height: 1.02;
   margin: 5px 0 0;
@@ -808,7 +813,7 @@ input[type="number"] {
 
 .businessIdentityLine,
 .adsMuted {
-  color: #b6b6b6;
+  color: var(--qeixova-color-49-49-49);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -842,7 +847,7 @@ input[type="number"] {
 .businessBalancePanel span,
 .businessMetricCard p,
 .businessStatTile span {
-  color: #9fa5a2;
+  color: var(--qeixova-color-60-5a-5d);
   font-size: 11px;
   font-weight: 950;
   text-transform: uppercase;
@@ -851,7 +856,7 @@ input[type="number"] {
 
 .businessBalancePanel strong {
   display: block;
-  color: #F5F5F5;
+  color: var(--qeixova-color-0a-0a-0a);
   font-size: 26px;
   line-height: 1;
   margin-top: 8px;
@@ -891,7 +896,7 @@ input[type="number"] {
 .businessMetricCard strong,
 .businessStatTile strong {
   display: block;
-  color: #F5F5F5;
+  color: var(--qeixova-color-0a-0a-0a);
   font-size: 30px;
   line-height: 1;
   margin-top: 7px;
@@ -909,7 +914,7 @@ input[type="number"] {
 
 .businessMetricCard small,
 .businessShortcutCard span {
-  color: #b6b6b6;
+  color: var(--qeixova-color-49-49-49);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -929,7 +934,7 @@ input[type="number"] {
   min-height: 40px;
   border-radius: 11px;
   background: #F5A623;
-  color: #050505;
+  color: var(--qeixova-color-fa-fa-fa);
   padding: 10px 14px;
   text-decoration: none;
   font-size: 12px;
@@ -956,7 +961,7 @@ input[type="number"] {
   border: 1px solid rgba(229, 62, 62, .32);
   border-radius: 9px;
   background: rgba(229, 62, 62, .12);
-  color: #fff;
+  color: var(--qeixova-color-00-00-00);
   padding: 7px 10px;
   font: inherit;
   cursor: pointer;
@@ -974,7 +979,7 @@ input[type="number"] {
 
 .businessShortcutCard strong {
   display: block;
-  color: #F5F5F5;
+  color: var(--qeixova-color-0a-0a-0a);
   margin-top: 10px;
   font-size: 14px;
 }
@@ -982,7 +987,7 @@ input[type="number"] {
 .businessShortcutCard:hover {
   transform: translateY(-2px);
   border-color: rgba(245, 166, 35, .28);
-  background: #111413;
+  background: var(--qeixova-color-ee-eb-ec);
 }
 
 .businessCompactMetrics {
@@ -998,8 +1003,8 @@ input[type="number"] {
 }
 
 .businessCampaignTable {
-  background: #0a0b0b;
-  border: 1px solid #202423;
+  background: var(--qeixova-color-f5-f4-f4);
+  border: 1px solid var(--qeixova-color-df-db-dc);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 18px 48px rgba(0, 0, 0, .24);
@@ -1015,8 +1020,8 @@ input[type="number"] {
 
 .businessCampaignTableHead {
   padding: 13px 16px;
-  border-bottom: 1px solid #171b19;
-  color: #69706c;
+  border-bottom: 1px solid var(--qeixova-color-e8-e4-e6);
+  color: var(--qeixova-color-96-8f-93);
   font-size: 11px;
   font-weight: 950;
   text-transform: uppercase;
@@ -1025,7 +1030,7 @@ input[type="number"] {
 
 .businessCampaignRow {
   padding: 15px 16px;
-  border-bottom: 1px solid #141816;
+  border-bottom: 1px solid var(--qeixova-color-eb-e7-e9);
 }
 
 .businessCampaignRow[data-last="true"] {
@@ -1038,7 +1043,7 @@ input[type="number"] {
 
 .businessCampaignRow > div:first-child a {
   display: block;
-  color: #F5F5F5;
+  color: var(--qeixova-color-0a-0a-0a);
   font-size: 14px;
   font-weight: 850;
   text-decoration: none;
@@ -1048,7 +1053,7 @@ input[type="number"] {
 }
 
 .businessCampaignRow > div:first-child p {
-  color: #9fa5a2;
+  color: var(--qeixova-color-60-5a-5d);
   font-size: 12px;
   margin-top: 4px;
 }
@@ -1073,7 +1078,7 @@ input[type="number"] {
 }
 
 .campaignStatus.muted {
-  color: #a8a8a8;
+  color: var(--qeixova-color-57-57-57);
   background: rgba(255, 255, 255, .06);
 }
 
@@ -1084,7 +1089,7 @@ input[type="number"] {
 
 .campaignReward,
 .campaignResults {
-  color: #F5F5F5;
+  color: var(--qeixova-color-0a-0a-0a);
   font-size: 13px;
   font-weight: 850;
 }
@@ -1099,10 +1104,10 @@ input[type="number"] {
 
 .campaignRowActions a,
 .campaignRowActions button {
-  border: 1px solid #202423;
+  border: 1px solid var(--qeixova-color-df-db-dc);
   border-radius: 9px;
-  background: #111413;
-  color: #F5F5F5;
+  background: var(--qeixova-color-ee-eb-ec);
+  color: var(--qeixova-color-0a-0a-0a);
   padding: 8px 12px;
   text-decoration: none;
   font-size: 12px;
@@ -1147,19 +1152,19 @@ input[type="number"] {
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: #111413;
+  background: var(--qeixova-color-ee-eb-ec);
   margin-bottom: 16px;
 }
 
 .businessEmptyState h2 {
-  color: #F5F5F5;
+  color: var(--qeixova-color-0a-0a-0a);
   font-size: 19px;
   margin-bottom: 8px;
 }
 
 .businessEmptyState p {
   max-width: 360px;
-  color: #b6b6b6;
+  color: var(--qeixova-color-49-49-49);
   font-size: 13px;
   line-height: 1.6;
   margin-bottom: 20px;
@@ -1176,8 +1181,8 @@ input[type="number"] {
   background:
     radial-gradient(circle at 50% 20%, rgba(245, 166, 35, 0.12), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 360px),
-    #050505;
-  color: #F5F5F5;
+    var(--qeixova-color-fa-fa-fa);
+  color: var(--qeixova-color-0a-0a-0a);
 }
 
 .businessLoaderCard {
@@ -1188,7 +1193,7 @@ input[type="number"] {
   padding: 32px 28px;
   border: 1px solid rgba(245, 166, 35, 0.18);
   border-radius: 18px;
-  background: rgba(10, 10, 10, 0.88);
+  background: var(--qeixova-color-f5-f5-f5-a0_88);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
   overflow: hidden;
   position: relative;
@@ -1230,7 +1235,7 @@ input[type="number"] {
   place-items: center;
   border-radius: 15px;
   background: #F5A623;
-  color: #050505;
+  color: var(--qeixova-color-fa-fa-fa);
   font-size: 24px;
   font-weight: 950;
   box-shadow: 0 14px 34px rgba(245, 166, 35, 0.22);
@@ -1246,7 +1251,7 @@ input[type="number"] {
   height: 6px;
   overflow: hidden;
   border-radius: 999px;
-  background: #111;
+  background: var(--qeixova-color-ee-ee-ee);
   position: relative;
   z-index: 1;
 }
@@ -1275,19 +1280,19 @@ input[type="number"] {
   align-items: flex-start;
   gap: 13px;
   padding: 30px;
-  color: #bbb;
+  color: var(--qeixova-color-44-44-44);
   background: linear-gradient(135deg, rgba(245, 166, 35, 0.06), transparent);
 }
 
 .businessInlineLoader strong {
   display: block;
-  color: #F5F5F5;
+  color: var(--qeixova-color-0a-0a-0a);
   font-size: 14px;
 }
 
 .businessInlineLoader p {
   margin-top: 5px;
-  color: #888;
+  color: var(--qeixova-color-77-77-77);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -1341,7 +1346,7 @@ input[type="number"] {
 @keyframes businessBorderWake {
   0%,
   100% {
-    border-color: #1a1a1a;
+    border-color: var(--qeixova-color-e5-e5-e5);
     box-shadow: 0 0 0 rgba(245, 166, 35, 0);
   }
   50% {
@@ -1675,19 +1680,19 @@ input[type="number"] {
 }
 
 .adsSectionTitle {
-  color: #F5F5F5;
+  color: var(--qeixova-color-0a-0a-0a);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.2px;
 }
 
 .adsMuted {
-  color: #888;
+  color: var(--qeixova-color-77-77-77);
 }
 
 .businessPageTitle,
 .business-page-pro h1 {
-  color: #fff !important;
+  color: var(--qeixova-color-00-00-00) !important;
   overflow-wrap: anywhere;
 }
 
@@ -1852,7 +1857,7 @@ input[type="number"] {
   }
 
   .businessCampaignRow {
-    border-bottom: 1px solid #161616 !important;
+    border-bottom: 1px solid var(--qeixova-color-e9-e9-e9) !important;
     display: grid !important;
     gap: 12px !important;
     grid-template-columns: 1fr !important;
@@ -1905,7 +1910,7 @@ input[type="number"] {
 @media (min-width: 1024px) {
   .business-page-pro {
     min-height: 100vh;
-    background: #000 !important;
+    background: var(--qeixova-color-ff-ff-ff) !important;
   }
 
   .businessAdsSidebar {
@@ -1919,9 +1924,9 @@ input[type="number"] {
     flex-shrink: 0;
     background:
       radial-gradient(circle at 0% 0%, rgba(245, 166, 35, .1), transparent 32%),
-      linear-gradient(180deg, #0b0c0c, #050505);
+      linear-gradient(180deg, var(--qeixova-color-f4-f3-f3), var(--qeixova-color-fa-fa-fa));
     border-right: 1px solid rgba(245,166,35,0.14);
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     overflow-y: auto;
   }
 
@@ -1934,7 +1939,7 @@ input[type="number"] {
     display: flex;
     align-items: center;
     gap: 11px;
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
     text-decoration: none;
     margin-bottom: 16px;
   }
@@ -1962,7 +1967,7 @@ input[type="number"] {
     justify-content: center;
     gap: 8px;
     background: #F5A623;
-    color: #000;
+    color: var(--qeixova-color-ff-ff-ff);
     text-decoration: none;
     border-radius: 11px;
     padding: 13px 13px;
@@ -1978,7 +1983,7 @@ input[type="number"] {
     border: 1px solid rgba(245,166,35,0.2);
     background:
       linear-gradient(180deg, rgba(245,166,35,0.09), rgba(245,166,35,0.04)),
-      #090a0a;
+      var(--qeixova-color-f6-f5-f5);
     border-radius: 14px;
     padding: 12px;
     display: flex;
@@ -1991,7 +1996,7 @@ input[type="number"] {
     height: 38px;
     border-radius: 12px;
     background: #F5A623;
-    color: #000;
+    color: var(--qeixova-color-ff-ff-ff);
     display: grid;
     place-items: center;
     font-weight: 900;
@@ -2001,13 +2006,13 @@ input[type="number"] {
   .businessAccountBox span,
   .businessAccountBox strong { display: block; }
 
-  .businessAccountBox span { color: #8f9692; font-size: 10px; font-weight: 900; text-transform: uppercase; }
-  .businessAccountBox strong { color: #F5F5F5; font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; }
+  .businessAccountBox span { color: var(--qeixova-color-70-69-6d); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+  .businessAccountBox strong { color: var(--qeixova-color-0a-0a-0a); font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; }
 
   .businessAdsNav { padding: 2px 12px; flex: 1; }
 
   .businessAdsNav p {
-    color: #5f6662;
+    color: var(--qeixova-color-a0-99-9d);
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
@@ -2019,7 +2024,7 @@ input[type="number"] {
     display: flex;
     gap: 11px;
     align-items: center;
-    color: #b9b9b9;
+    color: var(--qeixova-color-46-46-46);
     text-decoration: none;
     border: 1px solid transparent;
     border-radius: 11px;
@@ -2040,7 +2045,7 @@ input[type="number"] {
     border-radius: 11px;
     display: grid;
     place-items: center;
-    background: #111413;
+    background: var(--qeixova-color-ee-eb-ec);
     flex-shrink: 0;
   }
 
@@ -2052,14 +2057,14 @@ input[type="number"] {
   .businessAdsNav small { display: block; }
 
   .businessAdsNav strong { font-size: 13px; line-height: 1.2; }
-  .businessAdsNav small { color: #727a75; font-size: 11px; margin-top: 2px; }
+  .businessAdsNav small { color: var(--qeixova-color-8d-85-8a); font-size: 11px; margin-top: 2px; }
 
   .businessSidebarFoot {
     margin: 14px;
     padding: 13px;
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 13px;
-    background: #090a0a;
+    background: var(--qeixova-color-f6-f5-f5);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2069,7 +2074,7 @@ input[type="number"] {
   .businessSidebarFoot span,
   .businessSidebarFoot strong { display: block; }
 
-  .businessSidebarFoot span { color: #737a76; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+  .businessSidebarFoot span { color: var(--qeixova-color-8c-85-89); font-size: 10px; font-weight: 900; text-transform: uppercase; }
   .businessSidebarFoot strong { color: #1AEF22; font-size: 12px; }
 
   .businessSidebarFoot button {
@@ -2089,8 +2094,8 @@ input[type="number"] {
     padding: 30px 34px 42px !important;
     background:
       radial-gradient(circle at 50% 0%, rgba(245, 166, 35, .075), transparent 34%),
-      #000 !important;
-    color: #F5F5F5 !important;
+      var(--qeixova-color-ff-ff-ff) !important;
+    color: var(--qeixova-color-0a-0a-0a) !important;
   }
 }
 
@@ -2099,11 +2104,11 @@ input[type="number"] {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-  color: #f5f5f5;
+  color: var(--qeixova-color-0a-0a-0a);
   background:
     radial-gradient(circle at 50% 8%, rgba(26, 239, 34, 0.09), transparent 27rem),
     radial-gradient(circle at 50% 100%, rgba(245, 166, 35, 0.045), transparent 25rem),
-    #030403;
+    var(--qeixova-color-fc-fb-fc);
 }
 
 .registerNav {
@@ -2116,7 +2121,7 @@ input[type="number"] {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: #f5f5f5;
+  color: var(--qeixova-color-0a-0a-0a);
   font-weight: 900;
   text-decoration: none;
 }
@@ -2140,7 +2145,7 @@ input[type="number"] {
   border-radius: 30px;
   background:
     radial-gradient(circle at 50% 17%, rgba(26, 239, 34, 0.075), transparent 34%),
-    linear-gradient(180deg, rgba(12, 13, 12, 0.96), rgba(4, 5, 4, 0.98));
+    linear-gradient(180deg, var(--qeixova-color-f3-f2-f3-a0_96), var(--qeixova-color-fb-fa-fb-a0_98));
   box-shadow:
     0 34px 100px rgba(0, 0, 0, 0.62),
     0 0 80px rgba(26, 239, 34, 0.025),
@@ -2312,27 +2317,26 @@ input[type="number"] {
 
   .contributors-level span:last-child {
     margin-top: 5px;
-    color: #666 !important;
+    color: var(--qeixova-color-99-99-99) !important;
     line-height: 1.45;
   }
 }
 
-/* Light mode color-system transformation only.
-   Brand/accent/status colors remain unchanged. */
+/* Shared light theme tokens. Brand and status colors remain unchanged. */
 :root {
-  color-scheme: dark;
-  --theme-page: #000000;
-  --theme-page-soft: #050505;
-  --theme-surface: #0a0a0a;
-  --theme-surface-raised: #111111;
-  --theme-surface-strong: #1a1a1a;
-  --theme-border: #222222;
-  --theme-border-strong: #333333;
-  --theme-text: #f5f5f5;
-  --theme-text-strong: #ffffff;
-  --theme-text-muted: #bbbbbb;
-  --theme-text-soft: #888888;
-  --theme-input: #1a1a1a;
+  color-scheme: light;
+  --theme-page: var(--qeixova-color-ff-ff-ff);
+  --theme-page-soft: var(--qeixova-color-fa-fa-fa);
+  --theme-surface: var(--qeixova-color-f5-f5-f5);
+  --theme-surface-raised: var(--qeixova-color-ee-ee-ee);
+  --theme-surface-strong: var(--qeixova-color-e5-e5-e5);
+  --theme-border: var(--qeixova-color-dd-dd-dd);
+  --theme-border-strong: var(--qeixova-color-cc-cc-cc);
+  --theme-text: var(--qeixova-color-0a-0a-0a);
+  --theme-text-strong: var(--qeixova-color-00-00-00);
+  --theme-text-muted: var(--qeixova-color-44-44-44);
+  --theme-text-soft: var(--qeixova-color-77-77-77);
+  --theme-input: var(--qeixova-color-e5-e5-e5);
 }
 
 /* -- End of globals -- */
@@ -2349,9 +2353,9 @@ input[type="number"] {
   width: 190px;
   flex: 0 0 190px;
   padding: 16px;
-  border: 1px solid #252525;
+  border: 1px solid var(--qeixova-color-da-da-da);
   border-radius: 15px;
-  background: rgba(13, 16, 14, 0.92);
+  background: var(--qeixova-color-f2-ef-f1-a0_92);
 }
 
 .missionFilterRow {
@@ -2360,6 +2364,18 @@ input[type="number"] {
 
 .missionEmptyCard {
   width: min(430px, 100%);
+}
+
+.mobile-nav-menu__theme,
+.businessMobileTheme {
+  display: flex;
+  justify-content: flex-end;
+  grid-column: 1 / -1;
+  padding-top: 4px;
+}
+
+.adminAccount > button:first-of-type {
+  margin: 10px 0;
 }
 
 @media (max-width: 760px) {
@@ -2379,4 +2395,474 @@ input[type="number"] {
   .missionSelectRow {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* Theme-aware neutral colors shared by app, business, admin, and marketing screens. */
+:root, [data-theme="light"] {
+  --how-process-start: #effbef;
+  --how-process-end: #e8f8e9;
+  --qeixova-color-00-00-00: #000000;
+  --qeixova-color-07-07-07: #070707;
+  --qeixova-color-07-11-08: #071108;
+  --qeixova-color-08-08-08: #080808;
+  --qeixova-color-0a-07-00: #0a0700;
+  --qeixova-color-0a-0a-0a: #0a0a0a;
+  --qeixova-color-0c-0a-0c: #0c0a0c;
+  --qeixova-color-0d-0b-0d: #0d0b0d;
+  --qeixova-color-0e-0c-0e: #0e0c0e;
+  --qeixova-color-11-11-11: #111111;
+  --qeixova-color-12-12-12: #121212;
+  --qeixova-color-15-15-15: #151515;
+  --qeixova-color-17-17-17: #171717;
+  --qeixova-color-1a-17-1a: #1a171a;
+  --qeixova-color-1a-1a-1a: #1a1a1a;
+  --qeixova-color-1f-1f-1f: #1f1f1f;
+  --qeixova-color-21-20-24: #212024;
+  --qeixova-color-22-22-22: #222222;
+  --qeixova-color-26-26-26: #262626;
+  --qeixova-color-27-27-27: #272727;
+  --qeixova-color-28-24-27: #282427;
+  --qeixova-color-29-25-28: #292528;
+  --qeixova-color-2a-2a-2a: #2a2a2a;
+  --qeixova-color-2f-2f-2f: #2f2f2f;
+  --qeixova-color-30-30-30: #303030;
+  --qeixova-color-33-33-33: #333333;
+  --qeixova-color-37-33-36: #373336;
+  --qeixova-color-37-37-37: #373737;
+  --qeixova-color-38-33-37: #383337;
+  --qeixova-color-3b-3b-3b: #3b3b3b;
+  --qeixova-color-3c-36-3b: #3c363b;
+  --qeixova-color-42-42-42: #424242;
+  --qeixova-color-44-44-44: #444444;
+  --qeixova-color-46-3f-45: #463f45;
+  --qeixova-color-46-46-46: #464646;
+  --qeixova-color-47-3e-47: #473e47;
+  --qeixova-color-47-3f-46: #473f46;
+  --qeixova-color-47-42-46: #474246;
+  --qeixova-color-47-47-47: #474747;
+  --qeixova-color-49-49-49: #494949;
+  --qeixova-color-4b-47-49: #4b4749;
+  --qeixova-color-51-4a-50: #514a50;
+  --qeixova-color-51-4b-50: #514b50;
+  --qeixova-color-55-55-55: #555555;
+  --qeixova-color-57-57-57: #575757;
+  --qeixova-color-5a-55-5a: #5a555a;
+  --qeixova-color-5f-5f-5f: #5f5f5f;
+  --qeixova-color-60-5a-5d: #605a5d;
+  --qeixova-color-62-5b-61: #625b61;
+  --qeixova-color-62-62-62: #626262;
+  --qeixova-color-63-5a-62: #635a62;
+  --qeixova-color-63-5c-5f: #635c5f;
+  --qeixova-color-66-66-66: #666666;
+  --qeixova-color-6d-66-6b: #6d666b;
+  --qeixova-color-6d-66-6c: #6d666c;
+  --qeixova-color-70-69-6d: #70696d;
+  --qeixova-color-70-70-70: #707070;
+  --qeixova-color-72-72-72: #727272;
+  --qeixova-color-73-6d-72: #736d72;
+  --qeixova-color-74-6d-73: #746d73;
+  --qeixova-color-77-77-77: #777777;
+  --qeixova-color-7a-74-79: #7a7479;
+  --qeixova-color-7a-75-7a: #7a757a;
+  --qeixova-color-7a-7a-7a: #7a7a7a;
+  --qeixova-color-88-88-88: #888888;
+  --qeixova-color-8c-85-89: #8c8589;
+  --qeixova-color-8d-85-8a: #8d858a;
+  --qeixova-color-96-8f-93: #968f93;
+  --qeixova-color-99-99-99: #999999;
+  --qeixova-color-a0-99-9d: #a0999d;
+  --qeixova-color-aa-aa-aa: #aaaaaa;
+  --qeixova-color-b4-ab-b4: #b4abb4;
+  --qeixova-color-bb-bb-bb: #bbbbbb;
+  --qeixova-color-be-b6-be: #beb6be;
+  --qeixova-color-c4-c0-c2: #c4c0c2;
+  --qeixova-color-c5-c5-c5: #c5c5c5;
+  --qeixova-color-c9-c2-c5: #c9c2c5;
+  --qeixova-color-cb-c4-ca: #cbc4ca;
+  --qeixova-color-cb-cf-d5: #cbcfd5;
+  --qeixova-color-cc-cc-cc: #cccccc;
+  --qeixova-color-cf-c9-cf: #cfc9cf;
+  --qeixova-color-cf-cb-cd: #cfcbcd;
+  --qeixova-color-cf-cf-cf: #cfcfcf;
+  --qeixova-color-d1-cb-ce: #d1cbce;
+  --qeixova-color-d2-cd-d2: #d2cdd2;
+  --qeixova-color-d2-ce-d0: #d2ced0;
+  --qeixova-color-d4-cf-d3: #d4cfd3;
+  --qeixova-color-d4-cf-d4: #d4cfd4;
+  --qeixova-color-d5-d5-d5: #d5d5d5;
+  --qeixova-color-d6-cc-d5: #d6ccd5;
+  --qeixova-color-d6-d1-d5: #d6d1d5;
+  --qeixova-color-d6-d5-d8: #d6d5d8;
+  --qeixova-color-d6-d6-d6: #d6d6d6;
+  --qeixova-color-d7-d3-d5: #d7d3d5;
+  --qeixova-color-d8-d8-d8: #d8d8d8;
+  --qeixova-color-d9-d3-d8: #d9d3d8;
+  --qeixova-color-d9-d9-d9: #d9d9d9;
+  --qeixova-color-da-d5-d7: #dad5d7;
+  --qeixova-color-da-d6-da: #dad6da;
+  --qeixova-color-da-da-da: #dadada;
+  --qeixova-color-db-d7-d9: #dbd7d9;
+  --qeixova-color-db-d7-db: #dbd7db;
+  --qeixova-color-db-db-db: #dbdbdb;
+  --qeixova-color-dc-d7-d9: #dcd7d9;
+  --qeixova-color-dc-d8-dc: #dcd8dc;
+  --qeixova-color-dd-d8-da: #ddd8da;
+  --qeixova-color-dd-d9-da: #ddd9da;
+  --qeixova-color-dd-d9-dd: #ddd9dd;
+  --qeixova-color-dd-dd-dd: #dddddd;
+  --qeixova-color-df-db-dc: #dfdbdc;
+  --qeixova-color-df-dc-dd: #dfdcdd;
+  --qeixova-color-df-df-df: #dfdfdf;
+  --qeixova-color-e0-e0-e0: #e0e0e0;
+  --qeixova-color-e1-e1-e1: #e1e1e1;
+  --qeixova-color-e2-e2-e2: #e2e2e2;
+  --qeixova-color-e3-e3-e3: #e3e3e3;
+  --qeixova-color-e4-df-e1: #e4dfe1;
+  --qeixova-color-e4-e0-e2: #e4e0e2;
+  --qeixova-color-e4-e0-e4: #e4e0e4;
+  --qeixova-color-e4-e4-e4: #e4e4e4;
+  --qeixova-color-e4-e7-ec: #e4e7ec;
+  --qeixova-color-e5-e5-e5: #e5e5e5;
+  --qeixova-color-e5-e7-eb: #e5e7eb;
+  --qeixova-color-e6-e2-e4: #e6e2e4;
+  --qeixova-color-e6-e9-ee: #e6e9ee;
+  --qeixova-color-e8-e4-e6: #e8e4e6;
+  --qeixova-color-e8-e5-e8: #e8e5e8;
+  --qeixova-color-e8-e7-ea: #e8e7ea;
+  --qeixova-color-e8-e8-e8: #e8e8e8;
+  --qeixova-color-e8-ec-f1: #e8ecf1;
+  --qeixova-color-e9-e9-e9: #e9e9e9;
+  --qeixova-color-ea-e6-ea: #eae6ea;
+  --qeixova-color-ea-e7-ea: #eae7ea;
+  --qeixova-color-ea-ea-ea: #eaeaea;
+  --qeixova-color-eb-e7-e9: #ebe7e9;
+  --qeixova-color-ed-ea-ed: #edeaed;
+  --qeixova-color-ed-eb-eb: #edebeb;
+  --qeixova-color-ed-ed-ed-a0_96: rgba(237, 237, 237, 0.96);
+  --qeixova-color-ed-ef-f3: #edeff3;
+  --qeixova-color-ed-f0-f4: #edf0f4;
+  --qeixova-color-ed-f1-f5: #edf1f5;
+  --qeixova-color-ee-ea-eb: #eeeaeb;
+  --qeixova-color-ee-ea-ee: #eeeaee;
+  --qeixova-color-ee-eb-ec: #eeebec;
+  --qeixova-color-ee-eb-ee: #eeebee;
+  --qeixova-color-ee-ec-ec: #eeecec;
+  --qeixova-color-ee-ec-ed: #eeeced;
+  --qeixova-color-ee-ed-f0: #eeedf0;
+  --qeixova-color-ee-ee-ee: #eeeeee;
+  --qeixova-color-ee-ee-f0: #eeeef0;
+  --qeixova-color-ee-f0-f3: #eef0f3;
+  --qeixova-color-ee-f1-f5: #eef1f5;
+  --qeixova-color-ee-f1-f6: #eef1f6;
+  --qeixova-color-ee-f2-f6: #eef2f6;
+  --qeixova-color-ef-eb-ee: #efebee;
+  --qeixova-color-ef-ec-ed: #efeced;
+  --qeixova-color-ef-ec-ee: #efecee;
+  --qeixova-color-ef-ed-ee: #efedee;
+  --qeixova-color-ef-ee-ee: #efeeee;
+  --qeixova-color-ef-ee-ef: #efeeef;
+  --qeixova-color-ef-ef-ef: #efefef;
+  --qeixova-color-f0-ed-f0: #f0edf0;
+  --qeixova-color-f0-ee-ef: #f0eeef;
+  --qeixova-color-f0-f0-f0: #f0f0f0;
+  --qeixova-color-f1-ef-f1: #f1eff1;
+  --qeixova-color-f1-f5-f9: #f1f5f9;
+  --qeixova-color-f2-ef-f0: #f2eff0;
+  --qeixova-color-f2-ef-f1-a0_92: rgba(242, 239, 241, 0.92);
+  --qeixova-color-f2-ef-f2: #f2eff2;
+  --qeixova-color-f2-f0-f1: #f2f0f1;
+  --qeixova-color-f2-f2-f2: #f2f2f2;
+  --qeixova-color-f2-f4-f7: #f2f4f7;
+  --qeixova-color-f2-fb-f2: #f2fbf2;
+  --qeixova-color-f3-f1-f2: #f3f1f2;
+  --qeixova-color-f3-f2-f2: #f3f2f2;
+  --qeixova-color-f3-f2-f3-a0_96: rgba(243, 242, 243, 0.96);
+  --qeixova-color-f3-f3-f3: #f3f3f3;
+  --qeixova-color-f3-f3-f3-a0_94: rgba(243, 243, 243, 0.94);
+  --qeixova-color-f3-f3-f3-a0_96: rgba(243, 243, 243, 0.96);
+  --qeixova-color-f3-f4-f6: #f3f4f6;
+  --qeixova-color-f3-f5-f8: #f3f5f8;
+  --qeixova-color-f4-f1-f3: #f4f1f3;
+  --qeixova-color-f4-f2-f3: #f4f2f3;
+  --qeixova-color-f4-f3-f3: #f4f3f3;
+  --qeixova-color-f4-f4-f4: #f4f4f4;
+  --qeixova-color-f5-f3-f4: #f5f3f4;
+  --qeixova-color-f5-f4-f4: #f5f4f4;
+  --qeixova-color-f5-f4-f5: #f5f4f5;
+  --qeixova-color-f5-f5-f5: #f5f5f5;
+  --qeixova-color-f5-f5-f5-a0_88: rgba(245, 245, 245, 0.88);
+  --qeixova-color-f5-f5-f5-a0_96: rgba(245, 245, 245, 0.96);
+  --qeixova-color-f6-f4-f5: #f6f4f5;
+  --qeixova-color-f6-f5-f5: #f6f5f5;
+  --qeixova-color-f6-f5-f6: #f6f5f6;
+  --qeixova-color-f6-f6-f6: #f6f6f6;
+  --qeixova-color-f6-f8-fa: #f6f8fa;
+  --qeixova-color-f7-f5-f6: #f7f5f6;
+  --qeixova-color-f7-f6-f6: #f7f6f6;
+  --qeixova-color-f7-f6-f6-a0_96: rgba(247, 246, 246, 0.96);
+  --qeixova-color-f7-f6-f6-a0_97: rgba(247, 246, 246, 0.97);
+  --qeixova-color-f7-f7-f7: #f7f7f7;
+  --qeixova-color-f7-f8-fb: #f7f8fb;
+  --qeixova-color-f8-f7-f7: #f8f7f7;
+  --qeixova-color-f8-f7-f8: #f8f7f8;
+  --qeixova-color-f8-f8-f8: #f8f8f8;
+  --qeixova-color-f8-f8-f8-a0_98: rgba(248, 248, 248, 0.98);
+  --qeixova-color-f8-fa-f8: #f8faf8;
+  --qeixova-color-f8-fa-fc: #f8fafc;
+  --qeixova-color-f9-ef-f9: #f9eff9;
+  --qeixova-color-f9-f7-f8: #f9f7f8;
+  --qeixova-color-f9-fa-fb: #f9fafb;
+  --qeixova-color-fa-f8-f9: #faf8f9;
+  --qeixova-color-fa-fa-fa: #fafafa;
+  --qeixova-color-fa-fa-fa-a0_96: rgba(250, 250, 250, 0.96);
+  --qeixova-color-fa-fa-fa-a0_98: rgba(250, 250, 250, 0.98);
+  --qeixova-color-fa-fb-fc: #fafbfc;
+  --qeixova-color-fb-fa-fb-a0_98: rgba(251, 250, 251, 0.98);
+  --qeixova-color-fb-fc-fd: #fbfcfd;
+  --qeixova-color-fb-fc-fe: #fbfcfe;
+  --qeixova-color-fb-ff-fb: #fbfffb;
+  --qeixova-color-fc-fb-fc: #fcfbfc;
+  --qeixova-color-fc-fc-fd: #fcfcfd;
+  --qeixova-color-ff-f5-f5: #fff5f5;
+  --qeixova-color-ff-f8-f8: #fff8f8;
+  --qeixova-color-ff-fa-fa: #fffafa;
+  --qeixova-color-ff-fd-f5: #fffdf5;
+  --qeixova-color-ff-fd-fa: #fffdfa;
+  --qeixova-color-ff-ff-ff: #ffffff;
+  --qeixova-color-ff-ff-ff-a0_95: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] {
+  --how-process-start: #0a1a0a;
+  --how-process-end: #0d1f0d;
+  color-scheme: dark;
+  --qeixova-color-00-00-00: #ffffff;
+  --qeixova-color-07-07-07: #f8f8f8;
+  --qeixova-color-07-11-08: #f8eef7;
+  --qeixova-color-08-08-08: #f7f7f7;
+  --qeixova-color-0a-07-00: #f5f8ff;
+  --qeixova-color-0a-0a-0a: #f5f5f5;
+  --qeixova-color-0c-0a-0c: #f3f5f3;
+  --qeixova-color-0d-0b-0d: #f2f4f2;
+  --qeixova-color-0e-0c-0e: #f1f3f1;
+  --qeixova-color-11-11-11: #eeeeee;
+  --qeixova-color-12-12-12: #ededed;
+  --qeixova-color-15-15-15: #eaeaea;
+  --qeixova-color-17-17-17: #e8e8e8;
+  --qeixova-color-1a-17-1a: #e5e8e5;
+  --qeixova-color-1a-1a-1a: #e5e5e5;
+  --qeixova-color-1f-1f-1f: #e0e0e0;
+  --qeixova-color-21-20-24: #dedfdb;
+  --qeixova-color-22-22-22: #dddddd;
+  --qeixova-color-26-26-26: #d9d9d9;
+  --qeixova-color-27-27-27: #d8d8d8;
+  --qeixova-color-28-24-27: #d7dbd8;
+  --qeixova-color-29-25-28: #d6dad7;
+  --qeixova-color-2a-2a-2a: #d5d5d5;
+  --qeixova-color-2f-2f-2f: #d0d0d0;
+  --qeixova-color-30-30-30: #cfcfcf;
+  --qeixova-color-33-33-33: #cccccc;
+  --qeixova-color-37-33-36: #c8ccc9;
+  --qeixova-color-37-37-37: #c8c8c8;
+  --qeixova-color-38-33-37: #c7ccc8;
+  --qeixova-color-3b-3b-3b: #c4c4c4;
+  --qeixova-color-3c-36-3b: #c3c9c4;
+  --qeixova-color-42-42-42: #bdbdbd;
+  --qeixova-color-44-44-44: #bbbbbb;
+  --qeixova-color-46-3f-45: #b9c0ba;
+  --qeixova-color-46-46-46: #b9b9b9;
+  --qeixova-color-47-3e-47: #b8c1b8;
+  --qeixova-color-47-3f-46: #b8c0b9;
+  --qeixova-color-47-42-46: #b8bdb9;
+  --qeixova-color-47-47-47: #b8b8b8;
+  --qeixova-color-49-49-49: #b6b6b6;
+  --qeixova-color-4b-47-49: #b4b8b6;
+  --qeixova-color-51-4a-50: #aeb5af;
+  --qeixova-color-51-4b-50: #aeb4af;
+  --qeixova-color-55-55-55: #aaaaaa;
+  --qeixova-color-57-57-57: #a8a8a8;
+  --qeixova-color-5a-55-5a: #a5aaa5;
+  --qeixova-color-5f-5f-5f: #a0a0a0;
+  --qeixova-color-60-5a-5d: #9fa5a2;
+  --qeixova-color-62-5b-61: #9da49e;
+  --qeixova-color-62-62-62: #9d9d9d;
+  --qeixova-color-63-5a-62: #9ca59d;
+  --qeixova-color-63-5c-5f: #9ca3a0;
+  --qeixova-color-66-66-66: #999999;
+  --qeixova-color-6d-66-6b: #929994;
+  --qeixova-color-6d-66-6c: #929993;
+  --qeixova-color-70-69-6d: #8f9692;
+  --qeixova-color-70-70-70: #8f8f8f;
+  --qeixova-color-72-72-72: #8d8d8d;
+  --qeixova-color-73-6d-72: #8c928d;
+  --qeixova-color-74-6d-73: #8b928c;
+  --qeixova-color-77-77-77: #888888;
+  --qeixova-color-7a-74-79: #858b86;
+  --qeixova-color-7a-75-7a: #858a85;
+  --qeixova-color-7a-7a-7a: #858585;
+  --qeixova-color-88-88-88: #777777;
+  --qeixova-color-8c-85-89: #737a76;
+  --qeixova-color-8d-85-8a: #727a75;
+  --qeixova-color-96-8f-93: #69706c;
+  --qeixova-color-99-99-99: #666666;
+  --qeixova-color-a0-99-9d: #5f6662;
+  --qeixova-color-aa-aa-aa: #555555;
+  --qeixova-color-b4-ab-b4: #4b544b;
+  --qeixova-color-bb-bb-bb: #444444;
+  --qeixova-color-be-b6-be: #414941;
+  --qeixova-color-c4-c0-c2: #3b3f3d;
+  --qeixova-color-c5-c5-c5: #3a3a3a;
+  --qeixova-color-c9-c2-c5: #363d3a;
+  --qeixova-color-cb-c4-ca: #343b35;
+  --qeixova-color-cb-cf-d5: #34302a;
+  --qeixova-color-cc-cc-cc: #333333;
+  --qeixova-color-cf-c9-cf: #303630;
+  --qeixova-color-cf-cb-cd: #303432;
+  --qeixova-color-cf-cf-cf: #303030;
+  --qeixova-color-d1-cb-ce: #2e3431;
+  --qeixova-color-d2-cd-d2: #2d322d;
+  --qeixova-color-d2-ce-d0: #2d312f;
+  --qeixova-color-d4-cf-d3: #2b302c;
+  --qeixova-color-d4-cf-d4: #2b302b;
+  --qeixova-color-d5-d5-d5: #2a2a2a;
+  --qeixova-color-d6-cc-d5: #29332a;
+  --qeixova-color-d6-d1-d5: #292e2a;
+  --qeixova-color-d6-d5-d8: #292a27;
+  --qeixova-color-d6-d6-d6: #292929;
+  --qeixova-color-d7-d3-d5: #282c2a;
+  --qeixova-color-d8-d8-d8: #272727;
+  --qeixova-color-d9-d3-d8: #262c27;
+  --qeixova-color-d9-d9-d9: #262626;
+  --qeixova-color-da-d5-d7: #252a28;
+  --qeixova-color-da-d6-da: #252925;
+  --qeixova-color-da-da-da: #252525;
+  --qeixova-color-db-d7-d9: #242826;
+  --qeixova-color-db-d7-db: #242824;
+  --qeixova-color-db-db-db: #242424;
+  --qeixova-color-dc-d7-d9: #232826;
+  --qeixova-color-dc-d8-dc: #232723;
+  --qeixova-color-dd-d8-da: #222725;
+  --qeixova-color-dd-d9-da: #222625;
+  --qeixova-color-dd-d9-dd: #222622;
+  --qeixova-color-dd-dd-dd: #222222;
+  --qeixova-color-df-db-dc: #202423;
+  --qeixova-color-df-dc-dd: #202322;
+  --qeixova-color-df-df-df: #202020;
+  --qeixova-color-e0-e0-e0: #1f1f1f;
+  --qeixova-color-e1-e1-e1: #1e1e1e;
+  --qeixova-color-e2-e2-e2: #1d1d1d;
+  --qeixova-color-e3-e3-e3: #1c1c1c;
+  --qeixova-color-e4-df-e1: #1b201e;
+  --qeixova-color-e4-e0-e2: #1b1f1d;
+  --qeixova-color-e4-e0-e4: #1b1f1b;
+  --qeixova-color-e4-e4-e4: #1b1b1b;
+  --qeixova-color-e4-e7-ec: #1b1813;
+  --qeixova-color-e5-e5-e5: #1a1a1a;
+  --qeixova-color-e5-e7-eb: #1a1814;
+  --qeixova-color-e6-e2-e4: #191d1b;
+  --qeixova-color-e6-e9-ee: #191611;
+  --qeixova-color-e8-e4-e6: #171b19;
+  --qeixova-color-e8-e5-e8: #171a17;
+  --qeixova-color-e8-e7-ea: #171815;
+  --qeixova-color-e8-e8-e8: #171717;
+  --qeixova-color-e8-ec-f1: #17130e;
+  --qeixova-color-e9-e9-e9: #161616;
+  --qeixova-color-ea-e6-ea: #151915;
+  --qeixova-color-ea-e7-ea: #151815;
+  --qeixova-color-ea-ea-ea: #151515;
+  --qeixova-color-eb-e7-e9: #141816;
+  --qeixova-color-ed-ea-ed: #121512;
+  --qeixova-color-ed-eb-eb: #121414;
+  --qeixova-color-ed-ed-ed-a0_96: rgba(18, 18, 18, 0.96);
+  --qeixova-color-ed-ef-f3: #12100c;
+  --qeixova-color-ed-f0-f4: #120f0b;
+  --qeixova-color-ed-f1-f5: #120e0a;
+  --qeixova-color-ee-ea-eb: #111514;
+  --qeixova-color-ee-ea-ee: #111511;
+  --qeixova-color-ee-eb-ec: #111413;
+  --qeixova-color-ee-eb-ee: #111411;
+  --qeixova-color-ee-ec-ec: #111313;
+  --qeixova-color-ee-ec-ed: #111312;
+  --qeixova-color-ee-ed-f0: #11120f;
+  --qeixova-color-ee-ee-ee: #111111;
+  --qeixova-color-ee-ee-f0: #11110f;
+  --qeixova-color-ee-f0-f3: #110f0c;
+  --qeixova-color-ee-f1-f5: #110e0a;
+  --qeixova-color-ee-f1-f6: #110e09;
+  --qeixova-color-ee-f2-f6: #110d09;
+  --qeixova-color-ef-eb-ee: #101411;
+  --qeixova-color-ef-ec-ed: #101312;
+  --qeixova-color-ef-ec-ee: #101311;
+  --qeixova-color-ef-ed-ee: #101211;
+  --qeixova-color-ef-ee-ee: #101111;
+  --qeixova-color-ef-ee-ef: #101110;
+  --qeixova-color-ef-ef-ef: #101010;
+  --qeixova-color-f0-ed-f0: #0f120f;
+  --qeixova-color-f0-ee-ef: #0f1110;
+  --qeixova-color-f0-f0-f0: #0f0f0f;
+  --qeixova-color-f1-ef-f1: #0e100e;
+  --qeixova-color-f1-f5-f9: #0e0a06;
+  --qeixova-color-f2-ef-f0: #0d100f;
+  --qeixova-color-f2-ef-f1-a0_92: rgba(13, 16, 14, 0.92);
+  --qeixova-color-f2-ef-f2: #0d100d;
+  --qeixova-color-f2-f0-f1: #0d0f0e;
+  --qeixova-color-f2-f2-f2: #0d0d0d;
+  --qeixova-color-f2-f4-f7: #0d0b08;
+  --qeixova-color-f2-fb-f2: #0d040d;
+  --qeixova-color-f3-f1-f2: #0c0e0d;
+  --qeixova-color-f3-f2-f2: #0c0d0d;
+  --qeixova-color-f3-f2-f3-a0_96: rgba(12, 13, 12, 0.96);
+  --qeixova-color-f3-f3-f3: #0c0c0c;
+  --qeixova-color-f3-f3-f3-a0_94: rgba(12, 12, 12, 0.94);
+  --qeixova-color-f3-f3-f3-a0_96: rgba(12, 12, 12, 0.96);
+  --qeixova-color-f3-f4-f6: #0c0b09;
+  --qeixova-color-f3-f5-f8: #0c0a07;
+  --qeixova-color-f4-f1-f3: #0b0e0c;
+  --qeixova-color-f4-f2-f3: #0b0d0c;
+  --qeixova-color-f4-f3-f3: #0b0c0c;
+  --qeixova-color-f4-f4-f4: #0b0b0b;
+  --qeixova-color-f5-f3-f4: #0a0c0b;
+  --qeixova-color-f5-f4-f4: #0a0b0b;
+  --qeixova-color-f5-f4-f5: #0a0b0a;
+  --qeixova-color-f5-f5-f5: #0a0a0a;
+  --qeixova-color-f5-f5-f5-a0_88: rgba(10, 10, 10, 0.88);
+  --qeixova-color-f5-f5-f5-a0_96: rgba(10, 10, 10, 0.96);
+  --qeixova-color-f6-f4-f5: #090b0a;
+  --qeixova-color-f6-f5-f5: #090a0a;
+  --qeixova-color-f6-f5-f6: #090a09;
+  --qeixova-color-f6-f6-f6: #090909;
+  --qeixova-color-f6-f8-fa: #090705;
+  --qeixova-color-f7-f5-f6: #080a09;
+  --qeixova-color-f7-f6-f6: #080909;
+  --qeixova-color-f7-f6-f6-a0_96: rgba(8, 9, 9, 0.96);
+  --qeixova-color-f7-f6-f6-a0_97: rgba(8, 9, 9, 0.97);
+  --qeixova-color-f7-f7-f7: #080808;
+  --qeixova-color-f7-f8-fb: #080704;
+  --qeixova-color-f8-f7-f7: #070808;
+  --qeixova-color-f8-f7-f8: #070807;
+  --qeixova-color-f8-f8-f8: #070707;
+  --qeixova-color-f8-f8-f8-a0_98: rgba(7, 7, 7, 0.98);
+  --qeixova-color-f8-fa-f8: #070507;
+  --qeixova-color-f8-fa-fc: #070503;
+  --qeixova-color-f9-ef-f9: #061006;
+  --qeixova-color-f9-f7-f8: #060807;
+  --qeixova-color-f9-fa-fb: #060504;
+  --qeixova-color-fa-f8-f9: #050706;
+  --qeixova-color-fa-fa-fa: #050505;
+  --qeixova-color-fa-fa-fa-a0_96: rgba(5, 5, 5, 0.96);
+  --qeixova-color-fa-fa-fa-a0_98: rgba(5, 5, 5, 0.98);
+  --qeixova-color-fa-fb-fc: #050403;
+  --qeixova-color-fb-fa-fb-a0_98: rgba(4, 5, 4, 0.98);
+  --qeixova-color-fb-fc-fd: #040302;
+  --qeixova-color-fb-fc-fe: #040301;
+  --qeixova-color-fb-ff-fb: #040004;
+  --qeixova-color-fc-fb-fc: #030403;
+  --qeixova-color-fc-fc-fd: #030302;
+  --qeixova-color-ff-f5-f5: #000a0a;
+  --qeixova-color-ff-f8-f8: #000707;
+  --qeixova-color-ff-fa-fa: #000505;
+  --qeixova-color-ff-fd-f5: #00020a;
+  --qeixova-color-ff-fd-fa: #000205;
+  --qeixova-color-ff-ff-ff: #000000;
+  --qeixova-color-ff-ff-ff-a0_95: rgba(0, 0, 0, 0.95);
 }

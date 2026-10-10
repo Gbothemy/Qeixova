@@ -2,47 +2,48 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "dark";
+export type Theme = "light" | "dark";
 const STORAGE_KEY = "qeixova:theme";
 
 const ThemeContext = createContext<{
   theme: Theme;
-  setTheme: (t?: Theme) => void;
+  setTheme: (theme: Theme) => void;
   toggle: () => void;
 } | null>(null);
 
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+}
+
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>("light");
 
   useEffect(() => {
+    let stored: string | null = null;
     try {
-      window.localStorage.setItem(STORAGE_KEY, "dark");
-      setThemeState("dark");
-      document.documentElement.dataset.theme = "dark";
-      document.documentElement.style.colorScheme = "dark";
+      stored = window.localStorage.getItem(STORAGE_KEY);
     } catch {
-      setThemeState("dark");
-      document.documentElement.dataset.theme = "dark";
-      document.documentElement.style.colorScheme = "dark";
+      // Keep the default light theme if browser storage is unavailable.
     }
+    const initial: Theme = stored === "dark" ? "dark" : "light";
+    setThemeState(initial);
+    applyTheme(initial);
   }, []);
 
-  const setTheme = (_t?: Theme) => {
-    setThemeState("dark");
+  const setTheme = (next: Theme) => {
+    setThemeState(next);
+    applyTheme(next);
     try {
-      document.documentElement.dataset.theme = "dark";
-      document.documentElement.style.colorScheme = "dark";
-      window.localStorage.setItem(STORAGE_KEY, "dark");
-    } catch {}
+      window.localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // The current page still updates when storage is unavailable.
+    }
   };
 
-  const toggle = () => setTheme();
+  const toggle = () => setTheme(theme === "light" ? "dark" : "light");
 
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggle }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, setTheme, toggle }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

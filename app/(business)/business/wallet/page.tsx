@@ -294,7 +294,7 @@ const pageStyles = `
     background:
       radial-gradient(circle at 78% 8%, rgba(245, 166, 35, 0.09), transparent 26%),
       radial-gradient(circle at 40% 100%, rgba(26, 239, 34, 0.05), transparent 34%),
-      #000;
+      var(--qeixova-color-ff-ff-ff);
   }
 
   .billingPage {
@@ -305,8 +305,8 @@ const pageStyles = `
     min-height: 100vh;
     display: grid;
     place-items: center;
-    background: #000;
-    color: #bbb;
+    background: var(--qeixova-color-ff-ff-ff);
+    color: var(--qeixova-color-44-44-44);
   }
 
   .billingWorkspace {
@@ -331,7 +331,7 @@ const pageStyles = `
 
   .billingWorkspace h2 {
     margin: 0;
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 22px;
   }
 
@@ -345,7 +345,7 @@ const pageStyles = `
     border: 1px solid rgba(255,255,255,.08);
     background:
       linear-gradient(135deg, rgba(245, 166, 35, 0.08), transparent 32%),
-      linear-gradient(180deg, rgba(18,18,18,.96), rgba(7,7,7,.98));
+      linear-gradient(180deg, var(--qeixova-color-ed-ed-ed-a0_96), var(--qeixova-color-f8-f8-f8-a0_98));
   }
 
   .billingHero h1 {
@@ -358,7 +358,7 @@ const pageStyles = `
   .billingHero p:not(.eyebrow) {
     max-width: 670px;
     margin: 10px 0 0;
-    color: #bbb;
+    color: var(--qeixova-color-44-44-44);
     font-size: 14px;
     line-height: 1.65;
   }
@@ -375,14 +375,14 @@ const pageStyles = `
     padding: 17px;
     border: 1px solid rgba(255,255,255,.075);
     border-radius: 8px;
-    background: #070707;
+    background: var(--qeixova-color-f8-f8-f8);
     box-shadow: 0 18px 44px rgba(0,0,0,.24);
   }
 
   .summaryCard span,
   .summaryCard small {
     display: block;
-    color: #888;
+    color: var(--qeixova-color-77-77-77);
     font-size: 11px;
     font-weight: 900;
     text-transform: uppercase;
@@ -391,13 +391,13 @@ const pageStyles = `
   .summaryCard strong {
     display: block;
     margin: 14px 0 8px;
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: clamp(22px, 2.4vw, 30px);
     line-height: 1;
   }
 
   .summaryCard small {
-    color: #777;
+    color: var(--qeixova-color-88-88-88);
     font-size: 12px;
     font-weight: 700;
     text-transform: none;
@@ -425,7 +425,7 @@ const pageStyles = `
   .transactionsPanel {
     padding: 20px;
     border: 1px solid rgba(255,255,255,.075);
-    background: linear-gradient(180deg, rgba(12,12,12,.96), rgba(5,5,5,.98));
+    background: linear-gradient(180deg, var(--qeixova-color-f3-f3-f3-a0_96), var(--qeixova-color-fa-fa-fa-a0_98));
   }
 
   .panelTop,
@@ -441,7 +441,7 @@ const pageStyles = `
     display: block;
     max-width: 560px;
     margin-top: 7px;
-    color: #888;
+    color: var(--qeixova-color-77-77-77);
     font-size: 13px;
     line-height: 1.55;
   }
@@ -461,7 +461,7 @@ const pageStyles = `
   }
 
   .walletPill span {
-    color: #bbb;
+    color: var(--qeixova-color-44-44-44);
     font-size: 11px;
     font-weight: 900;
     text-transform: uppercase;
@@ -469,7 +469,7 @@ const pageStyles = `
 
   .walletPill strong {
     margin-top: 5px;
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 24px;
   }
 
@@ -503,7 +503,7 @@ const pageStyles = `
   .fieldBlock {
     display: grid;
     gap: 9px;
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 13px;
     font-weight: 900;
     margin-bottom: 15px;
@@ -512,10 +512,10 @@ const pageStyles = `
   input {
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid #252525;
+    border: 1px solid var(--qeixova-color-da-da-da);
     border-radius: 8px;
     background: #f1f6ff;
-    color: #050505;
+    color: var(--qeixova-color-fa-fa-fa);
     padding: 15px 16px;
     font: inherit;
     font-weight: 850;
@@ -544,9 +544,9 @@ const pageStyles = `
 
   .quickAmounts button,
   .methodGrid button {
-    border: 1px solid #222;
-    background: #0d0d0d;
-    color: #F5F5F5;
+    border: 1px solid var(--qeixova-color-dd-dd-dd);
+    background: var(--qeixova-color-f2-f2-f2);
+    color: var(--qeixova-color-0a-0a-0a);
     border-radius: 8px;
     cursor: pointer;
     transition: border-color .16s ease, background .16s ease, transform .16s ease;
@@ -585,7 +585,7 @@ const pageStyles = `
   }
 
   .methodGrid span {
-    color: #888;
+    color: var(--qeixova-color-77-77-77);
     font-size: 12px;
     line-height: 1.5;
     margin-top: 6px;
@@ -604,7 +604,7 @@ const pageStyles = `
 
   .fundPreview span,
   .sectionHead span {
-    color: #888;
+    color: var(--qeixova-color-77-77-77);
     font-size: 12px;
     font-weight: 850;
   }
@@ -625,7 +625,7 @@ const pageStyles = `
     border-radius: 8px;
     padding: 15px 16px;
     background: linear-gradient(135deg, #F5A623, #d89420);
-    color: #050505;
+    color: var(--qeixova-color-fa-fa-fa);
     font-weight: 950;
     cursor: pointer;
     box-shadow: 0 16px 34px rgba(245, 166, 35, 0.18);
@@ -648,7 +648,7 @@ const pageStyles = `
 
   .paystackCard p:not(.eyebrow) {
     margin: 10px 0 18px;
-    color: #888;
+    color: var(--qeixova-color-77-77-77);
     font-size: 13px;
     line-height: 1.65;
   }
@@ -663,9 +663,9 @@ const pageStyles = `
     grid-template-columns: 34px minmax(0, 1fr);
     column-gap: 10px;
     padding: 13px;
-    border: 1px solid #1f1f1f;
+    border: 1px solid var(--qeixova-color-e0-e0-e0);
     border-radius: 8px;
-    background: #050505;
+    background: var(--qeixova-color-fa-fa-fa);
   }
 
   .paystackSteps span {
@@ -686,13 +686,13 @@ const pageStyles = `
   }
 
   .paystackSteps strong {
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-weight: 850;
   }
 
   .paystackSteps small {
     margin-top: 4px;
-    color: #777;
+    color: var(--qeixova-color-88-88-88);
     font-size: 12px;
     line-height: 1.4;
   }
@@ -716,13 +716,13 @@ const pageStyles = `
     place-items: center;
     border-radius: 50%;
     background: #F5A623;
-    color: #050505;
+    color: var(--qeixova-color-fa-fa-fa);
     font-size: 11px;
     font-weight: 950;
   }
 
   .ruleList strong {
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 13px;
     line-height: 1.45;
   }
@@ -737,10 +737,10 @@ const pageStyles = `
   }
 
   .emptyState {
-    border: 1px dashed #303030;
+    border: 1px dashed var(--qeixova-color-cf-cf-cf);
     border-radius: 8px;
     padding: 36px;
-    color: #888;
+    color: var(--qeixova-color-77-77-77);
     text-align: center;
   }
 
@@ -755,9 +755,9 @@ const pageStyles = `
     gap: 13px;
     align-items: center;
     padding: 14px;
-    border: 1px solid #1d1d1d;
+    border: 1px solid var(--qeixova-color-e2-e2-e2);
     border-radius: 8px;
-    background: #050505;
+    background: var(--qeixova-color-fa-fa-fa);
   }
 
   .txIcon {
@@ -787,13 +787,13 @@ const pageStyles = `
   }
 
   .txCopy strong {
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 14px;
   }
 
   .txCopy span,
   .txMeta span {
-    color: #777;
+    color: var(--qeixova-color-88-88-88);
     font-size: 12px;
     margin-top: 4px;
   }
@@ -811,8 +811,8 @@ const pageStyles = `
     margin-top: 6px !important;
     padding: 4px 9px;
     border-radius: 999px;
-    border: 1px solid #2a2a2a;
-    color: #aaa !important;
+    border: 1px solid var(--qeixova-color-d5-d5-d5);
+    color: var(--qeixova-color-55-55-55) !important;
     font-size: 11px !important;
     font-weight: 900;
     text-transform: uppercase;

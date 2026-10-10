@@ -228,7 +228,7 @@ export default function BankAccountsModal({ onClose }: Props) {
               style={{
                 width: "100%",
                 background: "linear-gradient(135deg, var(--accent), var(--accent))",
-                color: "var(--button-text, #fff)", border: "none", borderRadius: 14, padding: "15px",
+                color: "var(--button-text, var(--qeixova-color-00-00-00))", border: "none", borderRadius: 14, padding: "15px",
                 fontWeight: 800, fontSize: 15, cursor: "pointer",
                 boxShadow: "0 6px 20px rgba(26,239,34,0.18)",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -257,7 +257,7 @@ export default function BankAccountsModal({ onClose }: Props) {
 
               {/* Bank name */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#bbbbbb", letterSpacing: 0.5 }}>BANK NAME</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "var(--qeixova-color-44-44-44)", letterSpacing: 0.5 }}>BANK NAME</label>
                 <div style={{ position: "relative", marginTop: 8 }}>
                   <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, pointerEvents: "none" }}>🏦</span>
                   <select
@@ -265,13 +265,13 @@ export default function BankAccountsModal({ onClose }: Props) {
                     onChange={(e) => set("bankName", e.target.value)}
                     style={{
                       width: "100%", padding: "13px 14px 13px 42px",
-                      borderRadius: 12, border: "1.5px solid #333333",
-                      fontSize: 14, outline: "none", color: form.bankName ? "#F5F5F5" : "#bbbbbb",
-                      background: "#1a1a1a", cursor: "pointer",
+                      borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)",
+                      fontSize: 14, outline: "none", color: form.bankName ? "var(--qeixova-color-0a-0a-0a)" : "var(--qeixova-color-44-44-44)",
+                      background: "var(--qeixova-color-e5-e5-e5)", cursor: "pointer",
                       appearance: "none",
                     }}
                     onFocus={(e) => (e.target.style.borderColor = "#1AEF22")}
-                    onBlur={(e) => (e.target.style.borderColor = "#999999")}
+                    onBlur={(e) => (e.target.style.borderColor = "var(--qeixova-color-66-66-66)")}
                   >
                     <option value="">Select your bank</option>
                     {NIGERIAN_BANKS.map((b) => (
@@ -283,7 +283,7 @@ export default function BankAccountsModal({ onClose }: Props) {
 
               {/* Account number */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#bbbbbb", letterSpacing: 0.5 }}>ACCOUNT NUMBER</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "var(--qeixova-color-44-44-44)", letterSpacing: 0.5 }}>ACCOUNT NUMBER</label>
                 <div style={{ position: "relative", marginTop: 8 }}>
                   <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, pointerEvents: "none" }}>🔢</span>
                   <input
@@ -295,25 +295,25 @@ export default function BankAccountsModal({ onClose }: Props) {
                     onChange={(e) => set("accountNumber", e.target.value.replace(/\D/g, ""))}
                     style={{
                       width: "100%", padding: "13px 14px 13px 42px",
-                      borderRadius: 12, border: "1.5px solid #333333",
-                      fontSize: 15, outline: "none", color: "#F5F5F5",
-                      background: "#1a1a1a", letterSpacing: 2,
+                      borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)",
+                      fontSize: 15, outline: "none", color: "var(--qeixova-color-0a-0a-0a)",
+                      background: "var(--qeixova-color-e5-e5-e5)", letterSpacing: 2,
                     }}
                     onFocus={(e) => (e.target.style.borderColor = "#1AEF22")}
-                    onBlur={(e) => (e.target.style.borderColor = "#999999")}
+                    onBlur={(e) => (e.target.style.borderColor = "var(--qeixova-color-66-66-66)")}
                   />
                   {form.accountNumber.length === 10 && (
                     <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16 }}>✅</span>
                   )}
                 </div>
-                <p style={{ fontSize: 11, color: "#bbbbbb", marginTop: 4 }}>
+                <p style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", marginTop: 4 }}>
                   {form.accountNumber.length}/10 digits
                 </p>
               </div>
 
               {/* Account name */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#bbbbbb", letterSpacing: 0.5 }}>ACCOUNT NAME</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "var(--qeixova-color-44-44-44)", letterSpacing: 0.5 }}>ACCOUNT NAME</label>
                 <div style={{ position: "relative", marginTop: 8 }}>
                   <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, pointerEvents: "none" }}>👤</span>
                   <input
@@ -323,12 +323,12 @@ export default function BankAccountsModal({ onClose }: Props) {
                     onChange={(e) => set("accountName", e.target.value)}
                     style={{
                       width: "100%", padding: "13px 14px 13px 42px",
-                      borderRadius: 12, border: "1.5px solid #333333",
-                      fontSize: 14, outline: "none", color: "#F5F5F5",
-                      background: "#1a1a1a",
+                      borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)",
+                      fontSize: 14, outline: "none", color: "var(--qeixova-color-0a-0a-0a)",
+                      background: "var(--qeixova-color-e5-e5-e5)",
                     }}
                     onFocus={(e) => (e.target.style.borderColor = "#1AEF22")}
-                    onBlur={(e) => (e.target.style.borderColor = "#999999")}
+                    onBlur={(e) => (e.target.style.borderColor = "var(--qeixova-color-66-66-66)")}
                   />
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function BankAccountsModal({ onClose }: Props) {
               {/* Info note */}
               <div style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: 12, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <span style={{ fontSize: 16, flexShrink: 0 }}>ℹ️</span>
-                <p style={{ fontSize: 12, color: "#cccccc", lineHeight: 1.6 }}>
+                <p style={{ fontSize: 12, color: "var(--qeixova-color-33-33-33)", lineHeight: 1.6 }}>
                   Make sure the account name matches your bank records exactly. Withdrawals to incorrect accounts cannot be reversed.
                 </p>
               </div>
@@ -345,8 +345,8 @@ export default function BankAccountsModal({ onClose }: Props) {
                 type="submit"
                 disabled={submitting}
                 style={{
-                  background: submitting ? "#999999" : "linear-gradient(135deg, #F5A623, #d89420)",
-                  color: "#fff", border: "none", borderRadius: 14, padding: "15px",
+                  background: submitting ? "var(--qeixova-color-66-66-66)" : "linear-gradient(135deg, #F5A623, #d89420)",
+                  color: "var(--qeixova-color-00-00-00)", border: "none", borderRadius: 14, padding: "15px",
                   fontWeight: 800, fontSize: 15,
                   cursor: submitting ? "not-allowed" : "pointer",
                   boxShadow: submitting ? "none" : "0 6px 20px rgba(245,166,35,0.35)",

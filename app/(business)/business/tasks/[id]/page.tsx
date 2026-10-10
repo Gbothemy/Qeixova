@@ -66,7 +66,7 @@ function ProofSummary({ summary }: { summary?: Completion["proof_summary"] }) {
 
   return (
     <div style={{ marginTop: 6 }}>
-      <p style={{ fontSize: 11, color: "#aaa", lineHeight: 1.45 }}>
+      <p style={{ fontSize: 11, color: "var(--qeixova-color-55-55-55)", lineHeight: 1.45 }}>
         Proof submitted. Screenshot evidence is private and available only to admin reviewers.
       </p>
       <PlatformChips platforms={platforms} />
@@ -152,13 +152,13 @@ export default function TaskDetailPage() {
       ? { label: "Rejected", color: "#e53e3e", bg: "rgba(229,62,62,0.08)", dot: "#e53e3e" }
     : task.is_active
       ? { label: "Active", color: "#1AEF22", bg: "rgba(26,239,34,0.08)", dot: "#1AEF22" }
-      : { label: "Paused", color: "#bbb", bg: "rgba(255,255,255,0.04)", dot: "#bbb" };
+      : { label: "Paused", color: "var(--qeixova-color-44-44-44)", bg: "rgba(255,255,255,0.04)", dot: "var(--qeixova-color-44-44-44)" };
 
   return (
     <>
       <BusinessSidebar name={business.name} />
       <main className="page-body business-page-pro">
-        <Link href="/business/tasks" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#aaa", textDecoration: "none", marginBottom: 20, padding: "6px 12px", background: "#0a0a0a", borderRadius: 8, border: "1px solid #161616" }}>
+        <Link href="/business/tasks" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--qeixova-color-55-55-55)", textDecoration: "none", marginBottom: 20, padding: "6px 12px", background: "var(--qeixova-color-f5-f5-f5)", borderRadius: 8, border: "1px solid var(--qeixova-color-e9-e9-e9)" }}>
           <Image src="/icon-home.svg" alt="Back" width={12} height={12} style={{ objectFit: "contain", opacity: 0.4 }} />
           Back to Campaigns
         </Link>
@@ -166,16 +166,16 @@ export default function TaskDetailPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: "#F5F5F5" }}>{task.title}</h1>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--qeixova-color-0a-0a-0a)" }}>{task.title}</h1>
               <div style={{ display: "flex", alignItems: "center", gap: 5, background: taskStatus.bg, borderRadius: 20, padding: "4px 10px" }}>
                 <div style={{ width: 5, height: 5, borderRadius: "50%", background: taskStatus.dot }} />
                 <span style={{ fontSize: 11, fontWeight: 700, color: taskStatus.color }}>{taskStatus.label}</span>
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "#aaa" }}>{task.category}</span>
+              <span style={{ fontSize: 12, color: "var(--qeixova-color-55-55-55)" }}>{task.category}</span>
               <span style={{ fontSize: 12, color: "#F5A623", fontWeight: 600 }}>{task.reward.toLocaleString()} QLT / completion</span>
-              <span style={{ fontSize: 11, color: "#bbb" }}>Created {new Date(task.created_at).toLocaleDateString()}</span>
+              <span style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)" }}>Created {new Date(task.created_at).toLocaleDateString()}</span>
             </div>
           </div>
           {!["pending_review", "rejected"].includes(task.status) && (
@@ -188,7 +188,7 @@ export default function TaskDetailPage() {
         {task.status === "rejected" && task.campaign_metadata?.rejectionReason && (
           <div style={{ background: "rgba(229,62,62,0.08)", border: "1px solid rgba(229,62,62,0.22)", borderRadius: 14, padding: "13px 16px", marginBottom: 20 }}>
             <p style={{ color: "#e53e3e", fontSize: 12, fontWeight: 800, marginBottom: 4 }}>Admin rejection reason</p>
-            <p style={{ color: "#ddd", fontSize: 13, lineHeight: 1.5 }}>{task.campaign_metadata.rejectionReason}</p>
+            <p style={{ color: "var(--qeixova-color-22-22-22)", fontSize: 13, lineHeight: 1.5 }}>{task.campaign_metadata.rejectionReason}</p>
           </div>
         )}
 
@@ -199,59 +199,59 @@ export default function TaskDetailPage() {
             { label: "Pending", value: task.pending_completions, color: "#F5A623", icon: "/icon-survey.svg" },
             { label: "Rejected", value: task.rejected_completions, color: "#e53e3e", icon: "/icon-app-testing.svg" },
           ].map((item) => (
-            <div key={item.label} style={{ background: "#0a0a0a", borderRadius: 14, padding: "14px", border: "1px solid #161616", position: "relative", overflow: "hidden" }}>
+            <div key={item.label} style={{ background: "var(--qeixova-color-f5-f5-f5)", borderRadius: 14, padding: "14px", border: "1px solid var(--qeixova-color-e9-e9-e9)", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: item.color }} />
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                 <Image src={item.icon} alt={item.label} width={12} height={12} style={{ objectFit: "contain", opacity: 0.35 }} />
-                <p style={{ fontSize: 10, color: "#bbb", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 600 }}>{item.label}</p>
+                <p style={{ fontSize: 10, color: "var(--qeixova-color-44-44-44)", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 600 }}>{item.label}</p>
               </div>
-              <p style={{ fontSize: 24, fontWeight: 900, color: "#F5F5F5", letterSpacing: 0 }}>{item.value}</p>
+              <p style={{ fontSize: 24, fontWeight: 900, color: "var(--qeixova-color-0a-0a-0a)", letterSpacing: 0 }}>{item.value}</p>
             </div>
           ))}
         </div>
 
         {task.target_completion_count > 0 && (
-          <div style={{ background: "#0a0a0a", borderRadius: 14, padding: "16px 18px", border: "1px solid #161616", marginBottom: 20 }}>
+          <div style={{ background: "var(--qeixova-color-f5-f5-f5)", borderRadius: 14, padding: "16px 18px", border: "1px solid var(--qeixova-color-e9-e9-e9)", marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "#F5F5F5" }}>Campaign Progress</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)" }}>Campaign Progress</p>
               <p style={{ fontSize: 13, fontWeight: 700, color: "#F5A623" }}>{task.approved_completions} / {task.target_completion_count}</p>
             </div>
-            <div style={{ height: 6, background: "#111", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ height: 6, background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 10, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #F5A623, #1AEF22)", borderRadius: 10, transition: "width 0.4s" }} />
             </div>
-            <p style={{ fontSize: 11, color: "#bbb", marginTop: 6 }}>{Math.round(progress)}% of target reached</p>
+            <p style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", marginTop: 6 }}>{Math.round(progress)}% of target reached</p>
           </div>
         )}
 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <p style={{ fontSize: 15, fontWeight: 700, color: "#F5F5F5" }}>Submissions</p>
-            <span style={{ fontSize: 12, color: "#aaa", background: "#0a0a0a", border: "1px solid #161616", borderRadius: 20, padding: "3px 10px" }}>{completions.length} total</span>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "var(--qeixova-color-0a-0a-0a)" }}>Submissions</p>
+            <span style={{ fontSize: 12, color: "var(--qeixova-color-55-55-55)", background: "var(--qeixova-color-f5-f5-f5)", border: "1px solid var(--qeixova-color-e9-e9-e9)", borderRadius: 20, padding: "3px 10px" }}>{completions.length} total</span>
           </div>
           {task.pending_completions > 0 && (
             <div style={{ background: "rgba(245,166,35,0.07)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
               <p style={{ color: "#F5A623", fontSize: 12, fontWeight: 800, marginBottom: 3 }}>Verification queue</p>
-              <p style={{ color: "#aaa", fontSize: 12, lineHeight: 1.5 }}>Proof screenshots are private to admin reviewers. Use admin proof approval for evidence inspection.</p>
+              <p style={{ color: "var(--qeixova-color-55-55-55)", fontSize: 12, lineHeight: 1.5 }}>Proof screenshots are private to admin reviewers. Use admin proof approval for evidence inspection.</p>
             </div>
           )}
           {completions.length === 0 ? (
-            <div style={{ background: "#0a0a0a", borderRadius: 14, padding: "36px", textAlign: "center", border: "1px solid #161616" }}>
+            <div style={{ background: "var(--qeixova-color-f5-f5-f5)", borderRadius: 14, padding: "36px", textAlign: "center", border: "1px solid var(--qeixova-color-e9-e9-e9)" }}>
               <Image src="/icon-survey.svg" alt="" width={36} height={36} style={{ objectFit: "contain", opacity: 0.15, marginBottom: 12 }} />
-              <p style={{ color: "#bbb", fontSize: 13 }}>No submissions yet. Share your campaign to get started.</p>
+              <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 13 }}>No submissions yet. Share your campaign to get started.</p>
             </div>
           ) : (
-            <div style={{ background: "#0a0a0a", borderRadius: 14, border: "1px solid #161616", overflow: "hidden" }}>
+            <div style={{ background: "var(--qeixova-color-f5-f5-f5)", borderRadius: 14, border: "1px solid var(--qeixova-color-e9-e9-e9)", overflow: "hidden" }}>
               {completions.map((completion, index) => {
                 const statusColor = STATUS_COLORS[completion.status] ?? STATUS_COLORS.pending;
                 return (
-                  <div key={completion.id} style={{ padding: "13px 16px", borderBottom: index < completions.length - 1 ? "1px solid #111" : "none", display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "center", gap: 10 }}>
+                  <div key={completion.id} style={{ padding: "13px 16px", borderBottom: index < completions.length - 1 ? "1px solid var(--qeixova-color-ee-ee-ee)" : "none", display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "center", gap: 10 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#111", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--qeixova-color-ee-ee-ee)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Image src="/icon-profile.svg" alt="" width={16} height={16} style={{ objectFit: "contain", opacity: 0.3 }} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: "#F5F5F5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{completion.full_name}</p>
-                        <p style={{ fontSize: 11, color: "#bbb", marginTop: 1 }}>{completion.email} - {new Date(completion.completed_at).toLocaleDateString()}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{completion.full_name}</p>
+                        <p style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", marginTop: 1 }}>{completion.email} - {new Date(completion.completed_at).toLocaleDateString()}</p>
                         <ProofSummary summary={completion.proof_summary} />
                         {typeof completion.qlt_awarded === "number" && (
                           <p style={{ fontSize: 11, color: "#1AEF22", marginTop: 4, fontWeight: 800 }}>
@@ -282,13 +282,13 @@ export default function TaskDetailPage() {
 
       {rejecting && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "grid", placeItems: "center", padding: 18, zIndex: 100 }}>
-          <div style={{ width: "min(100%, 430px)", background: "#0a0a0a", border: "1px solid #222", borderRadius: 18, padding: 18 }}>
-            <p style={{ fontSize: 16, fontWeight: 800, color: "#F5F5F5", marginBottom: 6 }}>Reject submission</p>
-            <p style={{ fontSize: 12, color: "#aaa", lineHeight: 1.5, marginBottom: 12 }}>Give {rejecting.full_name} a clear reason so they can improve future proof quality.</p>
-            <textarea value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} rows={4} placeholder="Example: Screenshot does not show the required repost or timestamp." style={{ width: "100%", border: "1px solid #333", borderRadius: 12, background: "#111", color: "#F5F5F5", padding: 12, fontSize: 13, resize: "vertical" }} />
+          <div style={{ width: "min(100%, 430px)", background: "var(--qeixova-color-f5-f5-f5)", border: "1px solid var(--qeixova-color-dd-dd-dd)", borderRadius: 18, padding: 18 }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 6 }}>Reject submission</p>
+            <p style={{ fontSize: 12, color: "var(--qeixova-color-55-55-55)", lineHeight: 1.5, marginBottom: 12 }}>Give {rejecting.full_name} a clear reason so they can improve future proof quality.</p>
+            <textarea value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} rows={4} placeholder="Example: Screenshot does not show the required repost or timestamp." style={{ width: "100%", border: "1px solid var(--qeixova-color-cc-cc-cc)", borderRadius: 12, background: "var(--qeixova-color-ee-ee-ee)", color: "var(--qeixova-color-0a-0a-0a)", padding: 12, fontSize: 13, resize: "vertical" }} />
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
-              <button type="button" onClick={() => setRejecting(null)} style={{ border: "1px solid #2a2a2a", background: "#111", color: "#ccc", borderRadius: 10, padding: "10px 14px", fontWeight: 800, cursor: "pointer" }}>Cancel</button>
-              <button type="button" onClick={() => handleReview(rejecting.id, "reject", rejectReason)} disabled={reviewingId === rejecting.id} style={{ border: "none", background: "#e53e3e", color: "#fff", borderRadius: 10, padding: "10px 14px", fontWeight: 800, cursor: "pointer" }}>Reject</button>
+              <button type="button" onClick={() => setRejecting(null)} style={{ border: "1px solid var(--qeixova-color-d5-d5-d5)", background: "var(--qeixova-color-ee-ee-ee)", color: "var(--qeixova-color-33-33-33)", borderRadius: 10, padding: "10px 14px", fontWeight: 800, cursor: "pointer" }}>Cancel</button>
+              <button type="button" onClick={() => handleReview(rejecting.id, "reject", rejectReason)} disabled={reviewingId === rejecting.id} style={{ border: "none", background: "#e53e3e", color: "var(--qeixova-color-00-00-00)", borderRadius: 10, padding: "10px 14px", fontWeight: 800, cursor: "pointer" }}>Reject</button>
             </div>
           </div>
         </div>

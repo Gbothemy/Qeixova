@@ -283,7 +283,7 @@ export default function BusinessGrowthPage() {
 const styles = `
   .notificationLayout {
     min-height: 100vh;
-    background: #000;
+    background: var(--qeixova-color-ff-ff-ff);
   }
 
   .notificationPage {
@@ -322,7 +322,7 @@ const styles = `
   .notificationHero p:not(.notificationEyebrow) {
     max-width: 760px;
     margin: 10px 0 0;
-    color: #aaa;
+    color: var(--qeixova-color-55-55-55);
     font-size: 14px;
     line-height: 1.65;
   }
@@ -342,7 +342,7 @@ const styles = `
 
   .heroStatus span,
   .statCard span {
-    color: #aaa;
+    color: var(--qeixova-color-55-55-55);
     font-size: 11px;
     font-weight: 900;
     text-transform: uppercase;
@@ -350,7 +350,7 @@ const styles = `
 
   .heroStatus strong {
     margin-top: 6px;
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
     font-size: 32px;
   }
 
@@ -360,7 +360,7 @@ const styles = `
     align-items: center;
     gap: 7px;
     margin-top: 10px;
-    color: #bbb;
+    color: var(--qeixova-color-44-44-44);
     font-size: 12px;
     font-weight: 800;
   }
@@ -398,7 +398,7 @@ const styles = `
   .statCard strong {
     display: block;
     margin-top: 10px;
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 30px;
     line-height: 1;
   }
@@ -430,7 +430,7 @@ const styles = `
     border: 0;
     border-radius: 999px;
     background: transparent;
-    color: #bbb;
+    color: var(--qeixova-color-44-44-44);
     cursor: pointer;
     font-weight: 800;
   }
@@ -456,7 +456,7 @@ const styles = `
 
   .sectionHead h2 {
     margin: 0;
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 22px;
   }
 
@@ -498,7 +498,7 @@ const styles = `
 
   .notificationItem:focus-visible {
     border-color: rgba(245, 166, 35, .42);
-    background: #101010;
+    background: var(--qeixova-color-ef-ef-ef);
     box-shadow: 0 12px 30px rgba(0, 0, 0, .2);
   }
 
@@ -516,7 +516,7 @@ const styles = `
   }
 
   .notificationItem:hover {
-    background: #101010;
+    background: var(--qeixova-color-ef-ef-ef);
   }
 
   .notificationItem.green .notificationIcon {
@@ -539,19 +539,19 @@ const styles = `
   }
 
   .notificationTitle strong {
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 14px;
   }
 
   .notificationTitle span {
-    color: #777;
+    color: var(--qeixova-color-88-88-88);
     font-size: 12px;
     white-space: nowrap;
   }
 
   .notificationItem p {
     margin: 6px 0 10px;
-    color: #aaa;
+    color: var(--qeixova-color-55-55-55);
     font-size: 13px;
     line-height: 1.55;
   }
@@ -561,8 +561,8 @@ const styles = `
     width: fit-content;
     padding: 4px 9px;
     border-radius: 999px;
-    background: #111;
-    color: #bbb;
+    background: var(--qeixova-color-ee-ee-ee);
+    color: var(--qeixova-color-44-44-44);
     font-size: 11px;
     font-weight: 850;
   }
@@ -587,14 +587,14 @@ const styles = `
 
   .emptyNotifications strong {
     display: block;
-    color: #F5F5F5;
+    color: var(--qeixova-color-0a-0a-0a);
     font-size: 18px;
   }
 
   .emptyNotifications p {
     max-width: 360px;
     margin: 8px auto 0;
-    color: #999;
+    color: var(--qeixova-color-66-66-66);
     font-size: 13px;
     line-height: 1.6;
   }
@@ -613,8 +613,8 @@ const styles = `
     place-items: center;
     margin-bottom: 14px;
     border-radius: 50%;
-    background: #151515;
-    box-shadow: inset 0 0 0 1px #222;
+    background: var(--qeixova-color-ea-ea-ea);
+    box-shadow: inset 0 0 0 1px var(--qeixova-color-dd-dd-dd);
   }
 
   .emptyBell img {

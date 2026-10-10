@@ -94,7 +94,7 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
         .ecosystemHub {
           max-width: 1120px;
           margin: 0 auto;
-          color: #f5f5f5;
+          color: var(--qeixova-color-0a-0a-0a);
         }
         .ecosystemHeader {
           display: flex;
@@ -112,14 +112,14 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
           margin-bottom: 8px;
         }
         h1 {
-          color: #fff;
+          color: var(--qeixova-color-00-00-00);
           font-size: clamp(28px, 5vw, 44px);
           line-height: 1.05;
           letter-spacing: 0;
           margin-bottom: 10px;
         }
         header p:not(.eyebrow) {
-          color: #aaa;
+          color: var(--qeixova-color-55-55-55);
           line-height: 1.6;
           max-width: 640px;
           font-size: 14px;
@@ -131,7 +131,7 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
           font-size: 13px;
         }
         .topAction {
-          color: #000;
+          color: var(--qeixova-color-ff-ff-ff);
           background: ${mode === "business" ? "#F5A623" : "#1AEF22"};
           padding: 11px 16px;
           white-space: nowrap;
@@ -143,8 +143,8 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
           margin-bottom: 14px;
         }
         .signalGrid div, .flowCard {
-          border: 1px solid #1b1b1b;
-          background: #0a0a0a;
+          border: 1px solid var(--qeixova-color-e4-e4-e4);
+          background: var(--qeixova-color-f5-f5-f5);
           border-radius: 16px;
         }
         .signalGrid div {
@@ -153,12 +153,12 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
         .signalGrid strong {
           display: block;
           font-size: 24px;
-          color: #f5f5f5;
+          color: var(--qeixova-color-0a-0a-0a);
         }
         .signalGrid span {
           display: block;
           font-size: 11px;
-          color: #888;
+          color: var(--qeixova-color-77-77-77);
           margin-top: 3px;
         }
         .filterRow {
@@ -168,9 +168,9 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
           padding-bottom: 12px;
         }
         .filterRow button {
-          border: 1px solid #2a2a2a;
-          background: #101010;
-          color: #aaa;
+          border: 1px solid var(--qeixova-color-d5-d5-d5);
+          background: var(--qeixova-color-ef-ef-ef);
+          color: var(--qeixova-color-55-55-55);
           border-radius: 999px;
           padding: 9px 14px;
           font-size: 12px;
@@ -219,7 +219,7 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
           margin-bottom: 8px;
         }
         .flowCard p, .flowCard li {
-          color: #aaa;
+          color: var(--qeixova-color-55-55-55);
           font-size: 13px;
           line-height: 1.55;
         }
@@ -231,7 +231,7 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
         }
         .flowCard a {
           margin-top: auto;
-          color: #000;
+          color: var(--qeixova-color-ff-ff-ff);
           background: ${mode === "business" ? "#F5A623" : "#1AEF22"};
           padding: 11px 13px;
           text-align: center;

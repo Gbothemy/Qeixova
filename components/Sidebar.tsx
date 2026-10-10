@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const nav = [
   { href: "/dashboard",   label: "Home",     icon: "/icon-home.svg",        desc: "Dashboard" },
@@ -18,11 +19,11 @@ const nav = [
 export default function Sidebar() {
   const path = usePathname();
   const router = useRouter();
-  const [stats, setStats] = useState({ balance: 0, today_earned: 0, tasks_today: 0, streak: 0, fullName: "", xp: 0, levelName: "Starter", badgeColor: "#cccccc" });
+  const [stats, setStats] = useState({ balance: 0, today_earned: 0, tasks_today: 0, streak: 0, fullName: "", xp: 0, levelName: "Starter", badgeColor: "var(--qeixova-color-33-33-33)" });
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.user) setStats(s => ({ ...s, fullName: d.user.full_name, streak: d.user.streak ?? 0, xp: d.user.xp ?? 0, levelName: d.user.levelName ?? "Starter", badgeColor: d.user.badgeColor ?? "#cccccc" }));
+      if (d?.user) setStats(s => ({ ...s, fullName: d.user.full_name, streak: d.user.streak ?? 0, xp: d.user.xp ?? 0, levelName: d.user.levelName ?? "Starter", badgeColor: d.user.badgeColor ?? "var(--qeixova-color-33-33-33)" }));
     }).catch(() => {});
     fetch("/api/wallet").then(r => r.ok ? r.json() : null).then(d => {
       if (d) setStats(s => ({ ...s, balance: d.balance ?? 0, today_earned: d.stats?.today_earned ?? 0, tasks_today: d.stats?.tasks_today ?? 0 }));
@@ -58,7 +59,6 @@ export default function Sidebar() {
 
       {/* Nav links */}
       <nav style={{ padding: "12px 12px", flex: 1 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: 1.2, textTransform: "uppercase", padding: "8px 12px 4px" }}>Menu</p>
         {nav.map((item) => {
           const active = path === item.href || (item.href === "/tasks/submit" && path.startsWith("/tasks/submit/"));
           return (
@@ -89,10 +89,11 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div style={{ padding: "16px 20px 24px", borderTop: "1px solid #222222" }}>
+      <div style={{ padding: "16px 20px 24px", borderTop: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}><ThemeToggle /></div>
         <div style={{ background: "linear-gradient(135deg, var(--accent-2), var(--accent-2))", borderRadius: 14, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: -15, right: -15, width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
-          <p style={{ fontSize: 13, fontWeight: 700, color: "#000", marginBottom: 3 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "var(--qeixova-color-ff-ff-ff)", marginBottom: 3 }}>
             {stats.streak > 0 ? `${stats.streak}-day streak!` : "Start your streak!"}
           </p>
           <p style={{ fontSize: 11, color: "rgba(0,0,0,0.65)" }}>Keep completing missions daily</p>

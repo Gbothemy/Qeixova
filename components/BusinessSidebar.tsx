@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const nav = [
   { href: "/business/dashboard", label: "Overview", icon: "/icon-home.svg", desc: "Account health" },
@@ -121,6 +122,7 @@ export default function BusinessSidebar({ name }: { name: string }) {
       </nav>
 
       <div className="businessSidebarFoot">
+        <ThemeToggle />
         <div>
           <span>Status</span>
           <strong>Ready to launch</strong>
@@ -148,6 +150,7 @@ export default function BusinessSidebar({ name }: { name: string }) {
               </Link>
             );
           })}
+          <div className="businessMobileTheme"><ThemeToggle /></div>
         </nav>
       )}
     </header>

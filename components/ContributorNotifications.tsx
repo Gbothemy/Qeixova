@@ -101,7 +101,7 @@ export default function ContributorNotifications() {
               className="notifViewAll"
               href="/notifications"
               onClick={() => setOpen(false)}
-              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#050505", background: "#1AEF22", borderRadius: 999, padding: "7px 11px", fontSize: 12, fontWeight: 800, lineHeight: 1, textDecoration: "none", whiteSpace: "nowrap" }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--qeixova-color-fa-fa-fa)", background: "#1AEF22", borderRadius: 999, padding: "7px 11px", fontSize: 12, fontWeight: 800, lineHeight: 1, textDecoration: "none", whiteSpace: "nowrap" }}
             >
               View all
             </Link>
@@ -192,7 +192,7 @@ export default function ContributorNotifications() {
           align-items: center;
           justify-content: center;
           background: var(--accent-2);
-          color: var(--button-text, #000);
+          color: var(--button-text, var(--qeixova-color-ff-ff-ff));
           font-size: 10px;
           font-weight: 900;
           border: 2px solid var(--card-bg);
@@ -202,7 +202,7 @@ export default function ContributorNotifications() {
           right: 0;
           top: calc(100% + 12px);
           width: min(390px, calc(100vw - 28px));
-          background: #111411;
+          background: var(--qeixova-color-ee-eb-ee);
           border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: 20px;
           box-shadow: 0 26px 80px rgba(0, 0, 0, 0.45);
@@ -220,12 +220,12 @@ export default function ContributorNotifications() {
         }
         .notifHead strong {
           display: block;
-          color: #f7f7f7;
+          color: var(--qeixova-color-08-08-08);
           font-size: 15px;
         }
         .notifHead span {
           display: block;
-          color: #a5aaa5;
+          color: var(--qeixova-color-5a-55-5a);
           font-size: 12px;
           margin-top: 3px;
         }
@@ -233,7 +233,7 @@ export default function ContributorNotifications() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          color: #050505;
+          color: var(--qeixova-color-fa-fa-fa);
           background: #1AEF22 !important;
           font-size: 12px;
           font-weight: 800;
@@ -262,7 +262,7 @@ export default function ContributorNotifications() {
           gap: 12px;
           border-radius: 15px;
           padding: 13px 12px;
-          color: #f5f5f5;
+          color: var(--qeixova-color-0a-0a-0a);
           text-decoration: none;
           cursor: pointer;
           appearance: none;
@@ -291,20 +291,20 @@ export default function ContributorNotifications() {
           align-items: flex-start;
         }
         .notifTitleRow strong {
-          color: #f5f5f5;
+          color: var(--qeixova-color-0a-0a-0a);
           font-size: 13px;
           line-height: 1.25;
           min-width: 0;
           overflow-wrap: anywhere;
         }
         .notifTitleRow small {
-          color: #8b928c;
+          color: var(--qeixova-color-74-6d-73);
           font-size: 10px;
           white-space: nowrap;
           padding-top: 1px;
         }
         .notifItem p {
-          color: #c7ccc8;
+          color: var(--qeixova-color-38-33-37);
           font-size: 12px;
           line-height: 1.45;
           margin: 4px 0 8px;
@@ -336,7 +336,7 @@ export default function ContributorNotifications() {
         }
         .notifStatus.read {
           background: rgba(255,255,255,0.08);
-          color: #a5aaa5;
+          color: var(--qeixova-color-5a-55-5a);
         }
         .notifOpen {
           color: #f5a623;
@@ -344,7 +344,7 @@ export default function ContributorNotifications() {
           font-weight: 800;
         }
         .notifEmpty {
-          color: #a5aaa5;
+          color: var(--qeixova-color-5a-55-5a);
           padding: 28px 12px;
           text-align: center;
           font-size: 13px;
@@ -353,7 +353,7 @@ export default function ContributorNotifications() {
         :global(a.notifItem:visited),
         :global(a.notifItem:hover),
         :global(a.notifItem:focus) {
-          color: #f5f5f5 !important;
+          color: var(--qeixova-color-0a-0a-0a) !important;
           text-decoration: none !important;
         }
         :global(a.notifItem p),
@@ -366,7 +366,7 @@ export default function ContributorNotifications() {
         :global(.notifViewAll:visited),
         :global(.notifViewAll:hover),
         :global(.notifViewAll:focus) {
-          color: #050505 !important;
+          color: var(--qeixova-color-fa-fa-fa) !important;
           text-decoration: none !important;
         }
         @media (max-width: 520px) {

@@ -205,10 +205,10 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
               <nav aria-label="Profile sections">
-                <a href="#business-info">Business information</a>
+                <a href="#bbbusiness-info">Business information</a>
                 <a href="#location">Location</a>
                 <a href="#preferences">Campaign preferences</a>
-                <a href="#alerts">Alerts</a>
+                <a href="#aaalerts">Alerts</a>
               </nav>
               <dl>
                 <div><dt>Balance</dt><dd>{Number(business.balance ?? 0).toLocaleString()} QLT</dd></div>
@@ -315,8 +315,8 @@ function MultiSelect({ label, options, selected, onToggle }: { label: string; op
 
 const styles = `
   :global(body) {
-    background: #070808;
-    color: #f7f7f7;
+    background: var(--qeixova-color-f8-f7-f7);
+    color: var(--qeixova-color-08-08-08);
   }
 
   .profileShell {
@@ -324,7 +324,7 @@ const styles = `
     padding: 24px 24px 112px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 280px),
-      #070808;
+      var(--qeixova-color-f8-f7-f7);
   }
 
   .profileMain {
@@ -337,9 +337,9 @@ const styles = `
   .settingsHeader,
   .settingsRail,
   .settingsPanel {
-    border: 1px solid #232826;
+    border: 1px solid var(--qeixova-color-dc-d7-d9);
     border-radius: 10px;
-    background: #0d100f;
+    background: var(--qeixova-color-f2-ef-f0);
   }
 
   .settingsHeader {
@@ -356,7 +356,7 @@ const styles = `
   .selectField small,
   .settingsRail span,
   .settingsRail dt {
-    color: #9ca3a0;
+    color: var(--qeixova-color-63-5c-5f);
   }
 
   .settingsHeader p {
@@ -370,13 +370,13 @@ const styles = `
 
   .settingsHeader h1 {
     margin: 0 0 6px;
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
     font-size: clamp(25px, 4vw, 36px);
     letter-spacing: 0;
   }
 
   .settingsHeader span {
-    color: #c8ccc9;
+    color: var(--qeixova-color-37-33-36);
   }
 
   .profileCompletion {
@@ -386,7 +386,7 @@ const styles = `
   }
 
   .profileCompletion span {
-    color: #9ca3a0;
+    color: var(--qeixova-color-63-5c-5f);
     font-size: 12px;
     font-weight: 850;
   }
@@ -400,7 +400,7 @@ const styles = `
     height: 8px;
     overflow: hidden;
     border-radius: 999px;
-    background: #222725;
+    background: var(--qeixova-color-dd-d8-da);
   }
 
   .profileCompletion b {
@@ -440,7 +440,7 @@ const styles = `
     flex: 0 0 auto;
     border-radius: 10px;
     background: #f5a623;
-    color: #050505;
+    color: var(--qeixova-color-fa-fa-fa);
     font-size: 22px;
     font-weight: 950;
   }
@@ -452,7 +452,7 @@ const styles = `
   }
 
   .railIdentity strong {
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
     overflow-wrap: anywhere;
   }
 
@@ -464,14 +464,14 @@ const styles = `
   .settingsRail nav {
     display: grid;
     gap: 6px;
-    border-top: 1px solid #202423;
+    border-top: 1px solid var(--qeixova-color-df-db-dc);
     padding-top: 14px;
   }
 
   .settingsRail nav a {
     border: 1px solid transparent;
     border-radius: 8px;
-    color: #d6dad7;
+    color: var(--qeixova-color-29-25-28);
     padding: 10px 11px;
     text-decoration: none;
     font-size: 13px;
@@ -481,14 +481,14 @@ const styles = `
   .settingsRail nav a:hover {
     border-color: rgba(245, 166, 35, .28);
     background: rgba(245, 166, 35, .08);
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
   }
 
   .settingsRail dl {
     display: grid;
     gap: 10px;
     margin: 0;
-    border-top: 1px solid #202423;
+    border-top: 1px solid var(--qeixova-color-df-db-dc);
     padding-top: 14px;
   }
 
@@ -505,7 +505,7 @@ const styles = `
 
   .settingsRail dd {
     margin: 0;
-    color: #f5f5f5;
+    color: var(--qeixova-color-0a-0a-0a);
     overflow-wrap: anywhere;
   }
 
@@ -514,7 +514,7 @@ const styles = `
     border: 0;
     border-radius: 8px;
     background: #f5a623;
-    color: #050505;
+    color: var(--qeixova-color-fa-fa-fa);
     font-weight: 950;
     cursor: pointer;
   }
@@ -538,7 +538,7 @@ const styles = `
 
   .panelHeader h2 {
     margin: 0;
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
     font-size: 17px;
     letter-spacing: 0;
   }
@@ -581,10 +581,10 @@ const styles = `
   .formField input,
   .formField textarea {
     width: 100%;
-    border: 1px solid #252a28;
+    border: 1px solid var(--qeixova-color-da-d5-d7);
     border-radius: 8px;
-    background: #080a09;
-    color: #f7f7f7;
+    background: var(--qeixova-color-f7-f5-f6);
+    color: var(--qeixova-color-08-08-08);
     padding: 12px;
     font: inherit;
     outline: 0;
@@ -603,9 +603,9 @@ const styles = `
   }
 
   .selectField {
-    border: 1px solid #252a28;
+    border: 1px solid var(--qeixova-color-da-d5-d7);
     border-radius: 8px;
-    background: #080a09;
+    background: var(--qeixova-color-f7-f5-f6);
   }
 
   .selectField[open] {
@@ -634,7 +634,7 @@ const styles = `
   }
 
   .selectField strong {
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
     font-size: 12px;
     font-weight: 950;
     text-transform: uppercase;
@@ -662,7 +662,7 @@ const styles = `
     gap: 6px;
     max-height: 250px;
     overflow-y: auto;
-    border-top: 1px solid #202423;
+    border-top: 1px solid var(--qeixova-color-df-db-dc);
     padding: 10px;
   }
 
@@ -670,10 +670,10 @@ const styles = `
     display: flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid #202423;
+    border: 1px solid var(--qeixova-color-df-db-dc);
     border-radius: 7px;
-    background: #0d100f;
-    color: #d8d8d8;
+    background: var(--qeixova-color-f2-ef-f0);
+    color: var(--qeixova-color-27-27-27);
     padding: 9px 10px;
     font-size: 13px;
     font-weight: 850;
@@ -682,7 +682,7 @@ const styles = `
   .selectField label.checked {
     border-color: rgba(245, 166, 35, .5);
     background: rgba(245, 166, 35, .1);
-    color: #fff;
+    color: var(--qeixova-color-00-00-00);
   }
 
   .selectField input {
@@ -732,7 +732,7 @@ const styles = `
   .saveButton {
     border: 0;
     background: #f5a623;
-    color: #050505;
+    color: var(--qeixova-color-fa-fa-fa);
   }
 
   .saveButton:disabled {

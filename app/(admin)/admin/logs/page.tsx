@@ -20,8 +20,8 @@ const EVENT_COLORS: Record<string, string> = {
   fraud_flagged:       "#c62828",
 };
 
-const TH: React.CSSProperties = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" };
-const TD: React.CSSProperties = { padding: "10px 14px", fontSize: 12, color: "#374151", borderBottom: "1px solid #eef0f3", verticalAlign: "top" };
+const TH: React.CSSProperties = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: "1px solid var(--qeixova-color-e5-e7-eb)", whiteSpace: "nowrap" };
+const TD: React.CSSProperties = { padding: "10px 14px", fontSize: 12, color: "#374151", borderBottom: "1px solid var(--qeixova-color-ee-f0-f3)", verticalAlign: "top" };
 
 const EVENT_TYPES = ["", "mission_submitted", "mission_approved", "mission_rejected", "wallet_credited", "level_up", "rate_limit_hit", "fraud_flagged", "referral_bonus", "milestone_awarded"];
 
@@ -58,7 +58,7 @@ export default function AuditLogsPage() {
   return (
     <div className="adminPage">
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "#1A1A1A" }}>Audit Logs</h1>
+        <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "var(--qeixova-color-1a-1a-1a)" }}>Audit Logs</h1>
         <p style={{ margin: 0, color: "#5f6876", fontSize: 13 }}>{total.toLocaleString()} events logged</p>
       </div>
 
@@ -67,16 +67,16 @@ export default function AuditLogsPage() {
       <div className="adminFilterBar" style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {EVENT_TYPES.map(e => (
           <button key={e} onClick={() => { setEventFilter(e); setPage(1); }}
-            style={{ padding: "6px 12px", borderRadius: 20, border: "1.5px solid", borderColor: eventFilter === e ? "#1AEF22" : "#d8dde5", background: eventFilter === e ? "#1AEF22" : "#fff", color: eventFilter === e ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
+            style={{ padding: "6px 12px", borderRadius: 20, border: "1.5px solid", borderColor: eventFilter === e ? "#1AEF22" : "#d8dde5", background: eventFilter === e ? "#1AEF22" : "var(--qeixova-color-ff-ff-ff)", color: eventFilter === e ? "#041006" : "#4b5563", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
             {e === "" ? "All Events" : e.replace(/_/g, " ")}
           </button>
         ))}
       </div>
 
-      <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
+      <div className="admin-table-wrap" style={{ background: "var(--qeixova-color-ff-ff-ff)", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
           <thead>
-            <tr style={{ background: "#fafafa" }}>
+            <tr style={{ background: "var(--qeixova-color-fa-fa-fa)" }}>
               <th style={TH}>Time</th>
               <th style={TH}>Event</th>
               <th style={TH}>User</th>
@@ -120,9 +120,9 @@ export default function AuditLogsPage() {
 
       {totalPages > 1 && (
         <div style={{ display: "flex", gap: 8, marginTop: 16, alignItems: "center" }}>
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer", background: "#fff" }}>← Prev</button>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid var(--qeixova-color-dd-dd-dd)", cursor: "pointer", background: "var(--qeixova-color-ff-ff-ff)" }}>← Prev</button>
           <span style={{ fontSize: 13, color: "#5f6876" }}>Page {page} of {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer", background: "#fff" }}>Next →</button>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid var(--qeixova-color-dd-dd-dd)", cursor: "pointer", background: "var(--qeixova-color-ff-ff-ff)" }}>Next →</button>
         </div>
       )}
     </div>
