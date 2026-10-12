@@ -224,7 +224,7 @@ export default function Home() {
         ) : (
           <div style={{ minHeight: 154, background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 16, padding: "28px 24px", textAlign: "center", border: "1px solid var(--qeixova-color-dd-dd-dd)", display: "grid", placeItems: "center" }}>
             <div>
-              <Image src="/icon-target.svg" width={38} height={38} alt="" style={{ opacity: 0.42, marginBottom: 10 }} />
+              <Image src="/icon-target.svg" width={38} height={38} alt="" className="contributor-icon-contrast" style={{ opacity: 0.42, marginBottom: 10 }} />
               <p style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 14, fontWeight: 800, marginBottom: 7 }}>No matched missions right now</p>
               <p style={{ color: "var(--qeixova-color-55-55-55)", fontSize: 12, lineHeight: 1.5 }}>New business campaigns will appear here when they match your selected interests and state.</p>
             </div>
@@ -258,7 +258,7 @@ export default function Home() {
           </div>
         ) : (
           <div style={{ background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 16, padding: "32px", textAlign: "center", border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
-            <img src="/icon-analytics.svg" width={36} height={36} style={{ opacity:0.3, filter:"invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)", marginBottom:8 }} alt="" />
+            <img src="/icon-analytics.svg" width={36} height={36} className="contributor-icon-contrast" style={{ opacity:0.3, filter:"invert(58%) sepia(98%) saturate(400%) hue-rotate(83deg) brightness(110%)", marginBottom:8 }} alt="" />
             <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 14 }}>No activity yet — complete your first mission!</p>
           </div>
         )}

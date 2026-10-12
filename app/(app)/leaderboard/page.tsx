@@ -73,7 +73,7 @@ export default function LeaderboardPage() {
       <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
         {list.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 24px", background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 16, border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
-            <img src="/icon-trophy.svg" width={48} height={48} style={{ opacity:0.3, marginBottom:12, filter:"invert(72%) sepia(60%) saturate(500%) hue-rotate(5deg)" }} alt="" />
+            <img src="/icon-trophy.svg" width={48} height={48} className="contributor-icon-contrast" style={{ opacity:0.3, marginBottom:12, filter:"invert(72%) sepia(60%) saturate(500%) hue-rotate(5deg)" }} alt="" />
             <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 14 }}>No data yet. Complete missions to appear here!</p>
           </div>
         ) : list.map((u, i) => (
@@ -114,4 +114,3 @@ export default function LeaderboardPage() {
     </div>
   );
 }
-

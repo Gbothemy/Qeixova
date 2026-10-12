@@ -352,7 +352,7 @@ export default function ProfilePage() {
           {stats.map((s, i) => (
             <div key={i} style={{ textAlign: "center", padding: "12px 8px", borderRight: i % 2 === 0 ? "1px solid var(--qeixova-color-dd-dd-dd)" : "none", borderBottom: i < stats.length - 2 ? "1px solid var(--qeixova-color-dd-dd-dd)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
-                <Image src={s.icon} alt={s.label} width={20} height={20} style={{ objectFit: "contain", opacity: 0.7 }} />
+                <Image src={s.icon} alt={s.label} width={20} height={20} className="contributor-icon-contrast contributor-icon-monochrome" style={{ objectFit: "contain", opacity: 0.7 }} />
               </div>
               <p style={{ fontWeight: 800, fontSize: 15, color: "#1AEF22" }}>{s.value}</p>
               <p style={{ fontSize: 10, color: "var(--qeixova-color-44-44-44)", marginTop: 2 }}>{s.label}</p>
@@ -434,7 +434,7 @@ export default function ProfilePage() {
           {menuItems.map((item, i) => (
             <div key={i} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px", borderBottom: i < menuItems.length - 1 ? "1px solid var(--qeixova-color-e5-e5-e5)" : "none", cursor: "pointer" }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(26,239,34,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Image src={item.icon} alt={item.label} width={22} height={22} style={{ objectFit: "contain" }} />
+                <Image src={item.icon} alt={item.label} width={22} height={22} className="contributor-icon-monochrome" style={{ objectFit: "contain" }} />
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)" }}>{item.label}</p>

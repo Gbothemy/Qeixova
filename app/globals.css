@@ -245,6 +245,14 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
   filter: brightness(0) !important;
 }
 
+[data-theme="light"] .contributor-icon-contrast {
+  opacity: 1 !important;
+}
+
+[data-theme="light"] .contributor-icon-monochrome {
+  filter: brightness(0) saturate(100%);
+}
+
 input, select, button, textarea {
   font-family: inherit;
 }
