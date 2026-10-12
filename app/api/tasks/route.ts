@@ -259,10 +259,7 @@ export async function GET() {
       }
 
       const matchScore = totalCriteria === 0 ? 100 : Math.round((matchedCriteria / totalCriteria) * 100);
-      const blockedByLocation = stateTargets.length > 0 && !stateMatched;
-      const blockedByCountry = countryTargets.length > 0 && !countryMatched;
       const blockedByInterests = targetInterests.length > 0 && !interestsMatched;
-      const blockedByProfileMismatch = criteria.some(({ targets, userVal }) => targets.length > 0 && !singleValueMatches(targets, userVal));
       // A contributor who already participated must retain access to their one
       // allowed retry even if their profile was later edited or incomplete.
       const eligibleRetry = task.retry_allowed === true;
@@ -270,7 +267,10 @@ export async function GET() {
         ? false
         : eligibleRetry
           ? false
-          : blockedByCountry || blockedByLocation || blockedByInterests || blockedByProfileMismatch;
+          // Mission discovery is based on interests. Profession, age, gender,
+          // and location targets must not hide an otherwise interest-matched
+          // mission from contributors.
+          : blockedByInterests;
 
       const matchReasons = [
         ...(countryTargets.length > 0 && countryMatched ? ["country"] : []),

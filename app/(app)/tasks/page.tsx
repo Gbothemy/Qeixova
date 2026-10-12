@@ -198,7 +198,7 @@ export default function TasksPage() {
             <div>
               <p style={{ color: "#F5A623", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>Matched mission board</p>
               <h1 style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 28, lineHeight: 1.1, fontWeight: 950, letterSpacing: 0, margin: 0 }}>Missions matching your profile</h1>
-              <p style={{ color: "var(--qeixova-color-55-55-55)", fontSize: 13, marginTop: 8, lineHeight: 1.6, maxWidth: 560 }}>Only campaigns aligned with your selected interests and state are shown here.</p>
+              <p style={{ color: "var(--qeixova-color-55-55-55)", fontSize: 13, marginTop: 8, lineHeight: 1.6, maxWidth: 560 }}>Campaigns with matching interests appear here, regardless of profession or location.</p>
             </div>
             {meta && (
               <div style={{ minWidth: 190, border: "1px solid var(--qeixova-color-db-d7-d9)", borderRadius: 14, background: "var(--qeixova-color-f2-f0-f1)", padding: 12 }}>
@@ -300,7 +300,7 @@ export default function TasksPage() {
             <div style={{ width: "min(100%, 430px)", margin: "0 auto" }}>
               <p style={{ fontSize: 44, marginBottom: 14 }}>🎯</p>
               <p style={{ fontWeight: 900, fontSize: 18, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 10, lineHeight: 1.3 }}>No matched missions are live yet</p>
-              <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 14, lineHeight: 1.65, margin: "0 auto" }}>When an approved campaign matches your selected interests and state, it will appear here.</p>
+              <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 14, lineHeight: 1.65, margin: "0 auto" }}>When an approved campaign matches one of your selected interests, it will appear here.</p>
             </div>
           </div>
         ) : filtered.length === 0 ? (
