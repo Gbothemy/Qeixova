@@ -312,8 +312,18 @@ const styles = `
 
   .loginForm input:focus {
     border-color: rgba(26, 239, 34, .78);
-    background: var(--qeixova-color-0a-07-00);
+    background: var(--theme-input);
+    color: var(--theme-text);
     box-shadow: 0 0 0 4px rgba(26, 239, 34, .12);
+  }
+
+  .loginForm input:-webkit-autofill,
+  .loginForm input:-webkit-autofill:hover,
+  .loginForm input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--theme-text);
+    caret-color: var(--theme-text);
+    box-shadow: 0 0 0 1000px var(--theme-input) inset;
+    transition: background-color 9999s ease-out;
   }
 
   .loginForm input::placeholder {
