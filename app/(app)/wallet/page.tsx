@@ -5,6 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import ContributorLoading from "@/components/ContributorLoading";
 import { useAuth } from "@/lib/useAuth";
 import { WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
+import { formatNairaFromQlt } from "@/lib/currency";
 
 interface Tx { type: string; label: string; amount: number; status: string; created_at: string; }
 
@@ -94,13 +95,13 @@ export default function WalletPage() {
           <p style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 38, fontWeight: 800, letterSpacing: -2, lineHeight: 1 }}>{balance.toLocaleString()}</p>
           <span style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 14 }}>QLT</span>
         </div>
-        <p style={{ color: "var(--qeixova-color-33-33-33)", fontSize: 14, fontWeight: 600, marginTop: 6 }}>≈ ₦{(balance / 100).toLocaleString()} cash value</p>
+        <p style={{ color: "var(--qeixova-color-33-33-33)", fontSize: 14, fontWeight: 600, marginTop: 6 }}>≈ ₦{formatNairaFromQlt(balance)} cash value</p>
         <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
           <span style={{ color: "#1AEF22", fontSize: 12, fontWeight: 700 }}>{missionEarnedQlt.toLocaleString()} mission QLT</span>
           <span style={{ color: "#F5A623", fontSize: 12, fontWeight: 700 }}>{bonusEarnedQlt.toLocaleString()} bonus QLT</span>
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-          {[{ label: "Min. Withdrawal", value: "100,000 QLT" }, { label: "Rate", value: "100 QLT = ₦1" }, { label: "Fee", value: "Free" }].map(item => (
+          {[{ label: "Min. Withdrawal", value: "100,000 QLT" }, { label: "Rate", value: "10 QLT = ₦1" }, { label: "Fee", value: "Free" }].map(item => (
             <div key={item.label} style={{ flex: 1, background: "var(--qeixova-color-ee-ee-ee)", border: "1px solid var(--qeixova-color-dd-dd-dd)", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
               <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 10, marginBottom: 3 }}>{item.label}</p>
               <p style={{ color: "var(--qeixova-color-0a-0a-0a)", fontWeight: 700, fontSize: 13 }}>{item.value}</p>
@@ -187,7 +188,7 @@ export default function WalletPage() {
                     <span style={{ fontSize: 14 }}>⭐</span>
                     <span style={{ fontSize: 13, color: "#1AEF22", fontWeight: 600 }}>{Number(amount).toLocaleString()} QLT</span>
                     <span style={{ color: "var(--qeixova-color-55-55-55)" }}>→</span>
-                    <span style={{ fontSize: 13, color: "#1AEF22", fontWeight: 700 }}>₦{(Number(amount) / 100).toLocaleString()}</span>
+                    <span style={{ fontSize: 13, color: "#1AEF22", fontWeight: 700 }}>₦{formatNairaFromQlt(Number(amount))}</span>
                   </div>
                 )}
               </div>
