@@ -116,7 +116,7 @@ export default function Sidebar() {
               title="Log out"
               style={{ background: "rgba(229,62,62,0.1)", border: "1px solid rgba(229,62,62,0.2)", borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
             >
-              <Image src="/icon-password.svg" alt="Logout" width={14} height={14} className="theme-icon" style={{ opacity: 0.6 }} />
+              <Image src="/icon-password.svg" alt="Logout" width={14} height={14} className="theme-icon" />
             </button>
           </div>
         </div>

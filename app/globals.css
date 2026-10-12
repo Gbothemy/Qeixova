@@ -233,9 +233,12 @@ html, body, .sidebar, .page-body, .main-content, .bottom-nav, .app-shell, .busin
   transition: filter 160ms ease, opacity 160ms ease;
 }
 [data-theme="light"] .theme-icon {
-  filter: invert(40%) brightness(60%);
+  filter: brightness(0) saturate(100%);
 }
 [data-theme="dark"] .theme-icon {
+  filter: none;
+}
+[data-theme="light"] img.theme-icon[src="/qeixova-icon.png"] {
   filter: none;
 }
 .theme-icon.active {
@@ -490,7 +493,12 @@ input[type="number"] {
   width: clamp(18px, 5.5vw, 21px);
   height: clamp(18px, 5.5vw, 21px);
   object-fit: contain;
-  filter: invert(40%) brightness(60%);
+  filter: brightness(0) saturate(100%);
+}
+
+[data-theme="dark"] .businessMobileNav img,
+[data-theme="dark"] .businessMobileNavAction img {
+  filter: none;
 }
 
 .businessMobileNav a.active img {
@@ -675,7 +683,8 @@ input[type="number"] {
     background: var(--qeixova-color-e8-e7-ea);
   }
 
-  .businessMobileMenuIcon img { width: 19px; height: 19px; object-fit: contain; filter: invert(70%); }
+  .businessMobileMenuIcon img { width: 19px; height: 19px; object-fit: contain; filter: brightness(0) saturate(100%); }
+  [data-theme="dark"] .businessMobileMenuIcon img { filter: none; }
   .businessMobileMenuPanel > a.active .businessMobileMenuIcon { background: #f5a623; }
   .businessMobileMenuPanel > a.active .businessMobileMenuIcon img { filter: brightness(0); }
 
@@ -2050,7 +2059,8 @@ input[type="number"] {
   }
 
   .businessAdsNav a.active .navIcon { background: #F5A623; }
-  .businessAdsNav img { filter: invert(40%) brightness(60%); }
+  .businessAdsNav img { filter: brightness(0) saturate(100%); }
+  [data-theme="dark"] .businessAdsNav img { filter: none; }
   .businessAdsNav a.active img { filter: brightness(0); }
 
   .businessAdsNav strong,
