@@ -178,7 +178,7 @@ export default function LandingPage() {
           <Link href="/register" className="btn-amber-glow" style={{ background: "linear-gradient(135deg, #F5A623, #d89420)", color: "var(--qeixova-color-ff-ff-ff)", textDecoration: "none", padding: "16px 36px", borderRadius: 14, fontWeight: 800, fontSize: 16, boxShadow: "0 8px 28px rgba(245,166,35,0.4)", transition: "all 0.2s ease" }}>
             Start a Campaign
           </Link>
-          <Link href="/register" className="btn-glow" style={{ background: "var(--qeixova-color-ee-ee-ee)", border: "1.5px solid var(--qeixova-color-dd-dd-dd)", color: "var(--qeixova-color-0a-0a-0a)", textDecoration: "none", padding: "16px 32px", borderRadius: 14, fontWeight: 600, fontSize: 15, transition: "all 0.2s ease" }}>
+          <Link href="/register" className="btn-glow growth-partner-cta" style={{ textDecoration: "none", padding: "16px 32px", borderRadius: 14, fontWeight: 600, fontSize: 15, transition: "all 0.2s ease" }}>
             Become a Growth Partner
           </Link>
         </div>
@@ -436,7 +436,7 @@ export default function LandingPage() {
             {campaignTypes.map((c, i) => (
               <div key={c.title} className={`reveal card-hover delay-${i + 1}`} style={{ background: "var(--qeixova-color-f5-f5-f5)", borderRadius: 16, padding: "22px 18px", border: "1px solid var(--qeixova-color-e5-e5-e5)" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(26,239,34,0.06)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-                  <Image src={c.icon} alt={c.title} width={24} height={24} style={{ objectFit: "contain" }} />
+                  <Image src={c.icon} alt={c.title} width={24} height={24} className="theme-icon" style={{ objectFit: "contain" }} />
                 </div>
                 <h3 style={{ fontWeight: 700, fontSize: 14, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 6 }}>{c.title}</h3>
                 <p style={{ fontSize: 12, color: "var(--qeixova-color-44-44-44)", lineHeight: 1.6 }}>{c.desc}</p>
@@ -499,7 +499,7 @@ export default function LandingPage() {
           <Link href="/register" style={{ background: "linear-gradient(135deg, #F5A623, #d89420)", color: "var(--qeixova-color-ff-ff-ff)", textDecoration: "none", padding: "16px 36px", borderRadius: 14, fontWeight: 800, fontSize: 16, boxShadow: "0 8px 28px rgba(245,166,35,0.4)", display: "inline-block" }}>
             Create Campaign
           </Link>
-          <Link href="/register" style={{ background: "var(--qeixova-color-ee-ee-ee)", border: "1.5px solid var(--qeixova-color-dd-dd-dd)", color: "var(--qeixova-color-0a-0a-0a)", textDecoration: "none", padding: "16px 28px", borderRadius: 14, fontWeight: 600, fontSize: 15, display: "inline-block" }}>
+          <Link href="/register" className="growth-partner-cta" style={{ textDecoration: "none", padding: "16px 28px", borderRadius: 14, fontWeight: 600, fontSize: 15, display: "inline-block" }}>
             Become a Growth Partner
           </Link>
         </div>
