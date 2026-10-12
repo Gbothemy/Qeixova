@@ -162,13 +162,26 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    await ensureAwarenessMission();
-    await expireElapsedMissions();
 
     const body = await req.json().catch(() => ({}));
     const { taskId } = body;
     const proofValue = typeof body.proofValue === "string" ? body.proofValue : "";
     if (!taskId) return NextResponse.json({ error: "taskId required" }, { status: 400 });
+
+    // A previous request may have saved successfully even if its response was
+    // lost. Recognize that retry before active-task and rate-limit checks.
+    const attemptState = await getMissionAttemptState(session.userId, Number(taskId));
+    if (attemptState.status === "pending") {
+      return NextResponse.json({
+        ok: true,
+        pending: true,
+        alreadySubmitted: true,
+        message: "Your submission is already received and awaiting review.",
+      });
+    }
+
+    await ensureAwarenessMission();
+    await expireElapsedMissions();
 
     // ── Anti-fraud: rate limit ────────────────────────────────────────────
     const { allowed: rateOk, remaining } = await checkRateLimit(session.userId);
@@ -205,7 +218,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const attemptState = await getMissionAttemptState(session.userId, Number(taskId));
     if (!attemptState.canSubmit) {
       const message = attemptState.status === "rejected"
         ? "You have used both attempts for this mission."
@@ -290,6 +302,8 @@ export async function POST(req: NextRequest) {
     const qltProgressReward = Number(task.xp_reward ?? QLT_PROGRESS_REWARDS[missionType] ?? 0);
 
     // ── Insert completion (DB UNIQUE constraint is final guard) ───────────
+    let completionId: number;
+    let attemptNumber: number;
     try {
       const completionRows = attemptState.isRetry
         ? await sql`
@@ -310,24 +324,43 @@ export async function POST(req: NextRequest) {
       if (completionRows.length === 0) {
         return NextResponse.json({ error: "This mission can no longer be resubmitted." }, { status: 409 });
       }
-      const attemptNumber = Number(completionRows[0].attempt_count ?? 1);
-      await createContributorNotification({
-        userId: session.userId,
-        type: "submission_received",
-        title: "Submission received",
-        message: `Your proof for ${task.title} is now pending review.`,
-        href: "/tasks",
-        dedupeKey: `submission:${completionRows[0].id}:attempt:${attemptNumber}:received`,
-        metadata: { taskId: Number(taskId), completionId: Number(completionRows[0].id), attemptNumber },
-      });
-      await syncCampaignSubmissionFromCompletion({
-        taskId: Number(taskId),
-        completionId: Number(completionRows[0].id),
-        contributorId: session.userId,
-        proofValue: storedProof,
-        rewardAmount: selectedReward,
-      });
-      if (task.business_id) {
+      completionId = Number(completionRows[0].id);
+      attemptNumber = Number(completionRows[0].attempt_count ?? 1);
+    } catch (err: unknown) {
+      // Catch DB unique violation
+      if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "23505") {
+        return NextResponse.json({ error: "You have already completed this mission." }, { status: 409 });
+      }
+      throw err;
+    }
+
+    const runFollowUp = async (name: string, action: () => Promise<unknown>) => {
+      try {
+        return await action();
+      } catch (err) {
+        console.error(`Mission submission saved, but ${name} failed:`, err);
+        return undefined;
+      }
+    };
+
+    await runFollowUp("contributor notification", () => createContributorNotification({
+      userId: session.userId,
+      type: "submission_received",
+      title: "Submission received",
+      message: `Your proof for ${task.title} is now pending review.`,
+      href: "/tasks",
+      dedupeKey: `submission:${completionId}:attempt:${attemptNumber}:received`,
+      metadata: { taskId: Number(taskId), completionId, attemptNumber },
+    }));
+    await runFollowUp("campaign sync", () => syncCampaignSubmissionFromCompletion({
+      taskId: Number(taskId),
+      completionId,
+      contributorId: session.userId,
+      proofValue: storedProof,
+      rewardAmount: selectedReward,
+    }));
+    if (task.business_id) {
+      await runFollowUp("business notification", async () => {
         const userRows = await sql`SELECT full_name FROM users WHERE id = ${session.userId}`;
         await createBusinessNotification({
           businessId: Number(task.business_id),
@@ -337,34 +370,32 @@ export async function POST(req: NextRequest) {
           body: `${userRows[0]?.full_name || "A growth partner"} submitted proof for ${task.title}.`,
           status: "Needs review",
           href: `/business/tasks/${taskId}`,
-          metadata: { taskId: Number(taskId), completionId: Number(completionRows[0].id), contributorId: session.userId, attemptNumber },
+          metadata: { taskId: Number(taskId), completionId, contributorId: session.userId, attemptNumber },
         });
-      }
-    } catch (err: unknown) {
-      // Catch DB unique violation
-      if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "23505") {
-        return NextResponse.json({ error: "You have already completed this mission." }, { status: 409 });
-      }
-      throw err;
+      });
     }
-
     // ── Increment rate limit counter ──────────────────────────────────────
-    await incrementRateLimit(session.userId);
+    await runFollowUp("submission rate counter", () => incrementRateLimit(session.userId));
 
     // ── Budget tracking ───────────────────────────────────────────────────
     if (budget > 0) {
-      await sql`UPDATE tasks SET budget_used = LEAST(total_budget, budget_used + ${selectedReward}) WHERE id = ${taskId}`;
-      await sql`UPDATE tasks SET is_active = FALSE WHERE id = ${taskId} AND total_budget > 0 AND budget_used >= total_budget`;
+      await runFollowUp("mission budget counter", async () => {
+        await sql`UPDATE tasks SET budget_used = LEAST(total_budget, budget_used + ${selectedReward}) WHERE id = ${taskId}`;
+        await sql`UPDATE tasks SET is_active = FALSE WHERE id = ${taskId} AND total_budget > 0 AND budget_used >= total_budget`;
+      });
     }
 
     // ── Streak update ─────────────────────────────────────────────────────
-    const { newStreak } = await updateStreak(session.userId);
+    const streak = await runFollowUp("streak update", () => updateStreak(session.userId));
+    const newStreak = streak && typeof streak === "object" && "newStreak" in streak
+      ? Number(streak.newStreak)
+      : 0;
 
     // ── Audit log ─────────────────────────────────────────────────────────
-    await log(session.userId, "mission_submitted", {
+    await runFollowUp("audit log", () => log(session.userId, "mission_submitted", {
       taskId, missionType, qltProgressReward, reward: selectedReward, selectedPlatforms: selectedPlatformOptions, newStreak,
-      attemptNumber: attemptState.attemptCount + 1,
-    }, "task", taskId);
+      attemptNumber,
+    }, "task", taskId));
 
     return NextResponse.json({
       ok: true,
@@ -375,7 +406,7 @@ export async function POST(req: NextRequest) {
       missionType,
       newStreak,
       message: "Submission received. Your QLT will be credited after review.",
-      attemptNumber: attemptState.attemptCount + 1,
+      attemptNumber,
       attemptsRemaining: Math.max(0, 1 - attemptState.attemptCount),
     });
 
