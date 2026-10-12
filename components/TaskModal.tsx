@@ -5,7 +5,53 @@ import Link from "next/link";
 import type { CampaignMetadata } from "./TaskCard";
 import { getBusinessPlatformRewardQlt } from "@/lib/campaignPlatformPricing";
 
-const MAX_PROOF_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_PROOF_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_PROOF_UPLOAD_BYTES = 2.4 * 1024 * 1024;
+
+function canvasBlob(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+}
+
+function blobDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the screenshot."));
+    reader.onerror = () => reject(new Error("Could not read the screenshot."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function compressProofImage(file: File, targetBytes: number) {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Your browser could not process this screenshot.");
+
+    let scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
+    let smallestBlob: Blob | null = null;
+    for (let resizePass = 0; resizePass < 6; resizePass += 1) {
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+      for (const quality of [0.88, 0.8, 0.72, 0.64, 0.56]) {
+        const blob = await canvasBlob(canvas, quality);
+        if (!blob) throw new Error("Your browser could not process this screenshot.");
+        smallestBlob = blob;
+        if (blob.size <= targetBytes) return await blobDataUrl(blob);
+      }
+      scale *= 0.82;
+    }
+
+    if (smallestBlob && smallestBlob.size <= targetBytes * 1.15) return await blobDataUrl(smallestBlob);
+    throw new Error("This screenshot is too large to submit safely. Crop it or choose a smaller image.");
+  } finally {
+    bitmap.close();
+  }
+}
 
 export interface FullTask {
   id: number;
@@ -150,6 +196,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
   const [screenshots, setScreenshots] = useState<{ dataUrl: string; name: string }[]>([]);
   const [selectedPlatformIds, setSelectedPlatformIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [processingScreenshots, setProcessingScreenshots] = useState(false);
   const [error, setError] = useState("");
   const [copiedCaption, setCopiedCaption] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -227,21 +274,35 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
-    files.forEach((file) => {
-      if (file.size > MAX_PROOF_IMAGE_BYTES) {
-        setError("Upload screenshots under 5MB each so admin can preview them.");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        setScreenshots((prev) => prev.length >= requiredScreenshotCount ? prev : [...prev, { dataUrl: reader.result as string, name: file.name }]);
-        if (isAwarenessMission) window.dispatchEvent(new Event("qeixova-welcome-guide-refresh"));
-      };
-      reader.readAsDataURL(file);
-    });
     event.target.value = "";
+    const availableSlots = Math.max(0, requiredScreenshotCount - screenshots.length);
+    const filesToProcess = files.slice(0, availableSlots);
+    if (files.length > availableSlots) {
+      setError(`This mission needs ${requiredScreenshotCount} screenshot${requiredScreenshotCount === 1 ? "" : "s"}. Extra images were ignored.`);
+    } else {
+      setError("");
+    }
+    if (filesToProcess.length === 0) return;
+
+    setProcessingScreenshots(true);
+    try {
+      const targetBytesPerImage = Math.floor(MAX_PROOF_UPLOAD_BYTES / requiredScreenshotCount);
+      const processed: { dataUrl: string; name: string }[] = [];
+      for (const file of filesToProcess) {
+        if (file.size > MAX_PROOF_IMAGE_BYTES) {
+          throw new Error("Each source screenshot must be 10 MB or smaller.");
+        }
+        processed.push({ dataUrl: await compressProofImage(file, targetBytesPerImage), name: file.name });
+      }
+      setScreenshots((previous) => [...previous, ...processed].slice(0, requiredScreenshotCount));
+      if (isAwarenessMission) window.dispatchEvent(new Event("qeixova-welcome-guide-refresh"));
+    } catch (processingError) {
+      setError(processingError instanceof Error ? processingError.message : "Could not prepare the screenshots. Please try again.");
+    } finally {
+      setProcessingScreenshots(false);
+    }
   };
 
   const handlePlatformToggle = (optionId: string, checked: boolean) => {
@@ -254,6 +315,10 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
   };
 
   const handleSubmit = async () => {
+    if (processingScreenshots) {
+      setError("Wait for your screenshots to finish preparing before submitting.");
+      return;
+    }
     let finalProof = proofValue.trim();
     if (platformOptions.length > 0 && activePlatformIds.length < 1) {
       setError("Select at least one platform you completed this mission on.");
@@ -517,10 +582,10 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
               {task.proof_type === "screenshot" && (
                 <div className="proofUpload" data-tour={isAwarenessMission ? "welcome-proof-upload" : undefined} data-ready={screenshots.length >= requiredScreenshotCount && (platformOptions.length === 0 || activePlatformIds.length > 0) ? "true" : "false"}>
                   <input ref={fileRef} type="file" accept="image/*" multiple={requiredScreenshotCount > 1} onChange={handleFileChange} />
-                  <button type="button" onClick={() => fileRef.current?.click()}>
-                    Upload screenshot{requiredScreenshotCount > 1 ? "s" : ""}
+                  <button type="button" disabled={processingScreenshots || submitting} onClick={() => fileRef.current?.click()}>
+                    {processingScreenshots ? "Preparing screenshots..." : `Upload screenshot${requiredScreenshotCount > 1 ? "s" : ""}`}
                   </button>
-                  <small>{Math.min(screenshots.length, requiredScreenshotCount)}/{requiredScreenshotCount} uploaded</small>
+                  <small>{processingScreenshots ? "Optimizing images for upload" : `${Math.min(screenshots.length, requiredScreenshotCount)}/${requiredScreenshotCount} uploaded`}</small>
                   {visibleScreenshots.length > 0 && (
                     <div className="screenshotGrid">
                       {visibleScreenshots.map((shot, index) => (
@@ -547,8 +612,8 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
 
             {error && <p className="errorBox">{error}</p>}
 
-            <button type="button" className="primaryAction" data-tour={isAwarenessMission ? "welcome-proof-submit" : undefined} onClick={handleSubmit} disabled={submitting}>
-              {submitting ? "Submitting..." : `Submit for ${displayedSubmitReward.toLocaleString()} QLT`}
+            <button type="button" className="primaryAction" data-tour={isAwarenessMission ? "welcome-proof-submit" : undefined} onClick={handleSubmit} disabled={submitting || processingScreenshots}>
+              {processingScreenshots ? "Preparing screenshots..." : submitting ? "Submitting..." : `Submit for ${displayedSubmitReward.toLocaleString()} QLT`}
             </button>
           </div>
         )}

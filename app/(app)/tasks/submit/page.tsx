@@ -83,8 +83,15 @@ export default function MyMissionsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ taskId: id, proofValue }),
       });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) return { ok: false, error: data.error || "Submission failed. Please try again." };
+      const responseText = await response.text();
+      let data: { error?: string; reward?: number; xpReward?: number; newBalance?: number } = {};
+      try { data = JSON.parse(responseText) as typeof data; } catch { /* Surface a useful fallback below. */ }
+      if (!response.ok) {
+        const fallback = response.status === 413
+          ? "The screenshots are still too large. Remove an image or choose a smaller screenshot and try again."
+          : `Submission failed (server response ${response.status}). Your selected screenshots are still here; please try again.`;
+        return { ok: false, error: data.error || fallback };
+      }
 
       removeMission(id);
       setTasks((current) => current.map((task) => task.id === id ? { ...task, completed: true, completion_status: "pending" } : task));

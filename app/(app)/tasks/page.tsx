@@ -104,7 +104,9 @@ export default function TasksPage() {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ taskId: id, proofValue }),
       });
-      const data = await res.json().catch(() => ({}));
+      const responseText = await res.text();
+      let data: { error?: string; reward?: number; xpReward?: number; newBalance?: number } = {};
+      try { data = JSON.parse(responseText) as typeof data; } catch { /* Surface a useful fallback below. */ }
       if (res.ok) {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: true, completion_status: "pending" } : t));
         setSelectedMissionIds((previous) => {
@@ -115,7 +117,10 @@ export default function TasksPage() {
         window.dispatchEvent(new CustomEvent("balanceUpdated", { detail: { newBalance: data.newBalance } }));
         return { ok: true, reward: data.reward, xpReward: data.xpReward };
       }
-      return { ok: false, error: data.error || "Submission failed" };
+      const fallback = res.status === 413
+        ? "The screenshots are still too large. Remove an image or choose a smaller screenshot and try again."
+        : `Submission failed (server response ${res.status}). Your selected screenshots are still here; please try again.`;
+      return { ok: false, error: data.error || fallback };
     } catch {
       return { ok: false, error: "Network error. Please try again." };
     }
