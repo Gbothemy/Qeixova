@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { verifyProof } from "@/lib/verifyProof";
 import { checkDailyCap, updateStreak, QLT_PROGRESS_REWARDS } from "@/lib/missionEngine";
-import { checkRateLimit, incrementRateLimit, getMissionAttemptState, checkTrustScore, MAX_MISSION_ATTEMPTS } from "@/lib/antiFraud";
+import { checkRateLimit, incrementRateLimit, getMissionAttemptState, checkTrustScore, MAX_MISSION_ATTEMPTS, ensureCompletionAttemptSchema } from "@/lib/antiFraud";
 import { log } from "@/lib/auditLog";
 import { syncCampaignSubmissionFromCompletion } from "@/lib/universalCampaignEngine";
 import { createBusinessNotification } from "@/lib/businessNotifications";
@@ -167,6 +167,11 @@ export async function POST(req: NextRequest) {
     const { taskId } = body;
     const proofValue = typeof body.proofValue === "string" ? body.proofValue : "";
     if (!taskId) return NextResponse.json({ error: "taskId required" }, { status: 400 });
+
+    // Ensure columns used by the retry lookup exist before querying them. This
+    // is also run by ensureAwarenessMission, but the retry lookup must happen
+    // first so that already-saved submissions remain idempotent.
+    await ensureCompletionAttemptSchema();
 
     // A previous request may have saved successfully even if its response was
     // lost. Recognize that retry before active-task and rate-limit checks.
