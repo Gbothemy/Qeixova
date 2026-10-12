@@ -86,7 +86,7 @@ export default function TasksPage() {
 
   const loadTasks = useCallback(() => {
     setFetching(true); setFetchError(false);
-    fetch("/api/tasks")
+    fetch("/api/tasks", { cache: "no-store" })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(d => { if (d?.tasks) setTasks(d.tasks); if (d?.meta) setMeta(d.meta); })
       .catch(() => setFetchError(true))
@@ -95,7 +95,16 @@ export default function TasksPage() {
 
   useEffect(() => {
     if (!user) return;
-    void Promise.resolve().then(loadTasks);
+    void loadTasks();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadTasks();
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [user, loadTasks]);
 
   const handleComplete = async (id: number, proofValue: string) => {
