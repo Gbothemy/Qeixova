@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export default function BusinessLoginPage() {
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "", code: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [requiresTwoFactor,setRequiresTwoFactor]=useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -57,7 +58,7 @@ export default function BusinessLoginPage() {
           </div>
 
           {/* Card */}
-          <div style={{ background: "var(--qeixova-color-f5-f5-f5)", borderRadius: 20, padding: "28px 24px", border: "1px solid var(--qeixova-color-e9-e9-e9)" }}>
+          <div style={{ background: "linear-gradient(145deg, color-mix(in srgb, var(--qeixova-color-f3-f3-f3) 82%, transparent), color-mix(in srgb, var(--qeixova-color-fa-fa-fa) 72%, transparent))", borderRadius: 20, padding: "28px 24px", border: "1px solid rgba(245,166,35,0.22)", boxShadow: "0 24px 70px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.035) inset", backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)" }}>
             {error && (
               <div style={{ background: "rgba(229,62,62,0.07)", border: "1px solid rgba(229,62,62,0.2)", borderRadius: 10, padding: "11px 14px", marginBottom: 20, fontSize: 13, color: "#e53e3e", display: "flex", alignItems: "center", gap: 8 }}>
                 <span>⚠️</span> {error}
@@ -75,9 +76,12 @@ export default function BusinessLoginPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--qeixova-color-55-55-55)", letterSpacing: 0.8, textTransform: "uppercase" }}>Password</label>
                 </div>
-                <input type="password" placeholder="Your password" value={form.password}
-                  onChange={e => setForm(p => ({ ...p, password: e.target.value }))} required style={inp}
-                  onFocus={e => (e.target.style.borderColor = "#F5A623")} onBlur={e => (e.target.style.borderColor = "var(--qeixova-color-e1-e1-e1)")} />
+                <div style={{ position: "relative", marginTop: 7 }}>
+                  <input type={showPassword ? "text" : "password"} placeholder="Your password" value={form.password}
+                    onChange={e => setForm(p => ({ ...p, password: e.target.value }))} required style={{ ...inp, marginTop: 0, paddingRight: 56, background: "color-mix(in srgb, var(--qeixova-color-f2-f2-f2) 78%, transparent)" }}
+                    onFocus={e => (e.target.style.borderColor = "#F5A623")} onBlur={e => (e.target.style.borderColor = "var(--qeixova-color-e1-e1-e1)")} />
+                  <PasswordVisibilityButton visible={showPassword} onClick={() => setShowPassword(value => !value)} label={showPassword ? "Hide password" : "Show password"} />
+                </div>
               </div>
               <button type="submit" disabled={loading} style={{
                 background: loading ? "var(--qeixova-color-ee-ee-ee)" : "linear-gradient(135deg, #F5A623, #d89420)",
@@ -121,5 +125,18 @@ export default function BusinessLoginPage() {
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  );
+}
+
+function PasswordVisibilityButton({ visible, onClick, label }: { visible: boolean; onClick: () => void; label: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} title={label}
+      style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", width: 36, height: 36, display: "grid", placeItems: "center", border: "1px solid rgba(245,166,35,.3)", borderRadius: 10, background: "rgba(245,166,35,.09)", color: "#F5A623", cursor: "pointer", padding: 0 }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+        {!visible && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />}
+      </svg>
+    </button>
   );
 }
