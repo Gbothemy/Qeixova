@@ -93,8 +93,8 @@ export default function RegisterPage() {
   const [verifyNotice, setVerifyNotice] = useState("");
   const [resendingVerification, setResendingVerification] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [_showPassword, _setShowPassword] = useState(false);
-  const [_showConfirmPassword, _setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Signup fields
   const [form, setForm] = useState({ fullName:"", email:"", password:"", confirmPassword:"", country:"Nigeria", state:"" });
@@ -340,7 +340,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Card */}
-              <div style={{ background:"var(--qeixova-color-ee-ee-ee)", borderRadius:24, padding:"32px 28px", boxShadow:"0 20px 60px rgba(0,0,0,0.5)", border:"1px solid var(--qeixova-color-dd-dd-dd)" }}>
+              <div style={{ background:"linear-gradient(145deg, color-mix(in srgb, var(--qeixova-color-ee-ee-ee) 78%, transparent), color-mix(in srgb, var(--qeixova-color-f3-f3-f3) 68%, transparent))", borderRadius:24, padding:"32px 28px", boxShadow:"0 24px 70px rgba(0,0,0,0.34), 0 0 0 1px rgba(255,255,255,0.035) inset", border:"1px solid rgba(26,239,34,0.16)", backdropFilter:"blur(22px)", WebkitBackdropFilter:"blur(22px)" }}>
                 <button onClick={()=>setScreen("type")} style={{ background:"none", border:"none", color:"var(--qeixova-color-44-44-44)", fontSize:13, cursor:"pointer", marginBottom:16, padding:0 }}>← Back</button>
                 <h2 style={{ fontWeight:800, fontSize:22, color:"var(--qeixova-color-0a-0a-0a)", marginBottom:6 }}>Create Your Account</h2>
                 <p style={{ fontSize:13, color:"var(--qeixova-color-44-44-44)", marginBottom:24 }}>
@@ -381,9 +381,10 @@ export default function RegisterPage() {
                       <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", display:"flex", alignItems:"center", pointerEvents:"none" }}>
                         <img src="/icon-lock.svg" width={16} height={16} style={{ opacity:0.5 }} alt="" />
                       </span>
-                      <input type="password" placeholder="Create a strong password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))}
-                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)", transition:"border-color 0.2s" }}
+                      <input type={showPassword ? "text" : "password"} placeholder="Create a strong password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))}
+                        style={{ width:"100%", padding:"13px 52px 13px 42px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"color-mix(in srgb, var(--qeixova-color-e5-e5-e5) 78%, transparent)", transition:"border-color 0.2s" }}
                         onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-cc-cc-cc)")} />
+                      <PasswordVisibilityButton visible={showPassword} onClick={()=>setShowPassword(value=>!value)} label={showPassword ? "Hide password" : "Show password"} />
                     </div>
                   </div>
                   {/* Confirm Password */}
@@ -393,9 +394,10 @@ export default function RegisterPage() {
                       <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", display:"flex", alignItems:"center", pointerEvents:"none" }}>
                         <img src="/icon-lock.svg" width={16} height={16} style={{ opacity:0.5 }} alt="" />
                       </span>
-                      <input type="password" placeholder="Repeat your password" value={form.confirmPassword} onChange={e=>setForm(f=>({...f,confirmPassword:e.target.value}))}
-                        style={{ width:"100%", padding:"13px 14px 13px 42px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"var(--qeixova-color-e5-e5-e5)", transition:"border-color 0.2s" }}
+                      <input type={showConfirmPassword ? "text" : "password"} placeholder="Repeat your password" value={form.confirmPassword} onChange={e=>setForm(f=>({...f,confirmPassword:e.target.value}))}
+                        style={{ width:"100%", padding:"13px 52px 13px 42px", borderRadius:12, border:"1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize:14, outline:"none", color:"var(--qeixova-color-0a-0a-0a)", background:"color-mix(in srgb, var(--qeixova-color-e5-e5-e5) 78%, transparent)", transition:"border-color 0.2s" }}
                         onFocus={e=>(e.target.style.borderColor=accentColor)} onBlur={e=>(e.target.style.borderColor="var(--qeixova-color-cc-cc-cc)")} />
+                      <PasswordVisibilityButton visible={showConfirmPassword} onClick={()=>setShowConfirmPassword(value=>!value)} label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"} />
                     </div>
                   </div>
                   {/* Country + State */}
@@ -592,5 +594,23 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function PasswordVisibilityButton({ visible, onClick, label }: { visible: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", width:34, height:34, display:"grid", placeItems:"center", border:"1px solid rgba(26,239,34,.22)", borderRadius:10, background:"rgba(26,239,34,.08)", color:"#1AEF22", cursor:"pointer", padding:0 }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+        {!visible && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />}
+      </svg>
+    </button>
   );
 }

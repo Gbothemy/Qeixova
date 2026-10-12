@@ -2246,13 +2246,8 @@ input[type="number"] {
   transition: all 0.2s ease;
 }
 .growth-partner-cta {
-  background: var(--qeixova-color-ee-ee-ee);
-  border: 1.5px solid var(--qeixova-color-dd-dd-dd);
-  color: var(--qeixova-color-0a-0a-0a);
-}
-[data-theme="light"] .growth-partner-cta {
   background: #1AEF22;
-  border-color: #1AEF22;
+  border: 1.5px solid #1AEF22;
   color: #071108;
 }
 .btn-amber-glow:hover {

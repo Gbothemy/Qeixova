@@ -172,11 +172,12 @@ const styles = `
 
   .formPanel {
     width: 100%;
-    border: 1px solid rgba(255, 255, 255, 0.075);
+    border: 1px solid rgba(26, 239, 34, 0.16);
     border-radius: 26px;
-    background: linear-gradient(180deg, var(--qeixova-color-f3-f3-f3-a0_94), var(--qeixova-color-fa-fa-fa-a0_96));
-    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(26, 239, 34, 0.03) inset;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--qeixova-color-f3-f3-f3) 82%, transparent), color-mix(in srgb, var(--qeixova-color-fa-fa-fa) 72%, transparent));
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(26, 239, 34, 0.04) inset;
     backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 
   .formHeader p {
@@ -292,8 +293,8 @@ const styles = `
     min-height: 54px;
     border: 1px solid var(--qeixova-color-d8-d8-d8);
     border-radius: 14px;
-    background: #f1f6ff;
-    color: var(--qeixova-color-fa-fa-fa);
+    background: color-mix(in srgb, var(--qeixova-color-f2-f2-f2) 78%, transparent);
+    color: var(--qeixova-color-0a-0a-0a);
     padding: 14px 15px 14px 48px;
     font: inherit;
     font-size: 14px;
@@ -427,13 +428,13 @@ const styles = `
     }
 
     .formPanel {
-      padding: 0;
-      border-right: 0;
-      border-left: 0;
-      border-radius: 0;
-      background: transparent;
-      box-shadow: none;
-      backdrop-filter: none;
+      padding: 24px 20px;
+      border: 1px solid rgba(26, 239, 34, 0.16);
+      border-radius: 24px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--qeixova-color-f3-f3-f3) 82%, transparent), color-mix(in srgb, var(--qeixova-color-fa-fa-fa) 72%, transparent));
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(26, 239, 34, 0.04) inset;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
     }
 
     .formHeader h2 {
@@ -509,4 +510,3 @@ void String.raw`
   );
 }
 `;
-
