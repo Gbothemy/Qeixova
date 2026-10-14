@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/operations", label: "Operations", description: "Security, risk, disputes and reports", icon: "OP", permission: "dashboard.read" },
   { href: "/admin/users", label: "Users", description: "Growth Partner accounts", icon: "US", permission: "accounts.read" },
   { href: "/admin/businesses", label: "Businesses", description: "Registered business accounts", icon: "BZ", permission: "accounts.read" },
+  { href: "/admin/email", label: "Email Center", description: "Message contributors and businesses", icon: "EM", permission: "accounts.manage" },
   { href: "/admin/campaigns", label: "Campaign Review", description: "Approve or reject business campaigns", icon: "AP", permission: "campaigns.read" },
   { href: "/admin/tasks", label: "Missions", description: "Campaign inventory", icon: "MS", permission: "campaigns.read" },
   { href: "/admin/completions", label: "Mission Proof", description: "Approve completed user missions", icon: "RV", permission: "proofs.read" },

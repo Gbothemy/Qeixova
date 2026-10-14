@@ -187,6 +187,7 @@ export async function POST(req: NextRequest) {
 
     await ensureAwarenessMission();
     await expireElapsedMissions();
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS qlt_bonus INTEGER NOT NULL DEFAULT 0`;
 
     // ── Anti-fraud: rate limit ────────────────────────────────────────────
     const { allowed: rateOk, remaining } = await checkRateLimit(session.userId);
@@ -246,11 +247,12 @@ export async function POST(req: NextRequest) {
     if (platformOptions.length > 0 && selectedPlatformOptions.length === 0) {
       return NextResponse.json({ error: "Select at least one platform completed for this mission." }, { status: 400 });
     }
-    const selectedReward = fixedRewardRegardlessOfPlatforms
+    const baseSelectedReward = fixedRewardRegardlessOfPlatforms
       ? Number(task.reward)
       : platformOptions.length > 0
       ? selectedPlatformOptions.reduce((total, option) => total + option.rewardQlt, 0)
       : Number(task.reward);
+    const selectedReward = baseSelectedReward + Math.max(0, Number(task.qlt_bonus) || 0);
     const storedProofBase = parseStoredProofJson(parsedProof.storedProof);
     const storedProof = storedProofBase
       ? JSON.stringify({

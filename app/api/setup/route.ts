@@ -96,6 +96,7 @@ export async function GET(req: Request) {
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS steps TEXT[] NOT NULL DEFAULT '{}'`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_type TEXT NOT NULL DEFAULT 'screenshot'`;
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_label TEXT NOT NULL DEFAULT 'Upload screenshot as proof'`;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS qlt_bonus INTEGER NOT NULL DEFAULT 0`;
     await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS proof_value TEXT`;
     await sql`ALTER TABLE completions ADD COLUMN IF NOT EXISTS attempt_count INTEGER NOT NULL DEFAULT 1`;
     await sql`

@@ -78,6 +78,26 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
   }
 }
 
+export function isEmailDeliveryConfigured() {
+  return Boolean((SMTP_HOST && SMTP_USER && SMTP_PASS) || (GMAIL_USER && GMAIL_PASS));
+}
+
+function escapeEmailHtml(value: string) {
+  const entities: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
+}
+
+export async function sendAdminMessageEmail(to: string, subject: string, message: string): Promise<boolean> {
+  const safeMessage = escapeEmailHtml(message.trim()).replace(/\r?\n/g, "<br>");
+  return sendEmail(to, subject.trim(), `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;padding:28px;color:#1f2937;line-height:1.65;white-space:normal"><div>${safeMessage}</div><p style="margin-top:28px;color:#667085;font-size:12px">Qeixova</p></div>`);
+}
+
 export async function sendAdminSecurityCodeEmail(to:string,name:string,code:string):Promise<boolean>{
   return sendEmail(to,"Your Qeixova admin security code",`<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px"><h2>Admin sign-in verification</h2><p>Hello ${name},</p><p>Use this one-time code to complete your Qeixova Admin sign-in:</p><div style="font-size:30px;font-weight:800;letter-spacing:8px;padding:18px;background:#f3f4f6;border-radius:12px;text-align:center">${code}</div><p>This code expires in 10 minutes. If you did not attempt to sign in, change your password and contact the platform owner.</p></div>`);
 }

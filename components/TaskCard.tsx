@@ -43,6 +43,7 @@ export interface Task {
   title: string;
   category: string;
   reward: number;
+  qlt_bonus?: number;
   duration: string;
   icon: string;
   color: string;
@@ -111,7 +112,7 @@ export default function TaskCard({ task, onStart, onSelect, selected }: TaskCard
   const matchScore = typeof task.matchScore === "number" ? Math.max(0, Math.min(100, task.matchScore)) : 100;
   const budgetPct = task.total_budget ? Math.min(100, ((task.budget_used ?? 0) / task.total_budget) * 100) : 0;
   const remainingSlots = task.target_completion_count
-    ? Math.max(0, task.target_completion_count - Math.floor((task.budget_used ?? 0) / Math.max(1, task.reward)))
+    ? Math.max(0, task.target_completion_count - Math.floor((task.budget_used ?? 0) / Math.max(1, task.reward + (Number(task.qlt_bonus) || 0))))
     : null;
   const statusLabel = task.completed
     ? task.completion_status === "pending" ? "Pending review" : "Submitted"
@@ -141,7 +142,7 @@ export default function TaskCard({ task, onStart, onSelect, selected }: TaskCard
           <span>{isAwarenessMission ? "Reward range" : "Reward"}</span>
           <strong>{isAwarenessMission
             ? `${awarenessMinReward.toLocaleString()}–${awarenessMaxReward.toLocaleString()}`
-            : `+${task.reward.toLocaleString()}`}</strong>
+            : `+${(task.reward + (Number(task.qlt_bonus) || 0)).toLocaleString()}`}</strong>
           <small>QLT</small>
         </div>
       </div>

@@ -131,6 +131,7 @@ export async function GET() {
     const tasks = await sql`
       SELECT
         t.id, t.title, t.category, t.reward, t.duration, t.mission_key,
+        COALESCE(t.qlt_bonus, 0) AS qlt_bonus,
         t.icon, t.color,
         COALESCE(t.instructions, '') AS instructions,
         COALESCE(t.steps, '{}') AS steps,

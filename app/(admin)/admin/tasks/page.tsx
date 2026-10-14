@@ -3,10 +3,12 @@ import { useEffect, useState, useCallback } from "react";
 
 interface Task {
   id: number; title: string; category: string; reward: number;
+  qlt_bonus?: number;
   duration: string; proof_type: string; max_screenshots: number;
   is_active: boolean; total_budget: number; budget_used: number;
   expires_at?: string | null;
   mission_type: string; xp_reward: number; min_level: number;
+  icon?: string; color?: string; instructions?: string; steps?: string[]; proof_label?: string;
   task_link?: string;
   business_name?: string;
   task_status?: string;
@@ -15,7 +17,7 @@ interface Task {
     selectedPricingLabel?: string;
     selectedPricingPlatforms?: string[];
     selectedInterests?: string[];
-    targetLocation?: { summary?: string };
+    targetLocation?: { summary?: string; locations?: Array<{ name?: string; state?: string }> };
   };
   target_completion_count?: number;
   target_interests?: string[];
@@ -26,7 +28,7 @@ interface Task {
 }
 
 const EMPTY_FORM = {
-  title: "", category: "", reward: "", duration: "5 min",
+  title: "", category: "", reward: "", qlt_bonus: "0", duration: "5 min",
   icon: "📋", color: "#e8f5e9", instructions: "", steps: "",
   proof_type: "screenshot", proof_label: "Upload screenshot as proof",
   max_screenshots: "1", total_budget: "0", task_link: "",
@@ -109,17 +111,18 @@ export default function TasksPage() {
   function openEdit(t: Task) {
     setEditTask(t);
     setForm({
-      title: t.title, category: t.category, reward: String(t.reward),
-      duration: t.duration, icon: "📋", color: "#e8f5e9", instructions: "", steps: "",
-      proof_type: t.proof_type, proof_label: "Upload screenshot as proof",
+      title: t.title, category: t.category, reward: String(t.reward), qlt_bonus: String(t.qlt_bonus ?? 0),
+      duration: t.duration, icon: t.icon ?? "📋", color: t.color ?? "#e8f5e9",
+      instructions: t.instructions ?? "", steps: Array.isArray(t.steps) ? t.steps.join("\n") : "",
+      proof_type: t.proof_type, proof_label: t.proof_label ?? "Upload screenshot as proof",
       max_screenshots: String(t.max_screenshots), total_budget: String(t.total_budget ?? 0),
       task_link: t.task_link ?? "",
       mission_type: t.mission_type ?? "engagement",
       xp_reward: String(t.xp_reward ?? 0),
       min_level: String(t.min_level ?? 1),
-      target_interests: (t.target_interests ?? []).join("\n"),
-      target_states: (t.target_states ?? []).join("\n"),
-      target_platforms: (t.target_platforms ?? []).join("\n"),
+      target_interests: (t.target_interests?.length ? t.target_interests : t.campaign_metadata?.selectedInterests ?? []).join("\n"),
+      target_states: (t.target_states?.length ? t.target_states : t.campaign_metadata?.targetLocation?.locations?.map((item) => item.state || item.name || "").filter(Boolean) ?? []).join("\n"),
+      target_platforms: (t.target_platforms?.length ? t.target_platforms : t.campaign_metadata?.selectedPricingPlatforms ?? []).join("\n"),
     });
     setShowModal(true);
   }
@@ -130,7 +133,7 @@ export default function TasksPage() {
     try {
       const payload = {
         ...form,
-        reward: Number(form.reward), max_screenshots: Number(form.max_screenshots),
+        reward: Number(form.reward), qlt_bonus: Number(form.qlt_bonus), max_screenshots: Number(form.max_screenshots),
         total_budget: Number(form.total_budget), task_link: form.task_link.trim(),
         xp_reward: Number(form.xp_reward), min_level: Number(form.min_level),
         steps: form.steps ? form.steps.split("\n").filter(Boolean) : [],
@@ -232,7 +235,10 @@ export default function TasksPage() {
                       <span><strong style={{ color: "var(--qeixova-color-55-55-55)" }}>Platforms:</strong> {getPlatforms(t)}</span>
                     </div>
                   </td>
-                  <td style={{ ...TD, fontWeight: 600 }}>{Number(t.reward).toLocaleString()}</td>
+                  <td style={{ ...TD, fontWeight: 600 }}>
+                    <div>{(Number(t.reward) + (Number(t.qlt_bonus) || 0)).toLocaleString()}</div>
+                    {Number(t.qlt_bonus) > 0 ? <small style={{ color: "#667085" }}>{Number(t.reward).toLocaleString()} + {Number(t.qlt_bonus).toLocaleString()} bonus</small> : null}
+                  </td>
                   <td style={TD}>
                     {t.total_budget > 0 ? (
                       <div>
@@ -285,9 +291,8 @@ export default function TasksPage() {
                 <label style={lbl}>Mission Type *</label>
                 <select style={inp} value={form.mission_type} onChange={e => {
                   const mt = e.target.value;
-                  const xp = "0";
                   const ml = mt === "premium" ? "2" : "1";
-                  setForm(f => ({ ...f, mission_type: mt, xp_reward: xp, min_level: ml }));
+                  setForm(f => ({ ...f, mission_type: mt, min_level: editTask ? f.min_level : ml }));
                 }}>
                   <option value="engagement">Engagement (low value)</option>
                   <option value="participation">Participation (medium)</option>
@@ -308,7 +313,11 @@ export default function TasksPage() {
               </div>
               <div>
                 <label style={lbl}>QLT Bonus</label>
-                <input style={inp} type="number" value={form.xp_reward} onChange={e => setForm(f => ({ ...f, xp_reward: e.target.value }))} />
+                <input style={inp} type="number" min={0} value={form.qlt_bonus} onChange={e => setForm(f => ({ ...f, qlt_bonus: e.target.value }))} />
+              </div>
+              <div>
+                <label style={lbl}>XP Reward</label>
+                <input style={inp} type="number" min={0} value={form.xp_reward} onChange={e => setForm(f => ({ ...f, xp_reward: e.target.value }))} />
               </div>
               <div>
                 <label style={lbl}>Min Level (1–5)</label>
@@ -316,7 +325,10 @@ export default function TasksPage() {
               </div>
               <div>
                 <label style={lbl}>Duration</label>
-                <input style={inp} value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))} placeholder="5 min" />
+                <input style={inp} type="text" value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))} placeholder="3 days" aria-describedby="mission-duration-help" />
+                <small id="mission-duration-help" style={{ display: "block", marginTop: 5, color: "#667085", fontSize: 11 }}>
+                  Enter a duration such as 3 days. Saving changes the expiry timer for an active mission.
+                </small>
               </div>
               <div>
                 <label style={lbl}>Proof Type</label>
@@ -363,7 +375,7 @@ export default function TasksPage() {
 
             <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
               <button onClick={() => setShowModal(false)} style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid var(--qeixova-color-dd-dd-dd)", background: "var(--qeixova-color-ff-ff-ff)", cursor: "pointer", fontSize: 13 }}>Cancel</button>
-              <button onClick={handleSave} disabled={saving || !form.title || !form.category || !form.reward}
+              <button onClick={handleSave} disabled={saving || !form.title || !form.category || !form.reward || !form.duration.trim()}
                 style={{ padding: "10px 22px", borderRadius: 8, border: "none", background: "#1AEF22", color: "var(--qeixova-color-00-00-00)", cursor: "pointer", fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
                 {saving ? "Saving…" : editTask ? "Save Changes" : "Create Mission"}
               </button>

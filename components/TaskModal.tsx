@@ -59,6 +59,7 @@ export interface FullTask {
   title: string;
   category: string;
   reward: number;
+  qlt_bonus?: number;
   duration: string;
   icon: string;
   color: string;
@@ -219,6 +220,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
       rewardQlt: getBusinessPlatformRewardQlt(platform) ?? splitRewardAcrossPlatforms(Number(task.reward), arr.length)[index],
     }));
   const fixedRewardRegardlessOfPlatforms = metadata.fixedRewardRegardlessOfPlatforms === true;
+  const qltBonus = Math.max(0, Number(task.qlt_bonus) || 0);
   const activePlatformIds = selectedPlatformIds.filter((id) => platformOptions.some((option) => option.id === id));
   const selectedPlatformOptions = platformOptions.filter((option) => activePlatformIds.includes(option.id));
   const selectedReward = selectedPlatformOptions.length > 0
@@ -227,6 +229,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
   const displayedSubmitReward = fixedRewardRegardlessOfPlatforms
     ? task.reward
     : platformOptions.length > 0 ? selectedReward : task.reward;
+  const displayedTotalReward = displayedSubmitReward + qltBonus;
   const awarenessMinReward = platformOptions.length > 0
     ? Math.min(...platformOptions.map((option) => option.rewardQlt))
     : task.reward;
@@ -240,7 +243,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
     ? selectedPlatformOptions.length > 0
       ? `${selectedReward.toLocaleString()} QLT`
       : `${awarenessMinReward.toLocaleString()}–${awarenessMaxReward.toLocaleString()} QLT`
-    : `${task.reward.toLocaleString()} QLT`;
+    : `${displayedTotalReward.toLocaleString()} QLT`;
   const requiredScreenshotCount = platformOptions.length > 0 ? Math.max(1, activePlatformIds.length) : maxShots;
   const visibleScreenshots = screenshots.slice(0, requiredScreenshotCount);
   const location = metadata.targetLocation?.summary || list(task.target_states, "Nationwide");
@@ -253,7 +256,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
   const actionSteps = orderContributorSteps(task.steps?.length ? task.steps : task.instructions.split("\n").filter(Boolean));
   const matchScore = typeof task.matchScore === "number" ? Math.max(0, Math.min(100, task.matchScore)) : 100;
   const remainingSlots = task.target_completion_count
-    ? Math.max(0, task.target_completion_count - Math.floor((task.budget_used ?? 0) / Math.max(1, task.reward)))
+    ? Math.max(0, task.target_completion_count - Math.floor((task.budget_used ?? 0) / Math.max(1, task.reward + qltBonus)))
     : null;
   const compactDetailStyle = `
     @media (max-width: 520px) {
@@ -404,10 +407,10 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
             <div className="successMark">OK</div>
             <span>Submission received</span>
             <h2>Proof sent for review</h2>
-            <p>Your completion for <strong>{task.title}</strong> is now pending verification. Approved work will release {(isAwarenessMission ? displayedSubmitReward : task.reward).toLocaleString()} QLT to your wallet.</p>
+            <p>Your completion for <strong>{task.title}</strong> is now pending verification. Approved work will release {(isAwarenessMission ? displayedSubmitReward : displayedTotalReward).toLocaleString()} QLT to your wallet.</p>
             <div className="pendingReward">
               <span>Pending reward</span>
-              <strong>+{displayedSubmitReward.toLocaleString()} QLT</strong>
+              <strong>+{(isAwarenessMission ? displayedSubmitReward : displayedTotalReward).toLocaleString()} QLT</strong>
             </div>
             <button type="button" onClick={onClose}>{presentation === "page" ? "Back to My Missions" : "Back to missions"}</button>
           </div>

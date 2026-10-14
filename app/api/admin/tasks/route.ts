@@ -17,6 +17,7 @@ import { activateMissionExpiryByTask, calculateMissionExpiry, expireElapsedMissi
 
 export async function GET(req: NextRequest) {
   if (!await checkAdminAuth(req,"campaigns.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS qlt_bonus INTEGER NOT NULL DEFAULT 0`;
   await expireElapsedMissions();
   const tasks = await sql`
     SELECT
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!await checkAdminAuth(req,"campaigns.manage")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS qlt_bonus INTEGER NOT NULL DEFAULT 0`;
 
   const body = await req.json();
   const { title, category, reward, duration, icon, color, instructions, steps, proof_type, proof_label, max_screenshots } = body;
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest) {
     INSERT INTO tasks (
       title, category, reward, duration, icon, color, instructions, steps,
       proof_type, proof_label, max_screenshots, total_budget, task_link,
-      mission_type, xp_reward, min_level, target_interests, target_platforms,
+      mission_type, xp_reward, qlt_bonus, min_level, target_interests, target_platforms,
       target_states, is_active, task_status, campaign_status
     )
     VALUES (
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
       ${instructions ?? ""}, ${steps ?? []}, ${proof_type ?? "screenshot"},
       ${proof_label ?? "Upload screenshot as proof"}, ${max_screenshots ?? 1},
       ${body.total_budget ?? 0}, ${body.task_link ?? ""},
-      ${body.mission_type ?? "engagement"}, ${body.xp_reward ?? 0}, ${body.min_level ?? 1},
+      ${body.mission_type ?? "engagement"}, ${body.xp_reward ?? 0}, ${body.qlt_bonus ?? 0}, ${body.min_level ?? 1},
       ${canonicalizeInterests(body.target_interests)},
       ${Array.isArray(body.target_platforms) ? body.target_platforms : []},
       ${Array.isArray(body.target_states) ? body.target_states : []},
@@ -85,23 +87,34 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   if (!await checkAdminAuth(req,"campaigns.manage")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS qlt_bonus INTEGER NOT NULL DEFAULT 0`;
 
   const { id, ...fields } = await req.json();
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
   const before=(await sql`SELECT * FROM tasks WHERE id=${id}`)[0]??null;
+  if (fields.duration !== undefined && !/^\d+(?:\.\d+)?\s*(?:minutes?|mins?|hours?|hrs?|days?|weeks?|months?)$/i.test(String(fields.duration).trim())) {
+    return NextResponse.json({ error: "Enter a valid duration, such as 30 min, 2 hours, or 3 days." }, { status: 400 });
+  }
   // Build dynamic update — only update provided fields
-  const allowed = ["title", "category", "reward", "duration", "icon", "color", "instructions", "steps", "proof_type", "proof_label", "max_screenshots", "is_active", "total_budget", "task_link", "mission_type", "xp_reward", "min_level", "target_interests", "target_platforms", "target_states", "task_status", "campaign_status"];
+  const allowed = ["title", "category", "reward", "qlt_bonus", "duration", "icon", "color", "instructions", "steps", "proof_type", "proof_label", "max_screenshots", "is_active", "total_budget", "task_link", "mission_type", "xp_reward", "min_level", "target_interests", "target_platforms", "target_states", "task_status", "campaign_status"];
   for (const key of allowed) {
     if (fields[key] !== undefined) {
       if (key === "title")          await sql`UPDATE tasks SET title = ${fields[key]} WHERE id = ${id}`;
       else if (key === "category")  await sql`UPDATE tasks SET category = ${fields[key]} WHERE id = ${id}`;
       else if (key === "reward")    await sql`UPDATE tasks SET reward = ${fields[key]} WHERE id = ${id}`;
+      else if (key === "qlt_bonus") await sql`UPDATE tasks SET qlt_bonus = ${fields[key]} WHERE id = ${id}`;
       else if (key === "duration") {
         await sql`UPDATE tasks SET duration = ${fields[key]} WHERE id = ${id}`;
         // A live mission's duration controls its real expiry as well as the
         // duration text shown in the editor. Editing it restarts that window.
-        if (before?.is_active && before?.mission_key !== "qeixova-awareness-verification") {
+        const isActiveMission = before && (
+          before.is_active === true
+          || before.task_status === "active"
+          || before.campaign_status === "active"
+          || before.campaign_status === "live"
+        );
+        if (isActiveMission && before?.mission_key !== "qeixova-awareness-verification") {
           const startedAt = new Date();
           const expiresAt = calculateMissionExpiry(fields[key], startedAt);
           await sql`

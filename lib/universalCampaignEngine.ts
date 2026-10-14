@@ -384,6 +384,7 @@ export async function ensureUniversalCampaignTaskColumns() {
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS mission_type TEXT NOT NULL DEFAULT 'engagement'`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS min_level INTEGER NOT NULL DEFAULT 1`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS xp_reward INTEGER NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS qlt_bonus INTEGER NOT NULL DEFAULT 0`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_status TEXT NOT NULL DEFAULT 'pending_review'`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_goal TEXT NOT NULL DEFAULT ''`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS campaign_pricing JSONB NOT NULL DEFAULT '{}'::jsonb`;

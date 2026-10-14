@@ -19,6 +19,7 @@ export function roleCan(role: AdminRole, permission: string) {
 }
 
 export function adminRoutePermission(pathname: string): string {
+  if (pathname.startsWith("/admin/email")) return "accounts.manage";
   if (pathname.startsWith("/admin/operations")) return "dashboard.read";
   if (pathname.startsWith("/admin/users") || pathname.startsWith("/admin/businesses")) return "accounts.read";
   if (pathname.startsWith("/admin/campaigns") || pathname.startsWith("/admin/tasks")) return "campaigns.read";

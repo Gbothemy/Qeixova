@@ -140,7 +140,7 @@ export default function MyMissionsPage() {
                     <span style={{ color: "var(--qeixova-color-6d-66-6c)", fontSize: 10 }}>{task.category}</span>
                   </div>
                   <h3 style={{ overflowWrap: "anywhere", color: "var(--qeixova-color-0a-0a-0a)", fontSize: 15, fontWeight: 900 }}>{task.title}</h3>
-                  <p style={{ marginTop: 6, color: "var(--qeixova-color-51-4b-50)", fontSize: 11, lineHeight: 1.45 }}>+{Number(task.reward).toLocaleString()} QLT <span aria-hidden="true">·</span> {task.duration} <span aria-hidden="true">·</span> {task.proof_label || task.proof_type} proof</p>
+                  <p style={{ marginTop: 6, color: "var(--qeixova-color-51-4b-50)", fontSize: 11, lineHeight: 1.45 }}>+{(Number(task.reward) + (Number(task.qlt_bonus) || 0)).toLocaleString()} QLT <span aria-hidden="true">·</span> {task.duration} <span aria-hidden="true">·</span> {task.proof_label || task.proof_type} proof</p>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 7 }}>
                   <button type="button" onClick={() => {
