@@ -13,7 +13,7 @@ import { checkAdminAuth } from "@/lib/adminAuth";
 import { getAdminContext, logAdminAction } from "@/lib/adminPlatform";
 import { createBusinessNotification } from "@/lib/businessNotifications";
 import { canonicalizeInterests } from "@/lib/interestTaxonomy";
-import { activateMissionExpiryByTask, expireElapsedMissions } from "@/lib/missionExpiry";
+import { activateMissionExpiryByTask, calculateMissionExpiry, expireElapsedMissions } from "@/lib/missionExpiry";
 
 export async function GET(req: NextRequest) {
   if (!await checkAdminAuth(req,"campaigns.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -97,7 +97,41 @@ export async function PATCH(req: NextRequest) {
       if (key === "title")          await sql`UPDATE tasks SET title = ${fields[key]} WHERE id = ${id}`;
       else if (key === "category")  await sql`UPDATE tasks SET category = ${fields[key]} WHERE id = ${id}`;
       else if (key === "reward")    await sql`UPDATE tasks SET reward = ${fields[key]} WHERE id = ${id}`;
-      else if (key === "duration")  await sql`UPDATE tasks SET duration = ${fields[key]} WHERE id = ${id}`;
+      else if (key === "duration") {
+        await sql`UPDATE tasks SET duration = ${fields[key]} WHERE id = ${id}`;
+        // A live mission's duration controls its real expiry as well as the
+        // duration text shown in the editor. Editing it restarts that window.
+        if (before?.is_active && before?.mission_key !== "qeixova-awareness-verification") {
+          const startedAt = new Date();
+          const expiresAt = calculateMissionExpiry(fields[key], startedAt);
+          await sql`
+            UPDATE tasks
+            SET approved_at = ${startedAt.toISOString()}::timestamptz,
+                expires_at = ${expiresAt.toISOString()}::timestamptz,
+                campaign_metadata = COALESCE(campaign_metadata, '{}'::jsonb)
+                  || ${JSON.stringify({ approvedAt: startedAt.toISOString(), expiresAt: expiresAt.toISOString(), durationSource: fields[key], durationEditedByAdmin: true })}::jsonb
+            WHERE id = ${id}
+          `;
+          const campaignTables = await sql`
+            SELECT to_regclass('public.campaigns') AS campaigns,
+              to_regclass('public.campaign_timers') AS campaign_timers
+          `;
+          if (campaignTables[0]?.campaigns) {
+            await sql`
+              UPDATE campaigns SET start_date = ${startedAt.toISOString()}::timestamptz,
+                end_date = ${expiresAt.toISOString()}::timestamptz, updated_at = NOW()
+              WHERE task_id = ${id}
+            `;
+          }
+          if (campaignTables[0]?.campaigns && campaignTables[0]?.campaign_timers) {
+            await sql`
+              UPDATE campaign_timers SET campaign_expiry_at = ${expiresAt.toISOString()}::timestamptz,
+                updated_at = NOW()
+              WHERE campaign_id = (SELECT id FROM campaigns WHERE task_id = ${id} LIMIT 1)
+            `;
+          }
+        }
+      }
       else if (key === "icon")      await sql`UPDATE tasks SET icon = ${fields[key]} WHERE id = ${id}`;
       else if (key === "color")     await sql`UPDATE tasks SET color = ${fields[key]} WHERE id = ${id}`;
       else if (key === "instructions") await sql`UPDATE tasks SET instructions = ${fields[key]} WHERE id = ${id}`;

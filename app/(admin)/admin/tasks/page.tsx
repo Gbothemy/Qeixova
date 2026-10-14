@@ -5,6 +5,7 @@ interface Task {
   id: number; title: string; category: string; reward: number;
   duration: string; proof_type: string; max_screenshots: number;
   is_active: boolean; total_budget: number; budget_used: number;
+  expires_at?: string | null;
   mission_type: string; xp_reward: number; min_level: number;
   task_link?: string;
   business_name?: string;
@@ -62,6 +63,17 @@ function getPlatforms(task: Task) {
   return task.campaign_metadata?.selectedPricingLabel || list(task.campaign_metadata?.selectedPricingPlatforms?.length ? task.campaign_metadata.selectedPricingPlatforms : task.target_platforms, "All platforms");
 }
 
+function formatTimeRemaining(expiresAt: string | null | undefined, now: number) {
+  if (!expiresAt) return "No expiry set";
+  const remaining = new Date(expiresAt).getTime() - now;
+  if (!Number.isFinite(remaining) || remaining <= 0) return "Ended";
+  const totalMinutes = Math.floor(remaining / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  return `${days}d ${hours}h ${minutes}m remaining`;
+}
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +83,7 @@ export default function TasksPage() {
   const [saving, setSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -86,6 +99,10 @@ export default function TasksPage() {
   }, []);
 
   useEffect(() => { void Promise.resolve().then(fetchTasks); }, [fetchTasks]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   function openAdd() { setEditTask(null); setForm(EMPTY_FORM); setShowModal(true); }
 
@@ -187,15 +204,16 @@ export default function TasksPage() {
               <th style={TH}>Campaign Fit</th>
               <th style={TH}>Reward</th>
               <th style={TH}>Progress</th>
+              <th style={TH}>Time Remaining</th>
               <th style={TH}>Status</th>
               <th style={TH}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>Loading...</td></tr>
+              <tr><td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>Loading...</td></tr>
             ) : tasks.length === 0 ? (
-              <tr><td colSpan={9} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>No missions found</td></tr>
+              <tr><td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>No missions found</td></tr>
             ) : tasks.map(t => {
               const mt = MISSION_COLORS[t.mission_type ?? "engagement"] ?? MISSION_COLORS.engagement;
               return (
@@ -227,6 +245,9 @@ export default function TasksPage() {
                         </div>
                       </div>
                     ) : <span style={{ color: "#667085", fontSize: 12 }}>∞</span>}
+                  </td>
+                  <td style={{ ...TD, whiteSpace: "nowrap", color: t.is_active ? "#166534" : "#667085", fontWeight: t.is_active ? 700 : 400 }}>
+                    {t.is_active ? formatTimeRemaining(t.expires_at, now) : "—"}
                   </td>
                   <td style={TD}>
                     <div style={{ display: "grid", gap: 4 }}>
