@@ -3,12 +3,14 @@
 import type { CSSProperties } from "react";
 
 export type CampaignMetadata = {
+  missionCategoryId?: string;
   contentType?: string;
   assetName?: string;
   assetDataUrl?: string;
   assetMimeType?: string;
   contentLink?: string;
   contentCaption?: string;
+  useGeneralCaptionForPlatforms?: boolean;
   fixedRewardRegardlessOfPlatforms?: boolean;
   captionOptions?: Array<{ platform: string; caption: string }>;
   selectedPricingLabel?: string | null;

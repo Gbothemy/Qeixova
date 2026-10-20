@@ -203,6 +203,16 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
   const fileRef = useRef<HTMLInputElement>(null);
 
   const metadata = task.campaign_metadata ?? {};
+  const missionCategoryId = metadata.missionCategoryId;
+  const missionActionIntro = missionCategoryId === "community"
+    ? "Complete these steps in order. Join the selected community, follow its rules, and submit the requested join proof."
+    : missionCategoryId === "apps"
+      ? "Complete these steps in order. Open the app, follow the test instructions, then submit screenshots and honest feedback."
+      : missionCategoryId === "feedback"
+        ? "Complete these steps in order. Review the campaign information, answer the questions honestly, and submit your written response."
+        : missionCategoryId === "music"
+          ? "Complete these steps in order. Open the music campaign, promote it on the selected platform, and submit proof of your post."
+          : "Complete these steps in order. Use the campaign content and matching platform caption when you make your post, then submit the requested proof.";
   const isAwarenessMission = task.mission_key === "qeixova-awareness-verification";
   const maxShots = task.max_screenshots ?? 1;
   const platforms = metadata.selectedPricingPlatforms?.length ? metadata.selectedPricingPlatforms : task.target_platforms;
@@ -462,7 +472,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
                 <span>How to complete this mission</span>
                 <strong>{actionSteps.length} step{actionSteps.length === 1 ? "" : "s"}</strong>
               </div>
-              <p className="missionActionIntro">Complete these steps in order. Use the campaign content and platform caption below when you make your post, then submit the requested proof.</p>
+              <p className="missionActionIntro">{missionActionIntro}</p>
               <ol className="stepList">
                 {actionSteps.map((step, index) => (
                   <li key={`${step}-${index}`}>
@@ -498,10 +508,10 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
                 ) : null}
                 {contentCaption ? (
                   <div className="campaignCaptionBlock">
-                    <span>General campaign caption</span>
+                    <span>{metadata.useGeneralCaptionForPlatforms ? "Caption for all selected platforms" : "General campaign caption"}</span>
                     <p>{contentCaption}</p>
                     <button className="campaignCaptionCopy" type="button" onClick={() => void copyCaption("campaign", contentCaption)}>
-                      {copiedCaption === "campaign" ? "Copied" : "Copy campaign caption"}
+                      {copiedCaption === "campaign" ? "Copied" : metadata.useGeneralCaptionForPlatforms ? "Copy caption for all platforms" : "Copy general caption"}
                     </button>
                   </div>
                 ) : null}

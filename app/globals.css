@@ -25,6 +25,173 @@ html {
   --danger-light-border: rgba(229,62,62,0.32);
 }
 
+/* Campaign caption mode selector in the business mission builder. */
+.platformCaptionEditor { display: grid; gap: 12px; }
+.platformCaptionEditor { --caption-accent: var(--accent-2); }
+.platformCaptionEditor .captionModeChoices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+.platformCaptionEditor label.captionModeCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px 36px minmax(0, 1fr) 20px;
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 96px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.platformCaptionEditor label.captionModeCard:hover { border-color: rgba(245,166,35,.65); }
+.platformCaptionEditor label.captionModeCard.active {
+  border-color: var(--caption-accent);
+  background: rgba(245,166,35,.09);
+  box-shadow: 0 0 0 1px rgba(245,166,35,.16) inset;
+}
+.platformCaptionEditor label.captionModeCard:focus-within { outline: 2px solid rgba(245,166,35,.55); outline-offset: 2px; }
+.platformCaptionEditor .captionModeCard input {
+  width: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  accent-color: var(--caption-accent);
+  cursor: pointer;
+}
+.platformCaptionEditor .captionModeIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(245,166,35,.14);
+  color: var(--caption-accent);
+  font-size: 12px;
+  font-weight: 900;
+}
+.platformCaptionEditor .captionModeCopy { display: grid; gap: 6px; min-width: 0; }
+.platformCaptionEditor .captionModeCopy strong { color: var(--text); font-size: 13px; line-height: 1.35; }
+.platformCaptionEditor .captionModeCopy small { color: var(--muted); font-size: 12px; line-height: 1.45; font-weight: 500; }
+.platformCaptionEditor .captionModeCheck {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: transparent;
+  font-size: 12px;
+  font-weight: 900;
+}
+.platformCaptionEditor .captionModeCard.active .captionModeCheck { border-color: var(--caption-accent); background: var(--caption-accent); color: #17120a; }
+.platformCaptionEditor .generalCaptionPreview {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(245,166,35,.34);
+  border-radius: 12px;
+  background: rgba(245,166,35,.045);
+}
+.platformCaptionEditor .generalCaptionPreviewHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.platformCaptionEditor .generalCaptionPreviewHead button {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border: 1px solid rgba(245,166,35,.4);
+  border-radius: 9px;
+  background: rgba(245,166,35,.09);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.platformCaptionEditor .generalCaptionPreview strong { color: var(--text); font-size: 13px; }
+.platformCaptionEditor .generalCaptionPreview p { color: var(--muted); font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+.platformCaptionEditor .generalCaptionPreview.missing { border-color: rgba(245,166,35,.5); background: rgba(245,166,35,.07); }
+@media (max-width: 820px) {
+  .platformCaptionEditor .captionModeChoices { grid-template-columns: 1fr; }
+}
+
+/* Business mission checklist follows the active app theme with Qeixova amber accents. */
+.missionStepOrderGuide.businessMissionSteps {
+  display: grid;
+  gap: 14px;
+  padding: clamp(14px, 2vw, 22px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card-bg);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .08);
+}
+.businessMissionSteps .missionStepOrderHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 2px; }
+.businessMissionSteps .missionStepOrderHeader p {
+  margin: 0;
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.businessMissionSteps .missionStepOrderHeader strong { flex: 0 0 auto; padding: 6px 10px; border: 1px solid color-mix(in srgb, var(--accent-2) 35%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent-2) 12%, var(--card-bg)); color: var(--text); font-size: 12px; font-weight: 800; }
+.businessMissionSteps .missionStepOrderIntro { margin: -2px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.businessMissionSteps ol { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; counter-reset: mission-example-step; }
+.businessMissionSteps li {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  column-gap: 12px;
+  counter-increment: mission-example-step;
+  align-items: center;
+  min-height: 58px;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .025);
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.businessMissionSteps li:hover {
+  border-color: color-mix(in srgb, var(--accent-2) 60%, var(--border));
+  box-shadow: 0 5px 14px rgba(0, 0, 0, .08);
+  transform: translateY(-1px);
+}
+.businessMissionSteps li::before {
+  content: counter(mission-example-step);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #ffbd43, #f3a018);
+  color: #30230f;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+@media (max-width: 620px) {
+  .businessMissionSteps .missionStepOrderHeader { align-items: flex-start; }
+  .businessMissionSteps .missionStepOrderHeader p { font-size: 10px; line-height: 1.4; }
+  .businessMissionSteps .missionStepOrderIntro { font-size: 12px; }
+  .businessMissionSteps li { grid-template-columns: 30px minmax(0, 1fr); gap: 9px; padding: 10px; font-size: 12px; }
+  .businessMissionSteps li::before { width: 27px; height: 27px; border-radius: 8px; font-size: 12px; }
+}
+
+.missionVisibilityChoices { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--border); border-radius: 13px; background: var(--bg); }
+.missionVisibilityChoices > strong { color: var(--text); font-size: 13px; }
+.missionVisibilityChoices > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.missionVisibilityChoices > div { display: flex; flex-wrap: wrap; gap: 9px; }
+.missionVisibilityChoices label { display: inline-flex; align-items: center; gap: 9px; min-width: 168px; padding: 10px 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text); cursor: pointer; font-size: 12px; font-weight: 750; transition: border-color .16s ease, background .16s ease, box-shadow .16s ease; }
+.missionVisibilityChoices label:hover { border-color: color-mix(in srgb, var(--accent-2) 60%, var(--border)); }
+.missionVisibilityChoices label.active { border-color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 14%, var(--card-bg)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-2) 20%, transparent); }
+.missionVisibilityChoices input { width: 16px; height: 16px; accent-color: #e99d1c; margin: 0; flex: 0 0 auto; }
+.missionVisibilityChoices input:focus-visible { outline: 3px solid rgba(233, 157, 28, .35); outline-offset: 2px; }
+
 [data-theme="light"] {
   --bg: var(--qeixova-color-ff-ff-ff);
   --text: var(--qeixova-color-11-11-11);

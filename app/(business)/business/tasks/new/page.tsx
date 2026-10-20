@@ -272,8 +272,8 @@ const stepHeroCopy = [
   },
   {
     eyebrow: "Step 5 / Actions and reach",
-    title: "Confirm growth partner actions and reach",
-    description: "Set what growth partners must do, how many people should complete the campaign, and the reward budget for each approval.",
+    title: "Review required steps and campaign size",
+    description: "The mission flow creates required steps from the campaign type and selected platforms. Add any extra business instructions, then choose your completion target and campaign run time.",
   },
   {
     eyebrow: "Step 6 / Audience and location",
@@ -300,7 +300,9 @@ type CampaignBuilderDraft = {
   objective: string;
   contentType: string;
   contentCaption: string;
+  useGeneralCaptionForPlatforms?: boolean;
   platformCaptions?: Record<string, string>;
+  customMissionSteps?: string;
   contentLink: string;
   assetName: string;
   assetDataUrl: string;
@@ -591,7 +593,7 @@ function createEmptyTargetLocation(): TargetLocation {
 function buildActionsForPricing(baseActions: string[], options: PricingOption[]) {
   if (options.length === 0) return baseActions;
 
-  const platformActions = options.map((option) => option.actionHint);
+  const platformActions = options.map((option) => cleanActionForContributor(option.actionHint));
   const supportingActions = baseActions.filter((action) => (
     !/^post (?:the )?campaign content$/i.test(action)
     && !/keep .*visible/i.test(action)
@@ -639,40 +641,80 @@ function cleanActionForContributor(action: string) {
     .trim();
 }
 
-function buildContributorSteps(input: {
-  hasUploadedAsset: boolean;
-  hasContentLink: boolean;
-  categoryId: string;
-  actions: string[];
-  selectedPricingOptions: PricingOption[];
-  appGuidedSteps: string[];
-}) {
-  const assetStep = input.hasUploadedAsset && !input.hasContentLink
-    ? "Download the uploaded campaign content first, then upload or share it manually on the required platform if the platform cannot preview it."
-    : "";
-  const selectedPlatformSteps = input.selectedPricingOptions
-    .map((option) => cleanActionForContributor(option.actionHint))
+function parseMissionSteps(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((step) => step.replace(/^\s*(?:\d+[.)]|[-*•])\s*/, "").trim())
     .filter(Boolean);
-  const fallbackSteps = input.actions
-    .map(cleanActionForContributor)
-    .filter((step) => step && !/^submit\b/i.test(step));
-  const keepVisibleStep = input.actions.find((step) => /keep .*visible/i.test(step));
-  const proofStep = input.categoryId === "feedback"
-    ? "Submit a clear written response"
-    : input.categoryId === "apps"
-      ? "Submit screenshots and useful feedback"
-      : "Submit screenshot proof";
+}
 
-  const actionSteps = input.categoryId === "apps"
-    ? input.appGuidedSteps.map(cleanActionForContributor).filter(Boolean)
-    : (selectedPlatformSteps.length > 0 ? selectedPlatformSteps : fallbackSteps);
+function buildRequiredMissionSteps(input: {
+  categoryId: string;
+  bundleId: string;
+  platforms: string[];
+  actions: string[];
+  useGeneralCaption: boolean;
+  appInstructions: string[];
+}) {
+  const platformList = input.platforms.length > 0 ? input.platforms.join(", ") : "the selected platform";
+  const visibilityDuration = input.actions.find((action) => /keep .*visible/i.test(action))?.match(/\d+\s*hours?/i)?.[0];
+  const visibilityStep = visibilityDuration
+    ? `Leave each post publicly visible for ${visibilityDuration}. Do not delete or hide it during this time.`
+    : "Leave each post publicly visible until your submission has been reviewed. Do not delete or hide it before then.";
+  const captionCopyStep = input.useGeneralCaption
+    ? "Open the Campaign content section and copy the general caption. Use this same caption on every selected platform."
+    : "Open the Campaign content section and copy the caption written for each platform. Use the WhatsApp caption for WhatsApp, the Instagram caption for Instagram, and so on.";
+  const captureScreenshotStep = visibilityDuration
+    ? `After the full ${visibilityDuration} has passed, take one clear screenshot of each post while it is still public. Show the published post and enough of your account or platform screen to identify it.`
+    : "Before submitting, take one clear screenshot of each post while it is still public. Show the published post and enough of your account or platform screen to identify it.";
+  const submitScreenshotStep = "Return to Qeixova and upload the screenshots you took, one for each selected platform, then submit the mission for review.";
 
-  return [...new Set([
-    assetStep,
-    ...actionSteps,
-    keepVisibleStep,
-    proofStep,
-  ].filter(Boolean))];
+  if (input.categoryId === "community") {
+    return [
+      `Open the community invite above and join the selected group or community: ${platformList}.`,
+      "Read and follow the community rules. Stay joined for any duration stated in the mission.",
+      "Return to Qeixova and upload a clear screenshot showing that you joined and the community name.",
+    ];
+  }
+
+  if (input.categoryId === "apps") {
+    return [
+      "Open or install the app using the link or test file above.",
+      ...(input.appInstructions.length > 0 ? input.appInstructions : ["Complete the app test instructions provided by the business."]),
+      "Return to Qeixova. Upload clear screenshots of the required test screens and submit your honest feedback.",
+    ];
+  }
+
+  if (input.categoryId === "feedback") {
+    return [
+      "Open the survey, product, or research link above and review the information provided.",
+      "Answer every question clearly and honestly, based on your own experience or opinion.",
+      "Submit your completed answers as your feedback response.",
+    ];
+  }
+
+  const isMusicLinkMission = input.categoryId === "music" && input.bundleId === "streaming-awareness";
+  const isCommunityPost = input.bundleId === "community-distribution";
+  const isVideoMission = input.bundleId === "short-video";
+  const prepareContentStep = isMusicLinkMission
+    ? "Open the song, artist, or release link above. If a campaign image or video is attached, download it to your device too."
+    : "Download the campaign image or video above and save it to your device. If it opens from a link, open the link first, then save the media you will post.";
+  const publishStep = isMusicLinkMission
+    ? `Open each selected platform: ${platformList}. Create a new post or status, add the music link or downloaded campaign media, paste the caption for that platform, and publish it.`
+    : isCommunityPost
+      ? `Open a relevant group or community on each selected platform: ${platformList}. Create a post, attach the downloaded campaign media, paste the caption for that platform, and publish it while following the group's rules.`
+      : isVideoMission
+        ? `Open each selected platform: ${platformList}. Start a new post or video repost, upload the campaign video you downloaded, paste the caption for that platform, and publish it.`
+        : `Open each selected platform: ${platformList}. Start a new post or status, upload the campaign image or video you downloaded, paste the caption for that platform, and publish it publicly.`;
+
+  return [
+    prepareContentStep,
+    captionCopyStep,
+    publishStep,
+    visibilityStep,
+    captureScreenshotStep,
+    submitScreenshotStep,
+  ];
 }
 
 function getBundleDisplay(bundle: CampaignBundle, categoryId: string) {
@@ -898,7 +940,9 @@ export default function NewCampaignPage() {
   const [objective, setObjective] = useState("");
   const [contentType, setContentType] = useState(missionCategories[0].contentTypes[0]);
   const [contentCaption, setContentCaption] = useState("");
+  const [useGeneralCaptionForPlatforms, setUseGeneralCaptionForPlatforms] = useState(false);
   const [platformCaptions, setPlatformCaptions] = useState<Record<string, string>>({});
+  const [customMissionSteps, setCustomMissionSteps] = useState("");
   const [contentLink, setContentLink] = useState("");
   const [assetName, setAssetName] = useState("");
   const [assetPreviewUrl, setAssetPreviewUrl] = useState("");
@@ -968,21 +1012,41 @@ export default function NewCampaignPage() {
     .split(/\r?\n/)
     .map((item) => item.trim())
     .filter(Boolean);
-  const hasContributorActions = category.id === "apps" ? appInstructionSteps.length > 0 : actions.length > 0;
+  const requiresCampaignCaption = category.id === "content" || category.id === "music";
+  const hasCaptionForEveryPlatform = selectedPricingOptions.length > 0
+    && selectedPricingOptions.every((option) => Boolean(platformCaptions[option.platform]?.trim()));
+  const hasRequiredCampaignCaptions = !requiresCampaignCaption
+    || (useGeneralCaptionForPlatforms ? Boolean(contentCaption.trim()) : hasCaptionForEveryPlatform);
+  const customMissionStepLines = useMemo(() => parseMissionSteps(customMissionSteps), [customMissionSteps]);
+  const hasContributorActions = category.id === "apps"
+    ? appInstructionSteps.length > 0
+    : actions.length > 0;
+  const requiredMissionSteps = buildRequiredMissionSteps({
+    categoryId: category.id,
+    bundleId: bundle?.id ?? "",
+    platforms: selectedPlatforms,
+    actions,
+    useGeneralCaption: useGeneralCaptionForPlatforms,
+    appInstructions: appInstructionSteps,
+  });
+  const previewContributorSteps = requiredMissionSteps.length > 1
+    ? [...requiredMissionSteps.slice(0, -1), ...customMissionStepLines, requiredMissionSteps[requiredMissionSteps.length - 1]]
+    : [...requiredMissionSteps, ...customMissionStepLines];
   const missingLaunchFields = [
     title.trim().length >= 4 ? "" : "campaign title",
     objective.trim().length >= 10 ? "" : "campaign objective",
     hasCampaignAsset ? "" : "campaign link or attached asset",
     hasPricingSelection ? "" : "selected platform",
-    hasContributorActions ? "" : category.id === "apps" ? "app test instructions" : "growth partner action",
+    hasRequiredCampaignCaptions ? "" : useGeneralCaptionForPlatforms ? "general caption for selected platforms" : "caption for every selected platform",
+    hasContributorActions ? "" : category.id === "apps" ? "app test instructions" : "required mission actions",
     hasLocationTarget ? "" : "target location",
     policyAccepted ? "" : "prohibited campaign confirmation",
   ].filter(Boolean);
   const canSubmit = missingLaunchFields.length === 0;
   const canContinueStep = (
     (stepIndex !== 2 || hasCampaignAsset)
-    && (stepIndex !== 3 || hasPricingSelection)
-    && (stepIndex !== 4 || category.id !== "apps" || appInstructionSteps.length > 0)
+    && (stepIndex !== 3 || (hasPricingSelection && hasRequiredCampaignCaptions))
+    && (stepIndex !== 4 || hasContributorActions)
     && (stepIndex !== 5 || hasLocationTarget)
   );
   const hasEnoughBalance = Number(business?.balance ?? 0) >= pricing.totalQlt;
@@ -993,7 +1057,9 @@ export default function NewCampaignPage() {
     || title.trim().length > 0
     || objective.trim().length > 0
     || contentCaption.trim().length > 0
+    || useGeneralCaptionForPlatforms
     || Object.values(platformCaptions).some((caption) => caption.trim().length > 0)
+    || customMissionSteps.trim().length > 0
     || contentLink.trim().length > 0
     || assetName.trim().length > 0
     || bundleId.trim().length > 0
@@ -1014,7 +1080,9 @@ export default function NewCampaignPage() {
     objective,
     contentType,
     contentCaption,
+    useGeneralCaptionForPlatforms,
     platformCaptions,
+    customMissionSteps,
     contentLink,
     assetName,
     assetDataUrl,
@@ -1040,7 +1108,9 @@ export default function NewCampaignPage() {
     bundleId,
     categoryId,
     contentCaption,
+    useGeneralCaptionForPlatforms,
     platformCaptions,
+    customMissionSteps,
     contentLink,
     contentType,
     customContributors,
@@ -1075,7 +1145,9 @@ export default function NewCampaignPage() {
     setObjective(draft.objective || "");
     setContentType(draft.contentType || missionCategories[0].contentTypes[0]);
     setContentCaption(draft.contentCaption || "");
+    setUseGeneralCaptionForPlatforms(draft.useGeneralCaptionForPlatforms === true);
     setPlatformCaptions(draft.platformCaptions && typeof draft.platformCaptions === "object" ? draft.platformCaptions : {});
+    setCustomMissionSteps(draft.customMissionSteps || "");
     setContentLink(draft.contentLink || "");
     setAssetName(draft.assetName || "");
     setAssetDataUrl(draft.assetDataUrl || "");
@@ -1422,6 +1494,12 @@ export default function NewCampaignPage() {
       setError("Select a bundle and at least one platform before continuing.");
       return;
     }
+    if (stepIndex === 3 && !hasRequiredCampaignCaptions) {
+      setError(useGeneralCaptionForPlatforms
+        ? "Write a general caption in Campaign Content before continuing."
+        : "Write a caption for every selected platform, or choose one general caption for all platforms.");
+      return;
+    }
     if (stepIndex === 4 && category.id === "apps" && appInstructionSteps.length === 0) {
       setError("Write the app test instructions growth partners should follow.");
       return;
@@ -1455,18 +1533,7 @@ export default function NewCampaignPage() {
 
     setSaving(true);
     setError("");
-    const appGuidedSteps = [
-      ...selectedPricingOptions.map((option) => option.actionHint),
-      ...appInstructionSteps,
-    ];
-    const contributorSteps = buildContributorSteps({
-      hasUploadedAsset: Boolean(assetName),
-      hasContentLink: Boolean(contentLink.trim()),
-      categoryId: category.id,
-      actions,
-      selectedPricingOptions,
-      appGuidedSteps,
-    });
+    const contributorSteps = previewContributorSteps;
     const instructions = [
       `Objective: ${objective.trim()}`,
       contentCaption.trim() ? `Content caption: ${contentCaption.trim()}` : "",
@@ -1477,6 +1544,7 @@ export default function NewCampaignPage() {
       `Platforms: ${selectedPlatforms.join(", ")}`,
       selectedInterests.length > 0 ? `Target interests: ${selectedInterests.join(", ")}` : "Target interests: Broad audience",
       `Target location: ${locationSummary}`,
+      customMissionStepLines.length > 0 ? `Additional business instructions: ${customMissionStepLines.join(" | ")}` : "",
       `Growth Partner actions: ${contributorSteps.join(" | ")}`,
       `Reward: ${pricing.rewardQlt.toLocaleString()} QLT per approved participation.`,
     ].join("\n");
@@ -1512,9 +1580,11 @@ export default function NewCampaignPage() {
         missionCategoryId: category.id,
         contentType,
         contentCaption: contentCaption.trim(),
-        captionOptions: selectedPricingOptions
+        useGeneralCaptionForPlatforms,
+        captionOptions: useGeneralCaptionForPlatforms ? [] : selectedPricingOptions
           .map((option) => ({ platform: option.platform, caption: (platformCaptions[option.platform] || "").trim() }))
           .filter((item) => item.caption.length > 0),
+        customMissionSteps: customMissionSteps.trim(),
         assetName,
         assetDataUrl,
         assetMimeType,
@@ -1752,7 +1822,7 @@ export default function NewCampaignPage() {
                   </label>
                 )}
                 <label className="fieldBlock captionField">
-                  General caption <small>Optional</small>
+                  General caption <small>Optional unless used for all platforms</small>
                   <textarea
                     value={contentCaption}
                     onChange={(event) => setContentCaption(event.target.value)}
@@ -1760,7 +1830,7 @@ export default function NewCampaignPage() {
                     rows={4}
                     maxLength={1200}
                   />
-                  <span className="fieldHelp">Use one caption across platforms, or add a different caption for each selected platform in the next step. Growth Partners can copy the caption they need.</span>
+                  <span className="fieldHelp">Use one caption across platforms, or add a different caption for each selected platform in the next step. This is required if you choose the general caption option.</span>
                 </label>
                 {!acceptsLink && contentLink && (
                   <div className="fieldNotice">
@@ -1816,20 +1886,66 @@ export default function NewCampaignPage() {
                 {selectedPricingOptions.length > 0 && (
                   <div className="platformCaptionEditor">
                     <p className="inlineSectionTitle">Campaign captions</p>
-                    <p className="fieldHelp">Add the caption growth partners should copy into their post on each selected platform.</p>
-                    {selectedPricingOptions.map((option) => (
-                      <label key={option.id} className="fieldBlock captionField">
-                        {option.platform} caption <small>Optional</small>
-                        <textarea
-                          value={platformCaptions[option.platform] || ""}
-                          onChange={(event) => setPlatformCaptions((current) => ({ ...current, [option.platform]: event.target.value }))}
-                          placeholder={`Write the ${option.platform} post caption for growth partners to copy.`}
-                          rows={4}
-                          maxLength={1200}
+                    <p className="fieldHelp">Growth partners will copy one of these captions into their post. Use one caption everywhere or write a separate caption for each selected platform.</p>
+                    <div className="captionModeChoices" role="radiogroup" aria-label="Campaign caption style">
+                      <label className={useGeneralCaptionForPlatforms ? "captionModeCard active" : "captionModeCard"}>
+                        <input
+                          type="radio"
+                          name="campaign-caption-mode"
+                          checked={useGeneralCaptionForPlatforms}
+                          onChange={() => {
+                            setUseGeneralCaptionForPlatforms(true);
+                            setError("");
+                          }}
                         />
-                        <span className="fieldHelp">{(platformCaptions[option.platform] || "").trim().length.toLocaleString()}/1,200 characters</span>
+                        <span className="captionModeIcon" aria-hidden="true">Aa</span>
+                        <span className="captionModeCopy">
+                          <strong>Same caption everywhere</strong>
+                          <small>Use your general caption on every selected platform.</small>
+                        </span>
+                        <span className="captionModeCheck" aria-hidden="true">{useGeneralCaptionForPlatforms ? "✓" : ""}</span>
                       </label>
-                    ))}
+                      <label className={!useGeneralCaptionForPlatforms ? "captionModeCard active" : "captionModeCard"}>
+                        <input
+                          type="radio"
+                          name="campaign-caption-mode"
+                          checked={!useGeneralCaptionForPlatforms}
+                          onChange={() => {
+                            setUseGeneralCaptionForPlatforms(false);
+                            setError("");
+                          }}
+                        />
+                        <span className="captionModeIcon" aria-hidden="true">Aa+</span>
+                        <span className="captionModeCopy">
+                          <strong>Customize each platform</strong>
+                          <small>Write a different caption for each selected platform.</small>
+                        </span>
+                        <span className="captionModeCheck" aria-hidden="true">{!useGeneralCaptionForPlatforms ? "✓" : ""}</span>
+                      </label>
+                    </div>
+                    {useGeneralCaptionForPlatforms ? (
+                      <div className={contentCaption.trim() ? "generalCaptionPreview" : "generalCaptionPreview missing"}>
+                        <div className="generalCaptionPreviewHead">
+                          <strong>{contentCaption.trim() ? "Caption used on all selected platforms" : "Add your general caption"}</strong>
+                          <button type="button" onClick={() => setStepIndex(2)}>{contentCaption.trim() ? "Edit caption" : "Write caption"}</button>
+                        </div>
+                        <p>{contentCaption.trim() || "Go back to Campaign Content and write a general caption before continuing."}</p>
+                      </div>
+                    ) : (
+                      selectedPricingOptions.map((option) => (
+                        <label key={option.id} className="fieldBlock captionField">
+                          {option.platform} caption <small>{requiresCampaignCaption ? "Required" : "Optional"}</small>
+                          <textarea
+                            value={platformCaptions[option.platform] || ""}
+                            onChange={(event) => setPlatformCaptions((current) => ({ ...current, [option.platform]: event.target.value }))}
+                            placeholder={`Write the ${option.platform} post caption for growth partners to copy.`}
+                            rows={4}
+                            maxLength={1200}
+                          />
+                          <span className="fieldHelp">{(platformCaptions[option.platform] || "").trim().length.toLocaleString()}/1,200 characters</span>
+                        </label>
+                      ))
+                    )}
                   </div>
                 )}
                 {recommendedBundles.length === 0 && (
@@ -1842,17 +1958,17 @@ export default function NewCampaignPage() {
             )}
 
             {stepIndex === 4 && (
-              <StepSection eyebrow="Step 5" title="Confirm actions and reach" note="Set what growth partners must do and how many people should complete the campaign.">
+              <StepSection eyebrow="Step 5" title="Review required steps and campaign size" note="The mission flow creates required steps from the campaign type and selected platforms. Add any extra business instructions, then choose your completion target and campaign run time.">
                 {category.id === "apps" ? (
                   <div className="appInstructionPanel">
                     <header className="appInstructionTop">
                       <div>
-                        <p className="inlineSectionTitle">Growth Partner checklist</p>
-                        <h3>What should testers do?</h3>
+                    <p className="inlineSectionTitle">App test instructions</p>
+                    <h3>What should testers do?</h3>
                       </div>
                       <span>{appInstructionSteps.length > 0 ? `${appInstructionSteps.length} steps added` : "Required"}</span>
                     </header>
-                    <p className="appInstructionCopy">Enter the exact actions growth partners must complete. Use one line per step so the mission is easy to follow.</p>
+                    <p className="appInstructionCopy">Add the app-specific actions testers must do between opening the app and submitting screenshots and feedback. The required mission steps below already cover opening the app and submitting proof.</p>
                     <label className="appInstructionEditor">
                       <textarea
                         value={appContributorInstructions}
@@ -1860,44 +1976,86 @@ export default function NewCampaignPage() {
                           setAppContributorInstructions(event.target.value);
                           setError("");
                         }}
-                        placeholder={"Install the app and create an account\nOpen the wallet page and test the fund button\nTake screenshots of each completed step\nWrite what worked, what failed, and what confused you"}
+                        placeholder={"Create an account with the test email provided\nOpen the wallet page and test the fund button\nTry the transfer flow and note any errors or confusing text"}
                       />
-                      <small>Each line becomes a separate growth partner step.</small>
+                      <small>Each line becomes a required test step between opening the app and submitting feedback.</small>
                     </label>
                     <div className="appTestSummary">
                       <span>Selected test path</span>
                       <strong>{selectedPricingOptions.map((option) => option.label).join(" + ") || "No test path selected"}</strong>
                     </div>
                   </div>
-                ) : (
-                  <div className="checkGrid">
-                    {getActionChoices(actions).map((item) => (
-                      <label key={item} className={actions.includes(item) ? "checkItem active" : "checkItem"}>
-                        <input
-                          type={VISIBILITY_ACTIONS.includes(item as typeof VISIBILITY_ACTIONS[number]) ? "radio" : "checkbox"}
-                          name={VISIBILITY_ACTIONS.includes(item as typeof VISIBILITY_ACTIONS[number]) ? "visibility-duration" : undefined}
-                          checked={actions.includes(item)}
-                          onChange={() => toggleAction(item)}
-                        />
-                        <span>{item}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+                ) : null}
+                <div className="missionStepOrderGuide businessMissionSteps">
+                    <div className="missionStepOrderHeader">
+                      <p>Required actions and post visibility</p>
+                      <strong>{requiredMissionSteps.length} steps</strong>
+                    </div>
+                    {category.id !== "apps" && getActionChoices(actions).some((item) => VISIBILITY_ACTIONS.includes(item as typeof VISIBILITY_ACTIONS[number])) && (
+                      <div className="missionVisibilityChoices">
+                        <strong>How long should each post stay visible?</strong>
+                        <p>Choose the required visibility time. This will be included in the numbered mission steps.</p>
+                        <div>
+                          {getActionChoices(actions).filter((item) => VISIBILITY_ACTIONS.includes(item as typeof VISIBILITY_ACTIONS[number])).map((item) => (
+                            <label key={item} className={actions.includes(item) ? "active" : ""}>
+                              <input
+                                type="radio"
+                                name="visibility-duration"
+                                checked={actions.includes(item)}
+                                onChange={() => toggleAction(item)}
+                              />
+                              <span>{item}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <p className="missionStepOrderIntro">Complete every step in order. Follow the instructions in each one, then submit the proof or response requested at the end.</p>
+                    <ol>
+                      {requiredMissionSteps.map((step, index) => <li key={`${step}-${index}`}>{step}</li>)}
+                    </ol>
+                </div>
+                <div className="appInstructionPanel optionalMissionStepPanel">
+                  <header className="appInstructionTop">
+                    <div>
+                      <p className="inlineSectionTitle">Additional business instructions</p>
+                      <h3>Add any extra steps</h3>
+                    </div>
+                    <span>Optional · {customMissionStepLines.length} added</span>
+                  </header>
+                  <p className="appInstructionCopy">Add details that are specific to your business, such as an account name, hashtag, page to visit, or special rule. They will be added to the checklist before the final proof step.</p>
+                  <label className="appInstructionEditor">
+                    <textarea
+                      value={customMissionSteps}
+                      onChange={(event) => {
+                        setCustomMissionSteps(event.target.value);
+                        setError("");
+                      }}
+                      placeholder={"Use the @qeixovaofficial account when tagging Qeixova.\nInclude the campaign hashtag #Qeixova in your post."}
+                      rows={3}
+                      maxLength={2400}
+                    />
+                    <small>Optional. Write one extra instruction per line. They will be added before the final proof step so proof stays last. {customMissionSteps.length.toLocaleString()}/2,400 characters.</small>
+                  </label>
+                </div>
                 <div className="sectionDivider" />
-                <p className="inlineSectionTitle">Reach package</p>
+                <div className="reachSectionIntro">
+                  <p className="inlineSectionTitle">Campaign size and run time</p>
+                  <p className="fieldHelp">Choose a suggested campaign size below. The number is your target for approved growth partner completions; the duration is how long the campaign stays open.</p>
+                </div>
                 <div className="packageGrid">
                   {reachPackages.map((item) => (
                     <button key={item.id} type="button" className={item.id === reachId ? "packageCard active" : "packageCard"} onClick={() => setReachId(item.id)}>
                       <strong>{item.name}</strong>
-                      <span>{item.contributors.toLocaleString()} growth partners</span>
-                      <small>{item.duration}</small>
+                      <span>Target: {item.contributors.toLocaleString()} approved completions</span>
+                      <small>Campaign stays open for {item.duration}</small>
                     </button>
                   ))}
                 </div>
                 <label className="fieldBlock compact">
-                  Custom growth partner quantity
-                  <input type="number" min="1" value={customContributors} onChange={(event) => setCustomContributors(event.target.value)} placeholder="Use package quantity" />
+                  Set a different completion target <small>Optional</small>
+                  <input type="number" min="1" value={customContributors} onChange={(event) => setCustomContributors(event.target.value)} placeholder={`Use ${reach.contributors} completions from ${reach.name}`} />
+                  <span className="fieldHelp">Enter the total number of approved completions you want. Leave this blank to use the selected package.</span>
                 </label>
               </StepSection>
             )}
@@ -2075,11 +2233,12 @@ export default function NewCampaignPage() {
                   bundleName={bundle?.name ?? "No bundle selected"}
                   selectedPlatforms={selectedPlatforms}
                   selectedPlatformLabel={selectedPricingLabel || "No platform selected"}
-                  actions={actions}
+                  actions={previewContributorSteps}
                   selectedInterests={selectedInterests}
                   locationSummary={locationSummary}
                   contentType={contentType}
                   contentCaption={contentCaption}
+                  useGeneralCaptionForPlatforms={useGeneralCaptionForPlatforms}
                   contentLink={contentLink}
                   assetName={assetName}
                   assetPreviewUrl={assetPreviewUrl}
@@ -2166,6 +2325,7 @@ function CampaignPreview({
   locationSummary,
   contentType,
   contentCaption,
+  useGeneralCaptionForPlatforms,
   contentLink,
   assetName,
   assetPreviewUrl,
@@ -2197,6 +2357,7 @@ function CampaignPreview({
   locationSummary: string;
   contentType: string;
   contentCaption: string;
+  useGeneralCaptionForPlatforms: boolean;
   contentLink: string;
   assetName: string;
   assetPreviewUrl: string;
@@ -2242,7 +2403,7 @@ function CampaignPreview({
           <p>{objective}</p>
           {contentCaption.trim() ? (
             <div className="previewCaptionBox">
-              <strong>Caption for growth partners</strong>
+              <strong>{useGeneralCaptionForPlatforms ? "Caption for all selected platforms" : "General caption for growth partners"}</strong>
               <span>{contentCaption.trim()}</span>
             </div>
           ) : null}
@@ -2283,16 +2444,18 @@ function CampaignPreview({
 
       <section className="previewSection">
         <div className="previewSectionHead">
-          <h3>Growth Partners will</h3>
-          <button type="button" className="previewPillButton" onClick={onChangePackage}>{shownActions.length} selected</button>
+          <h3>Growth Partner mission steps</h3>
+          <button type="button" className="previewPillButton" onClick={onChangePackage}>{shownActions.length} steps</button>
         </div>
         <div className="previewActionGrid">
-          {shownActions.length > 0 ? shownActions.map((action) => (
+          {shownActions.length > 0 ? shownActions.map((action, index) => (
             <div key={action} className="previewActionItem">
+              <span>{index + 1}</span>
               <p>{action}</p>
             </div>
           )) : (
             <div className="previewActionItem">
+              <span>!</span>
               <p>No growth partner actions selected.</p>
             </div>
           )}
@@ -2865,6 +3028,9 @@ const pageStyles = `
     box-sizing: border-box;
   }
 
+  .checkGrid .checkItem:has(input:disabled) { cursor: default; }
+  .checkGrid .checkItem input:disabled { opacity: 1; cursor: default; }
+
   .checkGrid .checkItem::before {
     content: counter(campaign-action);
     display: grid;
@@ -2877,6 +3043,12 @@ const pageStyles = `
     font-size: 12px;
     font-weight: 900;
   }
+
+  .checkGrid .checkItemCopy { display: grid; gap: 4px; align-content: center; min-width: 0; }
+  .checkGrid .checkItemCopy strong { color: var(--qeixova-color-f5-f5-f5); font-size: 13px; line-height: 1.35; }
+  .checkGrid .checkItemCopy small { color: var(--qeixova-color-70-69-6d); font-size: 11px; font-weight: 500; line-height: 1.45; }
+  .actionChoiceSection,
+  .reachSectionIntro { display: grid; gap: 6px; }
 
   .checkGrid .checkItem.active::before {
     background: #f5a623;
@@ -2964,6 +3136,9 @@ const pageStyles = `
     padding: 15px;
     resize: vertical;
   }
+
+  .businessMissionStepPanel .appInstructionEditor textarea { min-height: 165px; }
+  .standardActionSetup { display: grid; gap: 18px; }
 
   .appInstructionEditor small {
     color: var(--qeixova-color-70-69-6d);
@@ -3255,6 +3430,39 @@ const pageStyles = `
     color: var(--qeixova-color-17-17-17);
     font-weight: 850;
   }
+
+  .platformCaptionEditor { display: grid; gap: 12px; }
+  .captionModeChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .captionModeCard {
+    position: relative;
+    display: grid;
+    grid-template-columns: 17px 34px minmax(0, 1fr) 18px;
+    align-items: start;
+    gap: 10px;
+    min-height: 88px;
+    border: 1px solid var(--qeixova-color-da-d5-d7);
+    border-radius: 12px;
+    background: var(--qeixova-color-f7-f6-f6);
+    padding: 13px 12px;
+    cursor: pointer;
+    transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+  }
+  .captionModeCard:hover { border-color: rgba(26,239,34,.55); }
+  .captionModeCard.active { border-color: #1aef22; background: rgba(26,239,34,.085); box-shadow: 0 0 0 1px rgba(26,239,34,.12) inset; }
+  .captionModeCard:focus-within { outline: 2px solid rgba(26,239,34,.45); outline-offset: 2px; }
+  .captionModeCard input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: #1aef22; }
+  .captionModeIcon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: rgba(26,239,34,.12); color: #319b24; font-size: 11px; font-weight: 950; letter-spacing: -.5px; }
+  .captionModeCopy { display: grid; gap: 5px; min-width: 0; }
+  .captionModeCopy strong { color: var(--qeixova-color-17-17-17); font-size: 12px; line-height: 1.35; }
+  .captionModeCopy small { color: var(--qeixova-color-62-62-62); font-size: 11px; line-height: 1.4; font-weight: 500; }
+  .captionModeCheck { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; color: transparent; font-size: 11px; font-weight: 950; }
+  .captionModeCard.active .captionModeCheck { background: #a8f542; color: #17200c; }
+  .generalCaptionPreview { display: grid; gap: 9px; border: 1px solid rgba(26,239,34,.28); border-radius: 11px; background: rgba(26,239,34,.045); padding: 13px; }
+  .generalCaptionPreviewHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .generalCaptionPreviewHead button { border: 1px solid rgba(26,239,34,.35); border-radius: 8px; background: rgba(26,239,34,.09); color: var(--qeixova-color-17-17-17); padding: 7px 9px; font-size: 11px; font-weight: 850; cursor: pointer; }
+  .generalCaptionPreview strong { color: var(--qeixova-color-17-17-17); font-size: 12px; }
+  .generalCaptionPreview p { margin: 0; color: var(--qeixova-color-4b-47-49); font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+  .generalCaptionPreview.missing { border-color: rgba(245,166,35,.45); background: rgba(245,166,35,.07); }
 
   .fieldBlock input,
   .fieldBlock textarea {
@@ -4130,14 +4338,33 @@ const pageStyles = `
 
   .previewActionGrid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px 14px;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .previewActionItem {
-    display: block;
+    display: grid;
+    grid-template-columns: 27px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    border: 1px solid rgba(26,239,34,.16);
+    border-radius: 9px;
+    background: rgba(26,239,34,.045);
+    padding: 10px;
     color: var(--qeixova-color-27-27-27);
     font-weight: 800;
+  }
+
+  .previewActionItem > span {
+    width: 25px;
+    height: 25px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #a8f542;
+    color: #17200c;
+    font-size: 11px;
+    font-weight: 950;
   }
 
   .previewActionItem p {
@@ -4496,6 +4723,7 @@ const pageStyles = `
     .bundleGrid,
     .packageGrid,
     .locationModeGrid,
+    .captionModeChoices,
     .locationGrid,
     .locationSlot,
     .previewHeroCard,
