@@ -300,6 +300,7 @@ type CampaignBuilderDraft = {
   objective: string;
   contentType: string;
   contentCaption: string;
+  platformCaptions?: Record<string, string>;
   contentLink: string;
   assetName: string;
   assetDataUrl: string;
@@ -897,6 +898,7 @@ export default function NewCampaignPage() {
   const [objective, setObjective] = useState("");
   const [contentType, setContentType] = useState(missionCategories[0].contentTypes[0]);
   const [contentCaption, setContentCaption] = useState("");
+  const [platformCaptions, setPlatformCaptions] = useState<Record<string, string>>({});
   const [contentLink, setContentLink] = useState("");
   const [assetName, setAssetName] = useState("");
   const [assetPreviewUrl, setAssetPreviewUrl] = useState("");
@@ -991,6 +993,7 @@ export default function NewCampaignPage() {
     || title.trim().length > 0
     || objective.trim().length > 0
     || contentCaption.trim().length > 0
+    || Object.values(platformCaptions).some((caption) => caption.trim().length > 0)
     || contentLink.trim().length > 0
     || assetName.trim().length > 0
     || bundleId.trim().length > 0
@@ -1011,6 +1014,7 @@ export default function NewCampaignPage() {
     objective,
     contentType,
     contentCaption,
+    platformCaptions,
     contentLink,
     assetName,
     assetDataUrl,
@@ -1036,6 +1040,7 @@ export default function NewCampaignPage() {
     bundleId,
     categoryId,
     contentCaption,
+    platformCaptions,
     contentLink,
     contentType,
     customContributors,
@@ -1070,6 +1075,7 @@ export default function NewCampaignPage() {
     setObjective(draft.objective || "");
     setContentType(draft.contentType || missionCategories[0].contentTypes[0]);
     setContentCaption(draft.contentCaption || "");
+    setPlatformCaptions(draft.platformCaptions && typeof draft.platformCaptions === "object" ? draft.platformCaptions : {});
     setContentLink(draft.contentLink || "");
     setAssetName(draft.assetName || "");
     setAssetDataUrl(draft.assetDataUrl || "");
@@ -1506,6 +1512,9 @@ export default function NewCampaignPage() {
         missionCategoryId: category.id,
         contentType,
         contentCaption: contentCaption.trim(),
+        captionOptions: selectedPricingOptions
+          .map((option) => ({ platform: option.platform, caption: (platformCaptions[option.platform] || "").trim() }))
+          .filter((item) => item.caption.length > 0),
         assetName,
         assetDataUrl,
         assetMimeType,
@@ -1743,7 +1752,7 @@ export default function NewCampaignPage() {
                   </label>
                 )}
                 <label className="fieldBlock captionField">
-                  Content caption <small>Optional</small>
+                  General caption <small>Optional</small>
                   <textarea
                     value={contentCaption}
                     onChange={(event) => setContentCaption(event.target.value)}
@@ -1751,7 +1760,7 @@ export default function NewCampaignPage() {
                     rows={4}
                     maxLength={1200}
                   />
-                  <span className="fieldHelp">{contentCaption.trim().length.toLocaleString()}/1,200 characters. Growth Partners will see this before the action steps.</span>
+                  <span className="fieldHelp">Use one caption across platforms, or add a different caption for each selected platform in the next step. Growth Partners can copy the caption they need.</span>
                 </label>
                 {!acceptsLink && contentLink && (
                   <div className="fieldNotice">
@@ -1804,6 +1813,25 @@ export default function NewCampaignPage() {
                     );
                   })}
                 </div>
+                {selectedPricingOptions.length > 0 && (
+                  <div className="platformCaptionEditor">
+                    <p className="inlineSectionTitle">Campaign captions</p>
+                    <p className="fieldHelp">Add the caption growth partners should copy into their post on each selected platform.</p>
+                    {selectedPricingOptions.map((option) => (
+                      <label key={option.id} className="fieldBlock captionField">
+                        {option.platform} caption <small>Optional</small>
+                        <textarea
+                          value={platformCaptions[option.platform] || ""}
+                          onChange={(event) => setPlatformCaptions((current) => ({ ...current, [option.platform]: event.target.value }))}
+                          placeholder={`Write the ${option.platform} post caption for growth partners to copy.`}
+                          rows={4}
+                          maxLength={1200}
+                        />
+                        <span className="fieldHelp">{(platformCaptions[option.platform] || "").trim().length.toLocaleString()}/1,200 characters</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
                 {recommendedBundles.length === 0 && (
                   <p className="emptyPricing">No recommended bundle is available for this goal yet.</p>
                 )}

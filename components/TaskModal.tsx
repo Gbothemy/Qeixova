@@ -418,7 +418,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
 
         {phase === "details" && (
           <div className="modalContent">
-            <header className="missionBriefHeader" data-tour={isAwarenessMission ? "welcome-mission-overview" : undefined}>
+            <header className="missionBriefHeader missionBriefHeader--campaign" data-tour={isAwarenessMission ? "welcome-mission-overview" : undefined}>
               <div>
                 <span>{task.business_name || "Qeixova business campaign"}</span>
                 <h2>{task.title}</h2>
@@ -426,52 +426,6 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
               </div>
               <button type="button" onClick={onClose}>Close</button>
             </header>
-
-            {(campaignLink || metadata.assetName) && (
-              <section className="missionSection" data-tour={isAwarenessMission ? "welcome-mission-content" : undefined}>
-                <div className="sectionHead">
-                  <span>Campaign content</span>
-                  <strong>{metadata.assetName ? "Uploaded campaign asset" : "Campaign link"}</strong>
-                </div>
-                {campaignLink && (
-                  <div className="campaignLinkBlock">
-                    <span>Submitted link</span>
-                    <a className="campaignLink" href={campaignLink} target="_blank" rel="noopener noreferrer">{campaignLink}</a>
-                  </div>
-                )}
-                {contentCaption ? (
-                  <div className="campaignCaptionBlock">
-                    <span>Caption to post with content</span>
-                    <p>{contentCaption}</p>
-                  </div>
-                ) : null}
-                {metadata.captionOptions?.length ? (
-                  <div className="campaignCaptionBlock">
-                    <span>Captions for each platform</span>
-                    {metadata.captionOptions.map(({ platform, caption }) => (
-                      <article key={platform} style={{ marginTop: 12 }}>
-                        <strong>{platform}</strong>
-                        <p>{caption}</p>
-                        <button type="button" onClick={() => void copyCaption(platform, caption)}>
-                          {copiedCaption === platform ? "Copied" : `Copy ${platform} caption`}
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                ) : null}
-                {assetDataUrl ? (
-                  <div className="downloadAssetNote">
-                    {isImageAsset && <img className="assetPreviewImage" src={assetDataUrl} alt="Campaign asset" />}
-                    <p>{isImageAsset ? "Use this uploaded campaign image for the mission. Download it if your platform cannot import it directly from the preview." : "Download the uploaded campaign file, then use it on the required platform for this mission."}</p>
-                    <a className="assetDownloadButton" href={assetDataUrl} download={metadata.assetName || "campaign-asset"}>{assetMimeType.startsWith("image/") ? "Download image" : "Download file"}</a>
-                  </div>
-                ) : metadata.assetName ? (
-                  <div className="downloadAssetNote">
-                    <p>This campaign was created before stored asset previews were enabled. Ask the business to re-upload the campaign content if the file is required.</p>
-                  </div>
-                ) : null}
-              </section>
-            )}
 
             <div className="rewardBanner">
               <div>
@@ -503,11 +457,12 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
               </div>
             </section>
 
-            <section className="missionSection" data-tour={isAwarenessMission ? "welcome-mission-steps" : undefined}>
+            <section className="missionSection missionStepsSection" data-tour={isAwarenessMission ? "welcome-mission-steps" : undefined}>
               <div className="sectionHead">
-                <span>Growth Partner actions</span>
+                <span>How to complete this mission</span>
                 <strong>{actionSteps.length} step{actionSteps.length === 1 ? "" : "s"}</strong>
               </div>
+              <p className="missionActionIntro">Complete these steps in order. Use the campaign content and platform caption below when you make your post, then submit the requested proof.</p>
               <ol className="stepList">
                 {actionSteps.map((step, index) => (
                   <li key={`${step}-${index}`}>
@@ -517,6 +472,55 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
                 ))}
               </ol>
             </section>
+
+            {(campaignLink || metadata.assetName || contentCaption || metadata.captionOptions?.length) && (
+              <section className="missionSection missionCampaignSection" data-tour={isAwarenessMission ? "welcome-mission-content" : undefined}>
+                <div className="sectionHead">
+                  <span>Campaign content</span>
+                  <strong>{metadata.assetName ? "Uploaded campaign asset" : "Campaign link"}</strong>
+                </div>
+                {campaignLink && (
+                  <div className="campaignLinkBlock">
+                    <span>Submitted link</span>
+                    <a className="campaignLink" href={campaignLink} target="_blank" rel="noopener noreferrer">{campaignLink}</a>
+                  </div>
+                )}
+                {assetDataUrl ? (
+                  <div className="downloadAssetNote">
+                    {isImageAsset && <img className="assetPreviewImage" src={assetDataUrl} alt="Campaign asset" />}
+                    <p>{isImageAsset ? "Use this uploaded campaign image for the mission. Download it if your platform cannot import it directly from the preview." : "Download the uploaded campaign file, then use it on the required platform for this mission."}</p>
+                    <a className="assetDownloadButton" href={assetDataUrl} download={metadata.assetName || "campaign-asset"}>{assetMimeType.startsWith("image/") ? "Download image" : "Download file"}</a>
+                  </div>
+                ) : metadata.assetName ? (
+                  <div className="downloadAssetNote">
+                    <p>This campaign was created before stored asset previews were enabled. Ask the business to re-upload the campaign content if the file is required.</p>
+                  </div>
+                ) : null}
+                {contentCaption ? (
+                  <div className="campaignCaptionBlock">
+                    <span>General campaign caption</span>
+                    <p>{contentCaption}</p>
+                    <button className="campaignCaptionCopy" type="button" onClick={() => void copyCaption("campaign", contentCaption)}>
+                      {copiedCaption === "campaign" ? "Copied" : "Copy campaign caption"}
+                    </button>
+                  </div>
+                ) : null}
+                {metadata.captionOptions?.length ? (
+                  <div className="campaignCaptionBlock">
+                    <span>Captions for each platform</span>
+                    {metadata.captionOptions.map(({ platform, caption }) => (
+                      <article key={platform} className="platformCaptionItem">
+                        <strong>{platform}</strong>
+                        <p>{caption}</p>
+                        <button className="campaignCaptionCopy" type="button" onClick={() => void copyCaption(platform, caption)}>
+                          {copiedCaption === platform ? "Copied" : `Copy ${platform} caption`}
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            )}
 
             {isSelected ? (
               <div className="missionDetailActions">
@@ -664,6 +668,26 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           gap: 14px;
           align-items: start;
         }
+        .missionBriefHeader--campaign {
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
+          padding: 22px 22px 20px;
+          border: 1px solid rgba(168,245,66,.2);
+          border-radius: 17px;
+          background: radial-gradient(ellipse at 100% 0%, rgba(168,245,66,.15), transparent 42%), linear-gradient(135deg, #171b15, #0e100d 72%);
+          box-shadow: 0 16px 35px rgba(0,0,0,.16);
+        }
+        .missionBriefHeader--campaign > div,
+        .missionBriefHeader--campaign > button { position: relative; z-index: 1; }
+        .missionBriefHeader.missionBriefHeader--campaign span { color: #b1f65e; }
+        .missionBriefHeader--campaign h2 { color: #f7f9f3; font-size: 27px; letter-spacing: -.45px; }
+        .missionBriefHeader--campaign p { max-width: 640px; color: #c4cabe; font-size: 13px; }
+        .missionBriefHeader.missionBriefHeader--campaign button {
+          border-color: rgba(255,255,255,.16);
+          background: rgba(255,255,255,.06);
+          color: #f4f6ef;
+        }
         .missionBriefHeader span,
         .proofHeader span,
         .sectionHead span,
@@ -710,6 +734,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           background: rgba(26,239,34,.06);
           padding: 14px;
         }
+        .rewardBanner { border-color: rgba(168,245,66,.24); background: linear-gradient(110deg, rgba(168,245,66,.1), rgba(168,245,66,.035)); }
         .rewardBanner strong,
         .pendingReward strong {
           display: block;
@@ -725,6 +750,12 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           background: var(--card-bg);
           padding: 15px;
         }
+        .missionStepsSection {
+          border-color: rgba(168,245,66,.28);
+          background: linear-gradient(145deg, rgba(168,245,66,.055), var(--card-bg) 42%);
+          box-shadow: 0 12px 28px rgba(0,0,0,.08);
+        }
+        .missionCampaignSection { border-color: rgba(168,245,66,.2); }
         .sectionHead {
           display: flex;
           justify-content: space-between;
@@ -738,6 +769,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
         }
         .detailGrid {
           display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 8px;
         }
         .detailCard {
@@ -786,13 +818,13 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
         .campaignCaptionBlock {
           display: grid;
           gap: 7px;
-          border: 1px solid rgba(245,166,35,.28);
+          border: 1px solid rgba(168,245,66,.22);
           border-radius: 12px;
-          background: rgba(245,166,35,.08);
+          background: rgba(168,245,66,.045);
           padding: 12px;
         }
         .campaignCaptionBlock span {
-          color: var(--accent-2);
+          color: var(--accent);
           font-size: 10px;
           font-weight: 950;
           text-transform: uppercase;
@@ -805,6 +837,27 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           line-height: 1.55;
           white-space: pre-wrap;
         }
+        .campaignCaptionCopy {
+          justify-self: start;
+          border: 0;
+          border-radius: 8px;
+          background: #a8f542;
+          color: #17200c;
+          padding: 8px 11px;
+          font-size: 12px;
+          font-weight: 850;
+          cursor: pointer;
+        }
+        .platformCaptionItem {
+          display: grid;
+          gap: 8px;
+          margin-top: 12px;
+          padding: 12px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          background: var(--card-bg);
+        }
+        .platformCaptionItem > strong { color: var(--text); font-size: 13px; }
         .contentNote {
           margin: 0;
           color: var(--muted);
@@ -813,9 +866,9 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
         .downloadAssetNote {
           display: grid;
           gap: 6px;
-          border: 1px solid rgba(245,166,35,.25);
+          border: 1px solid rgba(168,245,66,.2);
           border-radius: 12px;
-          background: rgba(245,166,35,.06);
+          background: rgba(168,245,66,.035);
           padding: 12px;
         }
         .downloadAssetNote strong {
@@ -840,8 +893,8 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           display: inline-flex;
           width: fit-content;
           border-radius: 10px;
-          background: linear-gradient(135deg, var(--accent-2), var(--accent-2));
-          color: var(--button-text, var(--qeixova-color-ff-ff-ff));
+          background: #a8f542;
+          color: #17200c;
           padding: 9px 12px;
           font-size: 12px;
           font-weight: 950;
@@ -854,11 +907,21 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           padding: 0;
           list-style: none;
         }
+        .missionActionIntro {
+          margin: 0 0 12px;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.5;
+        }
         .stepList li {
           display: grid;
           grid-template-columns: 28px minmax(0, 1fr);
           gap: 10px;
           align-items: start;
+          padding: 11px;
+          border: 1px solid rgba(168,245,66,.13);
+          border-radius: 12px;
+          background: rgba(168,245,66,.035);
         }
         .stepList li > span {
           width: 28px;
@@ -866,8 +929,8 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           display: grid;
           place-items: center;
           border-radius: 9px;
-          background: var(--accent-2);
-          color: var(--step-number-text, var(--button-text, var(--qeixova-color-ff-ff-ff)));
+          background: #a8f542;
+          color: #17200c;
           font-size: 12px;
           font-weight: 950;
         }
@@ -1100,6 +1163,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
             grid-template-columns: 1fr;
             gap: 5px;
           }
+          .detailGrid { grid-template-columns: 1fr; }
           .missionBriefHeader button {
             justify-self: start;
           }

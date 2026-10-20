@@ -144,8 +144,8 @@ export default function GuidedWelcomeMission() {
       const contentAvailable = Boolean(findVisibleTarget('[data-tour="welcome-mission-content"]'));
       const detailStages = [
         { selector: '[data-tour="welcome-mission-overview"]', title: "1. Mission overview", body: "Review the campaign objective, reward, and proof requirements before you begin." },
-        ...(contentAvailable ? [{ selector: '[data-tour="welcome-mission-content"]', title: "2. Campaign materials", body: "Use the official Qeixova image and the supplied caption. Publish them on the platform or platforms you choose." }] : []),
-        { selector: '[data-tour="welcome-mission-steps"]', title: `${contentAvailable ? "3" : "2"}. Required actions`, body: "Complete each numbered action in order. These instructions describe what to do and what evidence to provide." },
+        { selector: '[data-tour="welcome-mission-steps"]', title: "2. Required actions", body: "Complete each numbered action in order. These instructions explain what to do and what proof to provide." },
+        ...(contentAvailable ? [{ selector: '[data-tour="welcome-mission-content"]', title: "3. Campaign materials", body: "Use the campaign asset and copy the caption for the platform where you will post." }] : []),
       ];
       const currentDetailStage = detailStages[Math.min(detailTourStep, detailStages.length - 1)];
       const isFinalDetailStage = detailTourStep >= detailStages.length - 1;
