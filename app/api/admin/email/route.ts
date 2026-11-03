@@ -3,8 +3,9 @@ import { checkAdminAuth } from "@/lib/adminAuth";
 import { getAdminContext, logAdminAction } from "@/lib/adminPlatform";
 import { sql } from "@/lib/db";
 import { isEmailDeliveryConfigured, sendAdminMessageEmail } from "@/lib/email";
+import { canonicalizeInterests, interestMatches } from "@/lib/interestTaxonomy";
 
-const MAX_RECIPIENTS_PER_SEND = 100;
+const MAX_RECIPIENTS_PER_SEND = 1000;
 
 function validAudience(value: unknown): value is "contributors" | "businesses" {
   return value === "contributors" || value === "businesses";
@@ -21,25 +22,54 @@ export async function GET(req: NextRequest) {
 
   const search = (searchParams.get("search") ?? "").trim().slice(0, 120);
   const pattern = `%${search}%`;
+  try {
+  const rankId = Number(searchParams.get("rankId"));
+  const rankFilter = Number.isSafeInteger(rankId) && rankId > 0;
   const recipients = audience === "contributors"
     ? await sql`
-        SELECT id, full_name AS name, email
+        SELECT users.id, full_name AS name, email, interests
+          , l.id AS rank_id, l.level_number, l.name AS rank_name
         FROM users
+        LEFT JOIN levels l ON l.id = users.level_id
         WHERE NULLIF(TRIM(email), '') IS NOT NULL
           AND (${search} = '' OR full_name ILIKE ${pattern} OR email ILIKE ${pattern})
-        ORDER BY full_name, id
-        LIMIT ${MAX_RECIPIENTS_PER_SEND}
+          AND (${rankFilter} = FALSE OR l.id = ${rankId})
+        ORDER BY full_name, users.id
       `
     : await sql`
-        SELECT id, name, email
+        SELECT businesses.id, name, email
         FROM businesses
         WHERE NULLIF(TRIM(email), '') IS NOT NULL
           AND (${search} = '' OR name ILIKE ${pattern} OR email ILIKE ${pattern})
-        ORDER BY name, id
-        LIMIT ${MAX_RECIPIENTS_PER_SEND}
+        ORDER BY name, businesses.id
       `;
 
-  return NextResponse.json({ recipients, limit: MAX_RECIPIENTS_PER_SEND, deliveryConfigured: isEmailDeliveryConfigured() });
+  const missionId = Number(searchParams.get("missionId"));
+  let mission: { id: number; title: string; target_interests: string[] } | null = null;
+  let matchedIds: number[] = [];
+  if (audience === "contributors") {
+    const missions = await sql`
+      SELECT id, title, COALESCE(target_interests, '{}') AS target_interests
+      FROM tasks WHERE is_active = TRUE ORDER BY title, id
+    `;
+    const ranks = await sql`SELECT id, level_number, name, min_qlt FROM levels ORDER BY level_number, id`;
+    const availableMissions = missions.map((row) => ({
+      id: Number(row.id), title: String(row.title), target_interests: canonicalizeInterests(row.target_interests),
+    }));
+    mission = availableMissions.find((item) => item.id === missionId) ?? null;
+    if (mission) {
+      matchedIds = recipients
+        .filter((row) => interestMatches(mission!.target_interests, canonicalizeInterests(row.interests)))
+        .map((row) => Number(row.id));
+    }
+    return NextResponse.json({ recipients: recipients.map(({ interests: _interests, ...recipient }) => recipient), missions: availableMissions, ranks, mission, matchedIds, limit: MAX_RECIPIENTS_PER_SEND, deliveryConfigured: isEmailDeliveryConfigured() });
+  }
+
+  return NextResponse.json({ recipients, missions: [], ranks: [], mission: null, matchedIds: [], limit: MAX_RECIPIENTS_PER_SEND, deliveryConfigured: isEmailDeliveryConfigured() });
+  } catch (error) {
+    console.error("[admin/email] Failed to load recipients", error);
+    return NextResponse.json({ error: "Could not load recipients. Check the database connection and try again." }, { status: 503 });
+  }
 }
 
 export async function POST(req: NextRequest) {
