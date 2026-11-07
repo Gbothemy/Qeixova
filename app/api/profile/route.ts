@@ -3,16 +3,18 @@ import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { displayLevel } from "@/lib/levels";
+import { ensureCreatorSchema } from "@/lib/contributorFeatures";
 
 export async function GET() {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    await ensureCreatorSchema();
 
-    const [userRows, taskRows, earnRows, withdrawRows, referralRows, milestoneRows] = await Promise.all([
+    const [userRows, taskRows, earnRows, withdrawRows, referralRows, milestoneRows, creatorCounts, creatorPosts, creatorReplies, creatorReposts] = await Promise.all([
       sql`
         SELECT
-          u.id, u.email, u.full_name, u.phone, u.balance, u.streak,
+          u.id, u.email, u.full_name, u.phone, u.bio, u.website, u.location, u.occupation, u.balance, u.streak,
           COALESCE(l.level_number, u.level, 0) AS level,
           l.name AS level_name,
           l.badge_color,
@@ -42,6 +44,28 @@ export async function GET() {
 
       // Milestone count
       sql`SELECT COUNT(*)::int AS count FROM user_milestones WHERE user_id = ${session.userId}`,
+      sql`SELECT
+        (SELECT COUNT(*)::int FROM creator_follows WHERE creator_id = ${session.userId}) AS followers,
+        (SELECT COUNT(*)::int FROM creator_follows WHERE follower_id = ${session.userId}) AS following`,
+      sql`SELECT p.id, p.body, p.created_at, COUNT(DISTINCT l.user_id)::int AS like_count,
+        COUNT(DISTINCT v.viewer_id)::int AS view_count, COUNT(DISTINCT c.id)::int AS comment_count,
+        COUNT(DISTINCT r.user_id)::int AS repost_count
+        FROM creator_posts p
+        LEFT JOIN creator_post_likes l ON l.post_id = p.id
+        LEFT JOIN creator_post_views v ON v.post_id = p.id
+        LEFT JOIN creator_post_comments c ON c.post_id = p.id
+        LEFT JOIN creator_post_reposts r ON r.post_id = p.id
+        WHERE p.user_id = ${session.userId}
+        GROUP BY p.id ORDER BY p.created_at DESC LIMIT 50`,
+      sql`SELECT c.id, c.body, c.created_at, p.id AS post_id, p.body AS post_body,
+        u.full_name AS post_author
+        FROM creator_post_comments c JOIN creator_posts p ON p.id = c.post_id
+        JOIN users u ON u.id = p.user_id
+        WHERE c.user_id = ${session.userId} ORDER BY c.created_at DESC LIMIT 50`,
+      sql`SELECT r.created_at, p.id AS post_id, p.body AS post_body, u.full_name AS post_author
+        FROM creator_post_reposts r JOIN creator_posts p ON p.id = r.post_id
+        JOIN users u ON u.id = p.user_id
+        WHERE r.user_id = ${session.userId} ORDER BY r.created_at DESC LIMIT 50`,
     ]);
 
     if (userRows.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -51,6 +75,11 @@ export async function GET() {
       profile: {
         ...user,
         level: displayLevel(user.level),
+        creator_follower_count: Number(creatorCounts[0]?.followers ?? 0),
+        creator_following_count: Number(creatorCounts[0]?.following ?? 0),
+        creator_posts: creatorPosts.map((post) => ({ ...post, id: Number(post.id), like_count: Number(post.like_count), view_count: Number(post.view_count), comment_count: Number(post.comment_count), repost_count: Number(post.repost_count) })),
+        creator_replies: creatorReplies.map((reply) => ({ ...reply, id: Number(reply.id), post_id: Number(reply.post_id) })),
+        creator_reposts: creatorReposts.map((repost) => ({ ...repost, post_id: Number(repost.post_id) })),
         tasks_completed:   taskRows[0]?.total ?? 0,
         tasks_today:       taskRows[0]?.today ?? 0,
         total_earned:      earnRows[0]?.total ?? 0,
@@ -73,9 +102,12 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
 
     if (body.action === "update_profile") {
-      const { full_name, phone } = body;
+      const { full_name, phone, bio = "", website = "", location = "", occupation = "" } = body;
       if (!full_name?.trim()) return NextResponse.json({ error: "Name is required" }, { status: 400 });
-      await sql`UPDATE users SET full_name = ${full_name.trim()}, phone = ${phone || null} WHERE id = ${session.userId}`;
+      if ([bio, website, location, occupation].some((value) => typeof value !== "string")) return NextResponse.json({ error: "Profile details must be text." }, { status: 400 });
+      if (bio.length > 280 || website.length > 200 || location.length > 80 || occupation.length > 100) return NextResponse.json({ error: "One or more profile fields exceed the allowed length." }, { status: 400 });
+      await ensureCreatorSchema();
+      await sql`UPDATE users SET full_name = ${full_name.trim()}, phone = ${phone || null}, bio = ${bio.trim()}, website = ${website.trim() || null}, location = ${location.trim() || null}, occupation = ${occupation.trim() || null} WHERE id = ${session.userId}`;
       return NextResponse.json({ ok: true });
     }
 

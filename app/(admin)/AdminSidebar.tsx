@@ -4,21 +4,22 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminRole, roleCan } from "@/lib/adminRoles";
-import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", description: "Operations overview", icon: "OV", permission: "dashboard.read" },
-  { href: "/admin/operations", label: "Operations", description: "Security, risk, disputes and reports", icon: "OP", permission: "dashboard.read" },
-  { href: "/admin/users", label: "Users", description: "Growth Partner accounts", icon: "US", permission: "accounts.read" },
-  { href: "/admin/businesses", label: "Businesses", description: "Registered business accounts", icon: "BZ", permission: "accounts.read" },
-  { href: "/admin/email", label: "Email Center", description: "Message contributors and businesses", icon: "EM", permission: "accounts.manage" },
-  { href: "/admin/campaigns", label: "Campaign Review", description: "Approve or reject business campaigns", icon: "AP", permission: "campaigns.read" },
-  { href: "/admin/tasks", label: "Missions", description: "Campaign inventory", icon: "MS", permission: "campaigns.read" },
-  { href: "/admin/completions", label: "Mission Proof", description: "Approve completed user missions", icon: "RV", permission: "proofs.read" },
-  { href: "/admin/withdrawals", label: "Withdrawals", description: "Payout operations", icon: "WD", permission: "withdrawals.read" },
-  { href: "/admin/logs", label: "Audit Logs", description: "System activity", icon: "LG", permission: "audit.read" },
-  { href: "/admin/config", label: "Economy", description: "Reward controls", icon: "EC", permission: "economy.read" },
+  { group: "Workspace", href: "/admin", label: "Overview", icon: "OV", permission: "dashboard.read" },
+  { group: "Workspace", href: "/admin/operations", label: "Operations", icon: "OP", permission: "dashboard.read" },
+  { group: "People", href: "/admin/users", label: "Users", icon: "US", permission: "accounts.read" },
+  { group: "People", href: "/admin/businesses", label: "Businesses", icon: "BZ", permission: "accounts.read" },
+  { group: "People", href: "/admin/email", label: "Email center", icon: "EM", permission: "accounts.manage" },
+  { group: "Campaigns", href: "/admin/campaigns", label: "Campaign review", icon: "AP", permission: "campaigns.read" },
+  { group: "Campaigns", href: "/admin/tasks", label: "Missions", icon: "MS", permission: "campaigns.read" },
+  { group: "Campaigns", href: "/admin/completions", label: "Mission proof", icon: "RV", permission: "proofs.read" },
+  { group: "Finance", href: "/admin/withdrawals", label: "Withdrawals", icon: "WD", permission: "withdrawals.read" },
+  { group: "Finance", href: "/admin/config", label: "Economy", icon: "EC", permission: "economy.read" },
+  { group: "System", href: "/admin/logs", label: "Audit logs", icon: "LG", permission: "audit.read" },
 ];
+
+const NAV_GROUPS = ["Workspace", "People", "Campaigns", "Finance", "System"] as const;
 
 function SidebarContent({
   pathname,
@@ -44,19 +45,22 @@ function SidebarContent({
         <button className="admin-close-btn" type="button" onClick={onClose} aria-label="Close admin menu">×</button>
       </header>
 
-      <p className="adminNavLabel">Operate</p>
       <nav className="adminNav" aria-label="Admin navigation">
-        {NAV.filter(item => roleCan(role, item.permission)).map((item) => {
-          const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
-          return (
-            <Link key={item.href} href={item.href} onClick={onClose} className={active ? "active" : ""}>
-              <span className="adminNavIcon" aria-hidden="true">{item.icon}</span>
-              <span>
-                <strong>{item.label}</strong>
-                <small>{item.description}</small>
-              </span>
-            </Link>
-          );
+        {NAV_GROUPS.map((group) => {
+          const items = NAV.filter(item => item.group === group && roleCan(role, item.permission));
+          if (!items.length) return null;
+          return <section className="adminNavGroup" key={group}>
+            <p className="adminNavLabel">{group}</p>
+            {items.map((item) => {
+              const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
+              return (
+                <Link key={item.href} href={item.href} onClick={onClose} className={active ? "active" : ""}>
+                  <span className="adminNavIcon" aria-hidden="true">{item.icon}</span>
+                  <strong>{item.label}</strong>
+                </Link>
+              );
+            })}
+          </section>;
         })}
       </nav>
 
@@ -64,7 +68,6 @@ function SidebarContent({
         <span>Signed in as</span>
         <strong>{name}</strong>
         <small>{role.replaceAll("_", " ")}</small>
-        <ThemeToggle />
         <button type="button" onClick={onLogout}>Log out</button>
       </footer>
     </>

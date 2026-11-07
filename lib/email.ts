@@ -138,13 +138,14 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
   `);
 }
 
-export async function sendEmailVerificationEmail(to: string, name: string, token: string): Promise<boolean> {
+export async function sendEmailVerificationEmail(to: string, name: string, token: string, reminder = false): Promise<boolean> {
   const verifyUrl = `${APP_URL}/api/auth/verify-email?token=${token}`;
-  return sendEmail(to, "Verify your Qeixova email", `
+  const safeName = escapeEmailHtml(name);
+  return sendEmail(to, reminder ? "Reminder: verify your Qeixova email" : "Verify your Qeixova email", `
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#000;color:#F5F5F5;padding:32px;border-radius:16px">
       <img src="${APP_URL}/qeixova-icon.png" width="48" style="border-radius:12px;margin-bottom:20px" />
-      <h1 style="font-size:20px;font-weight:900;color:#F5F5F5;margin:0 0 8px">Verify your email</h1>
-      <p style="color:#888;font-size:14px;line-height:1.7">Hi ${name}, confirm this email address to activate your Qeixova account. This link expires in 24 hours.</p>
+      <h1 style="font-size:20px;font-weight:900;color:#F5F5F5;margin:0 0 8px">${reminder ? "Your account is waiting" : "Verify your email"}</h1>
+      <p style="color:#888;font-size:14px;line-height:1.7">Hi ${safeName}, ${reminder ? "you still need to confirm this email address before you can log in. Use the button below to verify your Qeixova account." : "confirm this email address to activate your Qeixova account."} This link expires in 24 hours.</p>
       <a href="${verifyUrl}" style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#1AEF22,#06B517);color:#000;text-decoration:none;padding:13px 28px;border-radius:11px;font-weight:800;font-size:14px">Verify Email</a>
       <p style="color:#333;font-size:12px;margin-top:28px">If you did not create this account, you can ignore this email.</p>
     </div>

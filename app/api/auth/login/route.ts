@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
           ok: true,
           user: { id: user.id, email: user.email, fullName: user.full_name },
         })
-      : NextResponse.redirect(new URL("/dashboard", req.url), 303);
+      : NextResponse.redirect(new URL("/creator", req.url), 303);
     stage = "set_cookie";
     res.cookies.set("auth_token", token, {
       httpOnly: true, secure: process.env.NODE_ENV === "production",

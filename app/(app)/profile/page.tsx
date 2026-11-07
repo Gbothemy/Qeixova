@@ -1,13 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import BottomNav from "@/components/BottomNav";
-import BankAccountsModal from "@/components/BankAccountsModal";
 import ContributorLoading from "@/components/ContributorLoading";
-import { useAuth } from "@/lib/useAuth";
 
 interface Profile {
-  full_name: string; email: string; phone: string;
+  id: number; full_name: string; email: string; phone: string; bio?: string; website?: string | null; location?: string | null; occupation?: string | null;
   balance: number; streak: number; level: number;
   referral_code: string; tasks_completed: number;
   tasks_today: number; total_earned: number;
@@ -17,9 +16,16 @@ interface Profile {
   xp?: number; trust_score?: number; level_name?: string;
   badge_color?: string; milestones_claimed?: number;
   total_earned_qlt: number; bonus_earned_qlt: number;
+  creator_follower_count: number; creator_following_count: number;
+  creator_posts: CreatorPost[]; creator_replies: CreatorReply[]; creator_reposts: CreatorRepost[];
 }
 
-type ModalType = "edit" | "password" | "notifications" | "support" | "terms" | null;
+type CreatorPost = { id: number; body: string; created_at: string; like_count: number; view_count: number; comment_count: number; repost_count: number };
+type CreatorReply = { id: number; body: string; created_at: string; post_id: number; post_body: string; post_author: string };
+type CreatorRepost = { created_at: string; post_id: number; post_body: string; post_author: string };
+type ProfileTab = "Posts" | "Replies" | "Reposts" | "Media";
+
+type ModalType = "edit" | null;
 
 function timeAgo(d: string) {
   const diff = Date.now() - new Date(d).getTime();
@@ -70,14 +76,18 @@ function Alert({ msg }: { msg: { type: "success" | "error"; text: string } }) {
 function EditProfileModal({ profile, onClose, onSaved }: { profile: Profile; onClose: () => void; onSaved: (p: Partial<Profile>) => void; }) {
   const [name, setName] = useState(profile.full_name);
   const [phone, setPhone] = useState(profile.phone || "");
+  const [bio, setBio] = useState(profile.bio || "");
+  const [website, setWebsite] = useState(profile.website || "");
+  const [location, setLocation] = useState(profile.location || "");
+  const [occupation, setOccupation] = useState(profile.occupation || "");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const save = async () => {
     setSaving(true); setMsg(null);
-    const res = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_profile", full_name: name, phone }) });
+    const res = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_profile", full_name: name, phone, bio, website, location, occupation }) });
     const data = await res.json();
-    if (res.ok) { setMsg({ type: "success", text: "Profile updated!" }); onSaved({ full_name: name, phone }); setTimeout(onClose, 1200); }
+    if (res.ok) { setMsg({ type: "success", text: "Profile updated!" }); onSaved({ full_name: name, phone, bio, website, location, occupation }); setTimeout(onClose, 1200); }
     else setMsg({ type: "error", text: data.error || "Failed to update" });
     setSaving(false);
   };
@@ -86,6 +96,10 @@ function EditProfileModal({ profile, onClose, onSaved }: { profile: Profile; onC
     <Modal title="Edit Profile" onClose={onClose}>
       {msg && <Alert msg={msg} />}
       <Field label="Full Name" value={name} onChange={setName} placeholder="Your full name" />
+      <div style={{ marginBottom: 14 }}><label htmlFor="profile-bio" style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>Bio · {bio.length}/280</label><textarea id="profile-bio" value={bio} maxLength={280} onChange={event => setBio(event.target.value)} placeholder="What would you like people to know about you?" style={{ width: "100%", minHeight: 82, marginTop: 6, padding: "13px 14px", borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)", font: "inherit", resize: "vertical" }} /></div>
+      <Field label="What you do" value={occupation} onChange={setOccupation} placeholder="e.g. Designer, student, creator" />
+      <Field label="Website" value={website} onChange={setWebsite} placeholder="https://yourwebsite.com" />
+      <Field label="Location" value={location} onChange={setLocation} placeholder="City, country" />
       <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="+234 800 000 0000" />
       <div style={{ marginBottom: 14 }}>
         <label style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>Email Address</label>
@@ -99,179 +113,11 @@ function EditProfileModal({ profile, onClose, onSaved }: { profile: Profile; onC
   );
 }
 
-function ChangePasswordModal({ onClose }: { onClose: () => void }) {
-  const [current, setCurrent] = useState("");
-  const [next, setNext] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  const save = async () => {
-    if (next !== confirm) { setMsg({ type: "error", text: "Passwords do not match" }); return; }
-    if (next.length < 6) { setMsg({ type: "error", text: "Password must be at least 6 characters" }); return; }
-    setSaving(true); setMsg(null);
-    const res = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "change_password", current_password: current, new_password: next }) });
-    const data = await res.json();
-    if (res.ok) { setMsg({ type: "success", text: "Password changed!" }); setTimeout(onClose, 1400); }
-    else setMsg({ type: "error", text: data.error || "Failed to change password" });
-    setSaving(false);
-  };
-
-  return (
-    <Modal title="Change Password" onClose={onClose}>
-      {msg && <Alert msg={msg} />}
-      <Field label="Current Password" type="password" value={current} onChange={setCurrent} placeholder="Enter current password" />
-      <Field label="New Password" type="password" value={next} onChange={setNext} placeholder="At least 6 characters" />
-      <Field label="Confirm New Password" type="password" value={confirm} onChange={setConfirm} placeholder="Repeat new password" />
-      <button onClick={save} disabled={saving} style={{ width: "100%", background: saving ? "var(--qeixova-color-66-66-66)" : "linear-gradient(135deg, #1AEF22, #06B517)", color: "var(--qeixova-color-ff-ff-ff)", border: "none", borderRadius: 14, padding: "15px", fontWeight: 800, fontSize: 15, cursor: saving ? "not-allowed" : "pointer", boxShadow: saving ? "none" : "0 6px 20px rgba(26,239,34,0.3)", marginTop: 4 }}>
-        {saving ? "Updating..." : "Update Password"}
-      </button>
-    </Modal>
-  );
-}
-
-function NotificationsModal({ onClose }: { onClose: () => void }) {
-  const [prefs, setPrefs] = useState({ task_alerts: true, reward_updates: true, referral_alerts: true, weekly_summary: false });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const toggle = (k: keyof typeof prefs) => setPrefs(p => ({ ...p, [k]: !p[k] }));
-
-  useEffect(() => {
-    fetch("/api/notifications").then(r => r.ok ? r.json() : null).then(d => { if (d?.prefs) setPrefs(d.prefs); }).catch(() => {});
-  }, []);
-
-  const save = async () => {
-    setSaving(true);
-    await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prefs }) });
-    setSaving(false); setSaved(true);
-    setTimeout(() => { setSaved(false); onClose(); }, 1000);
-  };
-
-  const items = [
-    { key: "task_alerts" as const, label: "New Task Alerts", sub: "Get notified when new tasks are available" },
-    { key: "reward_updates" as const, label: "Reward Updates", sub: "Notifications when you earn rewards" },
-    { key: "referral_alerts" as const, label: "Referral Alerts", sub: "When someone joins using your code" },
-    { key: "weekly_summary" as const, label: "Weekly Summary", sub: "Your weekly earnings and activity report" },
-  ];
-
-  return (
-    <Modal title="Notifications" onClose={onClose}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        {items.map(item => (
-          <div key={item.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)" }}>{item.label}</p>
-              <p style={{ fontSize: 12, color: "var(--qeixova-color-44-44-44)", marginTop: 2 }}>{item.sub}</p>
-            </div>
-            <div onClick={() => toggle(item.key)} style={{ width: 46, height: 26, borderRadius: 13, cursor: "pointer", transition: "background 0.2s", background: prefs[item.key] ? "#1AEF22" : "var(--qeixova-color-66-66-66)", position: "relative" }}>
-              <div style={{ position: "absolute", top: 3, left: prefs[item.key] ? 23 : 3, width: 20, height: 20, borderRadius: "50%", background: "var(--qeixova-color-00-00-00)", transition: "left 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.4)" }} />
-            </div>
-          </div>
-        ))}
-      </div>
-      <button onClick={save} disabled={saving} style={{ width: "100%", background: saved ? "#1AEF22" : saving ? "var(--qeixova-color-66-66-66)" : "linear-gradient(135deg, #1AEF22, #06B517)", color: "var(--qeixova-color-ff-ff-ff)", border: "none", borderRadius: 14, padding: "15px", fontWeight: 800, fontSize: 15, cursor: saving ? "not-allowed" : "pointer", boxShadow: "0 6px 20px rgba(26,239,34,0.3)", marginTop: 20 }}>
-        {saved ? "✅ Saved!" : saving ? "Saving..." : "Save Preferences"}
-      </button>
-    </Modal>
-  );
-}
-
-function SupportModal({ onClose }: { onClose: () => void }) {
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [sent, setSent] = useState(false);
-
-  const send = () => {
-    if (!subject.trim() || !message.trim()) return;
-    window.open(`mailto:qeixova@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`Subject: ${subject}\n\n${message}`)}`, "_blank");
-    setSent(true);
-  };
-
-  if (sent) return (
-    <Modal title="Support" onClose={onClose}>
-      <div style={{ textAlign: "center", padding: "20px 0" }}>
-        <div style={{ fontSize: 52, marginBottom: 16 }}>✅</div>
-        <p style={{ fontWeight: 800, fontSize: 18, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 8 }}>Message Sent!</p>
-        <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 14 }}>Our support team will get back to you within 24 hours.</p>
-        <button onClick={onClose} style={{ marginTop: 24, background: "linear-gradient(135deg, #1AEF22, #06B517)", color: "var(--qeixova-color-ff-ff-ff)", border: "none", borderRadius: 14, padding: "14px 32px", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>Done</button>
-      </div>
-    </Modal>
-  );
-
-  return (
-    <Modal title="Contact Support" onClose={onClose}>
-      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        {[
-          { icon: "📧", label: "Email", sub: "qeixova@gmail.com", href: "mailto:qeixova@gmail.com" },
-          { icon: "📘", label: "Facebook", sub: "Message us", href: "https://www.facebook.com/profile.php?id=61568026449468" },
-          { icon: "🐦", label: "Twitter/X", sub: "@QeixovaTech", href: "https://x.com/QeixovaTech" },
-        ].map(c => (
-          <a key={c.label} href={c.href} target="_blank" rel="noopener noreferrer" style={{ flex: 1, background: "var(--qeixova-color-e5-e5-e5)", border: "1px solid var(--qeixova-color-cc-cc-cc)", borderRadius: 14, padding: "12px 8px", textAlign: "center", textDecoration: "none" }}>
-            <p style={{ fontSize: 22 }}>{c.icon}</p>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "var(--qeixova-color-0a-0a-0a)", marginTop: 4 }}>{c.label}</p>
-            <p style={{ fontSize: 10, color: "var(--qeixova-color-44-44-44)" }}>{c.sub}</p>
-          </a>
-        ))}
-      </div>
-      <Field label="Subject" value={subject} onChange={setSubject} placeholder="What do you need help with?" />
-      <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>Message</label>
-        <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Describe your issue in detail..." rows={4}
-          style={{ width: "100%", marginTop: 6, padding: "13px 14px", borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)", fontSize: 14, outline: "none", color: "var(--qeixova-color-0a-0a-0a)", background: "var(--qeixova-color-e5-e5-e5)", resize: "none" }}
-          onFocus={e => (e.target.style.borderColor = "#1AEF22")} onBlur={e => (e.target.style.borderColor = "var(--qeixova-color-66-66-66)")} />
-      </div>
-      <button onClick={send} style={{ width: "100%", background: "linear-gradient(135deg, #1AEF22, #06B517)", color: "var(--qeixova-color-ff-ff-ff)", border: "none", borderRadius: 14, padding: "15px", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 6px 20px rgba(26,239,34,0.3)" }}>Send Message</button>
-    </Modal>
-  );
-}
-
-function TermsModal({ onClose }: { onClose: () => void }) {
-  const [view, setView] = useState<"menu" | "terms" | "privacy" | "refund">("menu");
-  const content: Record<string, { title: string; body: string }> = {
-    terms: { title: "Terms of Service", body: `Welcome to Qeixova. By using our platform you agree to these terms.\n\n1. ELIGIBILITY\nYou must be at least 18 years old and a resident of Nigeria.\n\n2. EARNING & REWARDS\n100 QLT = ₦1. Points have no cash value until converted via withdrawal.\n\n3. TASK COMPLETION\nComplete tasks honestly. Fraudulent submissions result in account suspension.\n\n4. WITHDRAWALS\nMinimum withdrawal is 100,000 QLT (₦1,000). Processed within 24 hours.\n\n5. REFERRALS\nYou earn 2,500 QLT per referral signup plus 10% of their task earnings. Referral abuse results in termination.\n\n6. CHANGES\nWe may update these terms at any time.` },
-    privacy: { title: "Privacy Policy", body: `Qeixova is committed to protecting your personal information.\n\n1. DATA WE COLLECT\nName, email, phone number, and task completion data.\n\n2. HOW WE USE YOUR DATA\nTo manage your account and process withdrawals. We do not sell your data.\n\n3. DATA SECURITY\nAll data is encrypted. Passwords are hashed using bcrypt.\n\n4. YOUR RIGHTS\nRequest deletion by contacting qeixova@gmail.com.` },
-    refund: { title: "Refund Policy", body: `Qeixova does not charge users any fees.\n\n1. NO DEPOSITS\nQeixova does not require any deposits or payments.\n\n2. WITHDRAWAL DISPUTES\nIf a withdrawal is not received within 48 hours, contact support.\n\n3. POINT DISPUTES\nContact support within 7 days of the transaction.` },
-  };
-
-  if (view !== "menu") {
-    const c = content[view];
-    return (
-      <Modal title={c.title} onClose={onClose}>
-        <button onClick={() => setView("menu")} style={{ background: "var(--qeixova-color-dd-dd-dd)", border: "none", borderRadius: 10, padding: "8px 14px", fontSize: 13, cursor: "pointer", marginBottom: 16, color: "var(--qeixova-color-0a-0a-0a)", fontWeight: 600 }}>← Back</button>
-        <div style={{ fontSize: 13, color: "var(--qeixova-color-55-55-55)", lineHeight: 1.8, whiteSpace: "pre-line" }}>{c.body}</div>
-      </Modal>
-    );
-  }
-
-  return (
-    <Modal title="Terms & Privacy" onClose={onClose}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {[
-          { key: "terms", icon: "📋", title: "Terms of Service", sub: "Rules and guidelines for using Qeixova" },
-          { key: "privacy", icon: "🔒", title: "Privacy Policy", sub: "How we collect and use your data" },
-          { key: "refund", icon: "💰", title: "Refund Policy", sub: "Our policy on disputes and withdrawals" },
-        ].map(item => (
-          <div key={item.key} onClick={() => setView(item.key as "terms" | "privacy" | "refund")} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "var(--qeixova-color-e5-e5-e5)", borderRadius: 14, border: "1px solid var(--qeixova-color-cc-cc-cc)", cursor: "pointer" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(26,239,34,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{item.icon}</div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 14, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)" }}>{item.title}</p>
-              <p style={{ fontSize: 12, color: "var(--qeixova-color-44-44-44)", marginTop: 2 }}>{item.sub}</p>
-            </div>
-            <span style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 18 }}>›</span>
-          </div>
-        ))}
-      </div>
-      <p style={{ textAlign: "center", color: "var(--qeixova-color-55-55-55)", fontSize: 12, marginTop: 20 }}>Last updated: April 2025 · Qeixova v1.0</p>
-    </Modal>
-  );
-}
-
 export default function ProfilePage() {
-  const { logout } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [copied, setCopied] = useState(false);
-  const [showBankModal, setShowBankModal] = useState(false);
   const [modal, setModal] = useState<ModalType>(null);
+  const [profileTab, setProfileTab] = useState<ProfileTab>("Posts");
 
   useEffect(() => {
     fetch("/api/profile").then(r => r.ok ? r.json() : null).then(d => { if (d?.profile) setProfile(d.profile); }).catch(() => {});
@@ -296,170 +142,52 @@ export default function ProfilePage() {
     { label: "Referrals",      value: String(profile.referral_count), icon: "/icon-profile.svg" },
   ] : [];
 
-  const menuItems = [
-    { icon: "/icon-bank.svg",          label: "Bank Accounts",   sub: "Add & manage withdrawal accounts",  action: () => setShowBankModal(true) },
-    { icon: "/icon-edit-profile.svg",  label: "Edit Profile",    sub: "Update your name & phone",           action: () => setModal("edit") },
-    { icon: "/icon-password.svg",      label: "Change Password", sub: "Update your account password",       action: () => setModal("password") },
-    { icon: "/icon-notifications.svg", label: "Notifications",   sub: "Task alerts & updates",              action: () => setModal("notifications") },
-    { icon: "/icon-support.svg",       label: "Support",         sub: "Get help anytime",                   action: () => setModal("support") },
-    { icon: "/icon-terms.svg",         label: "Terms & Privacy", sub: "Legal information",                  action: () => setModal("terms") },
-  ];
+
 
   if (!profile) return <ContributorLoading label="Loading profile" detail="Preparing your account, progress, and preferences." />;
 
   return (
     <div className="page-body" style={{ background: "var(--qeixova-color-ff-ff-ff)", minHeight: "100vh" }}>
-      {/* Header */}
-      <div className="page-header" style={{ background: "var(--qeixova-color-f5-f5-f5)", borderBottom: "1px solid var(--qeixova-color-dd-dd-dd)", padding: "52px 20px 40px", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(26,239,34,0.03)" }} />
-        <div style={{ position: "relative", display: "inline-block", marginBottom: 14 }}>
-          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #F5A623, #d89420)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, boxShadow: "0 6px 20px rgba(245,166,35,0.4)", border: "3px solid var(--qeixova-color-e5-e5-e5)" }}>
-            {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : "👤"}
-          </div>
-          <div style={{ position: "absolute", bottom: 0, right: 0, width: 14, height: 14, borderRadius: "50%", background: "#1AEF22", border: "2px solid var(--qeixova-color-f5-f5-f5)" }} />
+      <section className="profileSocial">
+        <header className="profileSocialHeading"><Link href="/creator" aria-label="Back to Home">←</Link><div><strong>{profile.full_name}</strong><span>{profile.creator_posts.length.toLocaleString()} posts</span></div><button type="button" onClick={() => setModal("edit")} aria-label="Edit profile">•••</button></header>
+        <div className="profileAvatarRow"><div className="profileAvatar">{profile.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</div><button type="button" className="profileEditButton" onClick={() => setModal("edit")}>Edit profile</button></div>
+        <div className="profileIdentity"><h2>{profile.full_name}</h2><span className="profileHandle">@{profile.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "contributor"}</span>
+          {profile.bio ? <p className="profileBio">{profile.bio}</p> : <button type="button" className="profileAddBio" onClick={() => setModal("edit")}>Add a bio to tell the community about yourself.</button>}
+          <div className="profileMeta">{profile.occupation ? <span>💼 {profile.occupation}</span> : null}{profile.location ? <span>⌖ {profile.location}</span> : null}{profile.website ? <a href={/^https?:\/\//i.test(profile.website) ? profile.website : `https://${profile.website}`} target="_blank" rel="noreferrer">↗ {profile.website}</a> : null}<span>▦ Joined {new Date(profile.created_at).toLocaleDateString([], { month: "long", year: "numeric" })}</span></div>
+          <div className="profileSocialCounts"><span><b>{Number(profile.creator_following_count).toLocaleString()}</b> Following</span><span><b>{Number(profile.creator_follower_count).toLocaleString()}</b> Followers</span></div>
+          <div className="profileBadges"><span style={{ borderColor: `${profile.badge_color ?? "#45875b"}55`, color: profile.badge_color ?? "#45875b" }}>L{profile.level} {profile.level_name || "Starter"}</span>{profile.streak > 0 ? <span>🔥 {profile.streak}-day streak</span> : null}{profile.trust_score !== undefined ? <span>Trust {profile.trust_score}%</span> : null}</div>
         </div>
-        <p style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>{profile?.full_name ?? "Loading..."}</p>
-        <p style={{ color: "var(--qeixova-color-33-33-33)", fontSize: 13, marginTop: 3 }}>{profile?.email}</p>
-        {profile?.phone && <p style={{ color: "var(--qeixova-color-33-33-33)", fontSize: 12, marginTop: 2 }}>{profile.phone}</p>}
-        {profile?.created_at && <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 11, marginTop: 4 }}>Member since {timeAgo(profile.created_at)}</p>}
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: (profile?.badge_color ?? "var(--qeixova-color-33-33-33)") + "22", border: `1px solid ${profile?.badge_color ?? "var(--qeixova-color-33-33-33)"}44`, borderRadius: 20, padding: "6px 16px" }}>
-            <span style={{ color: profile?.badge_color ?? "var(--qeixova-color-33-33-33)", fontSize: 12, fontWeight: 700 }}>L{profile?.level ?? 1} {profile?.level_name ?? "Starter"}</span>
-          </div>
-          {profile?.xp !== undefined && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(245,166,35,0.08)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 20, padding: "5px 14px" }}>
-              <span style={{ color: "#F5A623", fontSize: 12, fontWeight: 700 }}>{profile.xp.toLocaleString()} QLT progress</span>
-            </div>
-          )}
-          {profile && profile.streak > 0 && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(26,239,34,0.08)", border: "1px solid rgba(26,239,34,0.2)", borderRadius: 20, padding: "5px 14px" }}>
-              <span style={{ color: "#1AEF22", fontSize: 12, fontWeight: 600 }}>🔥 {profile.streak}-day streak</span>
-            </div>
-          )}
-          {profile?.trust_score !== undefined && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: profile.trust_score >= 80 ? "rgba(26,239,34,0.08)" : profile.trust_score >= 50 ? "rgba(245,166,35,0.08)" : "rgba(229,62,62,0.08)", border: `1px solid ${profile.trust_score >= 80 ? "rgba(26,239,34,0.2)" : profile.trust_score >= 50 ? "rgba(245,166,35,0.2)" : "rgba(229,62,62,0.2)"}`, borderRadius: 20, padding: "5px 14px" }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: profile.trust_score >= 80 ? "#1AEF22" : profile.trust_score >= 50 ? "#F5A623" : "#e53e3e" }}>
-                Trust: {profile.trust_score}%
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
+<details className="profileAccountDetails"><summary><span><strong>Account &amp; earnings</strong><small>QLT balance, mission progress, and referrals</small></span><b aria-hidden="true">⌄</b></summary>      <section className="profileAccountSection">
+        <header className="accountSectionHeading"><div><h2>Account overview</h2><p>Your QLT balance, mission progress, and referrals</p></div><Link href="/wallet">Wallet details <span aria-hidden="true">↗</span></Link></header>
+        <div className="accountMetricGrid">{stats.map((item) => <article key={item.label} className={`accountMetric${item.label === "Balance" ? " balanceMetric" : ""}`}><div className="accountMetricLabel"><Image src={item.icon} alt="" width={17} height={17} /><span>{item.label}</span></div><strong>{item.value}</strong></article>)}</div>
 
-      {/* Stats */}
-      <div style={{ padding: "0 16px", marginTop: -24 }}>
-        <div style={{ background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 20, padding: "20px", border: "1px solid var(--qeixova-color-dd-dd-dd)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
-          {stats.map((s, i) => (
-            <div key={i} style={{ textAlign: "center", padding: "12px 8px", borderRight: i % 2 === 0 ? "1px solid var(--qeixova-color-dd-dd-dd)" : "none", borderBottom: i < stats.length - 2 ? "1px solid var(--qeixova-color-dd-dd-dd)" : "none" }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
-                <Image src={s.icon} alt={s.label} width={20} height={20} className="contributor-icon-contrast contributor-icon-monochrome" style={{ objectFit: "contain", opacity: 0.7 }} />
-              </div>
-              <p style={{ fontWeight: 800, fontSize: 15, color: "#1AEF22" }}>{s.value}</p>
-              <p style={{ fontSize: 10, color: "var(--qeixova-color-44-44-44)", marginTop: 2 }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+        <section className="accountReviewCard"><div className="accountSubheading"><div><h3>Task review</h3><p>Your submitted mission results</p></div><span className="reviewRate">{profile.approved_count + profile.rejected_count > 0 ? Math.round(profile.approved_count / (profile.approved_count + profile.rejected_count) * 100) : 0}%<small>success</small></span></div><div className="reviewMetrics"><div><strong>{profile.approved_count}</strong><span>Approved</span></div><div><strong>{profile.rejected_count}</strong><span>Rejected</span></div><div><strong>{profile.approved_count + profile.rejected_count}</strong><span>Reviewed</span></div></div>{profile.trust_level === "new" && profile.approved_count < 5 ? <p className="accountHint">Complete {5 - profile.approved_count} more approved task{5 - profile.approved_count !== 1 ? "s" : ""} to become a Trusted User.</p> : null}{profile.trust_level === "flagged" ? <p className="accountWarning">Your account has been flagged due to a high rejection rate. Review mission requirements carefully.</p> : null}</section>
 
-      {/* Approval Feedback */}
-      {profile && (profile.approved_count > 0 || profile.rejected_count > 0) && (
-        <div style={{ padding: "16px 16px 0" }}>
-          <div style={{ background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 16, padding: "16px 18px", border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "var(--qeixova-color-0a-0a-0a)", marginBottom: 12 }}>Task Review Summary</p>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1, background: "rgba(26,239,34,0.06)", borderRadius: 12, padding: "12px", textAlign: "center", border: "1px solid rgba(26,239,34,0.15)" }}>
-                <p style={{ fontSize: 22, fontWeight: 800, color: "#1AEF22" }}>{profile.approved_count}</p>
-                <p style={{ fontSize: 11, color: "var(--qeixova-color-66-66-66)", marginTop: 2 }}>Approved</p>
-              </div>
-              <div style={{ flex: 1, background: "rgba(229,62,62,0.06)", borderRadius: 12, padding: "12px", textAlign: "center", border: "1px solid rgba(229,62,62,0.15)" }}>
-                <p style={{ fontSize: 22, fontWeight: 800, color: "#e53e3e" }}>{profile.rejected_count}</p>
-                <p style={{ fontSize: 11, color: "var(--qeixova-color-66-66-66)", marginTop: 2 }}>Rejected</p>
-              </div>
-              <div style={{ flex: 1, background: "rgba(245,166,35,0.06)", borderRadius: 12, padding: "12px", textAlign: "center", border: "1px solid rgba(245,166,35,0.15)" }}>
-                <p style={{ fontSize: 22, fontWeight: 800, color: "#F5A623" }}>
-                  {profile.approved_count + profile.rejected_count > 0
-                    ? Math.round((profile.approved_count / (profile.approved_count + profile.rejected_count)) * 100)
-                    : 0}%
-                </p>
-                <p style={{ fontSize: 11, color: "var(--qeixova-color-66-66-66)", marginTop: 2 }}>Success Rate</p>
-              </div>
-            </div>
-            {profile.trust_level === "new" && profile.approved_count < 5 && (
-              <p style={{ fontSize: 11, color: "var(--qeixova-color-33-33-33)", marginTop: 10, textAlign: "center" }}>
-                Complete {5 - profile.approved_count} more approved task{5 - profile.approved_count !== 1 ? "s" : ""} to become a Trusted User
-              </p>
-            )}
-            {profile.trust_level === "flagged" && (
-              <p style={{ fontSize: 11, color: "#e53e3e", marginTop: 10, textAlign: "center" }}>
-                Your account has been flagged due to high rejection rate. Please review task requirements carefully.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+        <section className="accountReferralCard"><div className="referralCopy"><span className="accountEyebrow">INVITE YOUR COMMUNITY</span><h3>Refer &amp; earn 2,500 QLT + 10%</h3><p>Code <strong>{profile.referral_code}</strong> · {profile.referral_count} {profile.referral_count === 1 ? "person" : "people"} joined</p><small>Earn 10% of your referrals’ earnings.</small></div><div className="referralActions"><button type="button" onClick={copyCode}>{copied ? "Copied" : "Copy code"}</button><button type="button" onClick={() => { const url = `${window.location.origin}/register?ref=${profile.referral_code}`; if (navigator.share) void navigator.share({ title: "Join Qeixova", text: "Earn QLT by completing missions!", url }).catch(() => {}); else void navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); }}>Share invite</button></div></section>
 
-      {/* Referral banner */}
-      {profile && (
-        <div style={{ padding: "20px 16px 0" }}>
-          <div style={{ background: "linear-gradient(135deg, #F5A623 0%, #d89420 100%)", borderRadius: 18, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 6px 20px rgba(245,166,35,0.3)", position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: -30, right: -30, width: 100, height: 100, borderRadius: "50%", background: "rgba(0,0,0,0.08)" }} />
-            <div>
-              <p style={{ color: "var(--qeixova-color-ff-ff-ff)", fontWeight: 800, fontSize: 16 }}>Refer & Earn 2,500 QLT + 10%</p>
-              <p style={{ color: "rgba(0,0,0,0.65)", fontSize: 12, marginTop: 3 }}>Your code: <span style={{ fontWeight: 800, letterSpacing: 1 }}>{profile.referral_code}</span></p>
-              <p style={{ color: "rgba(0,0,0,0.5)", fontSize: 11, marginTop: 2 }}>{profile.referral_count} {profile.referral_count === 1 ? "person" : "people"} joined • Earn 10% of their earnings</p>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={copyCode} style={{ background: "var(--qeixova-color-ff-ff-ff)", color: "#F5A623", border: "none", borderRadius: 12, padding: "10px 18px", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
-                {copied ? "Copied! ✅" : "Copy 📋"}
-              </button>
-              <button onClick={() => {
-                const url = `${window.location.origin}/register?ref=${profile.referral_code}`;
-                if (navigator.share) {
-                  navigator.share({ title: "Join Qeixova", text: "Earn QLT by completing missions!", url });
-                } else {
-                  navigator.clipboard.writeText(url);
-                  setCopied(true); setTimeout(() => setCopied(false), 2000);
-                }
-              }} style={{ background: "rgba(0,0,0,0.15)", color: "var(--qeixova-color-ff-ff-ff)", border: "none", borderRadius: 12, padding: "10px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                Share 🔗
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Menu */}
-      <div style={{ padding: "20px 16px 0" }}>
-        <div style={{ background: "var(--qeixova-color-ee-ee-ee)", borderRadius: 20, overflow: "hidden", border: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
-          {menuItems.map((item, i) => (
-            <div key={i} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px", borderBottom: i < menuItems.length - 1 ? "1px solid var(--qeixova-color-e5-e5-e5)" : "none", cursor: "pointer" }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(26,239,34,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Image src={item.icon} alt={item.label} width={22} height={22} className="contributor-icon-monochrome" style={{ objectFit: "contain" }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)" }}>{item.label}</p>
-                <p style={{ fontSize: 12, color: "var(--qeixova-color-44-44-44)", marginTop: 1 }}>{item.sub}</p>
-              </div>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--qeixova-color-e5-e5-e5)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--qeixova-color-44-44-44)", fontSize: 16 }}>›</div>
-            </div>
-          ))}
+      </section></details>
+        <nav className="profileTabs" aria-label="Profile posts"><button type="button" className={profileTab === "Posts" ? "active" : ""} onClick={() => setProfileTab("Posts")}>Posts</button><button type="button" className={profileTab === "Replies" ? "active" : ""} onClick={() => setProfileTab("Replies")}>Replies</button><button type="button" className={profileTab === "Reposts" ? "active" : ""} onClick={() => setProfileTab("Reposts")}>Reposts</button><button type="button" className={profileTab === "Media" ? "active" : ""} onClick={() => setProfileTab("Media")}>Media</button></nav>
+        <div className="profileTimeline">
+          {profileTab === "Posts" && profile.creator_posts.map(post => <article className="profilePost" key={post.id}><div className="profilePostAvatar">{profile.full_name.slice(0, 1).toUpperCase()}</div><div className="profilePostContent"><header><strong>{profile.full_name}</strong><span>@{profile.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "contributor"}</span><span>·</span><time>{timeAgo(post.created_at)}</time></header><p>{post.body}</p><footer><span>◉ {post.view_count.toLocaleString()} Views</span><span>♡ {post.like_count.toLocaleString()} Likes</span><span>↻ {post.repost_count.toLocaleString()} Reposts</span><span>▢ {post.comment_count.toLocaleString()} Replies</span></footer></div></article>)}
+          {profileTab === "Replies" && profile.creator_replies.map(reply => <article className="profilePost" key={reply.id}><div className="profilePostAvatar">{profile.full_name.slice(0, 1).toUpperCase()}</div><div className="profilePostContent"><header><strong>{profile.full_name}</strong><span>replied to {reply.post_author}</span><time>{timeAgo(reply.created_at)}</time></header><p>{reply.body}</p><blockquote>{reply.post_body}</blockquote></div></article>)}
+          {profileTab === "Reposts" && profile.creator_reposts.map((repost, index) => <article className="profilePost" key={`${repost.post_id}-${index}`}><div className="profilePostAvatar">{profile.full_name.slice(0, 1).toUpperCase()}</div><div className="profilePostContent"><header><strong>{profile.full_name}</strong><span>reposted</span><time>{timeAgo(repost.created_at)}</time></header><blockquote><b>{repost.post_author}</b><p>{repost.post_body}</p></blockquote></div></article>)}
+          {profileTab === "Media" ? <div className="profileEmpty"><strong>No media posts yet</strong><span>Photos and videos you share will appear here.</span></div> : null}
+          {profileTab === "Posts" && profile.creator_posts.length === 0 ? <div className="profileEmpty"><strong>Your profile starts here</strong><span>Share your first useful post from Home and it will appear here.</span></div> : null}
+          {profileTab === "Replies" && profile.creator_replies.length === 0 ? <div className="profileEmpty"><strong>No replies yet</strong><span>Your conversations on posts will show up here.</span></div> : null}
+          {profileTab === "Reposts" && profile.creator_reposts.length === 0 ? <div className="profileEmpty"><strong>No reposts yet</strong><span>Posts you repost will be collected here.</span></div> : null}
         </div>
-      </div>
+      </section>
 
-      {/* Logout */}
-      <div style={{ padding: "16px 16px 0" }}>
-        <button onClick={logout} style={{ width: "100%", background: "rgba(229,62,62,0.08)", color: "#e53e3e", border: "1.5px solid rgba(229,62,62,0.2)", borderRadius: 16, padding: "15px", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-          🚪 Log Out
-        </button>
-      </div>
+
+
+      <style jsx>{`
+        .profileAccountDetails{margin:0 14px 10px;border-top:1px solid #e8ebee;border-bottom:1px solid #e8ebee}.profileAccountDetails>summary{display:flex;align-items:center;gap:10px;padding:12px 7px;cursor:pointer;list-style:none}.profileAccountDetails>summary::-webkit-details-marker{display:none}.profileAccountDetails>summary>span{display:grid;gap:3px}.profileAccountDetails>summary strong{font-size:12px;color:#263440}.profileAccountDetails>summary small{font-size:10px;color:#72808e}.profileAccountDetails>summary>b{margin-left:auto;color:#71808d;font-size:16px}.profileAccountDetails[open]>summary{border-bottom:1px solid #e8ebee}.profileSocial,.profileAccountSection{width:min(100%,750px);margin:0 auto;color:#17202b}.profileSocial{border-left:1px solid #e4e7eb;border-right:1px solid #e4e7eb;background:#fff}.profileSocialHeading{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:22px;height:58px;padding:0 18px;border-bottom:1px solid #e7e9ec;background:rgba(255,255,255,.94);backdrop-filter:blur(10px)}.profileSocialHeading>a{color:#17202b;font-size:25px;text-decoration:none}.profileSocialHeading>div{display:grid;gap:2px}.profileSocialHeading strong{font-size:17px}.profileSocialHeading span{color:#647383;font-size:11px}.profileSocialHeading>button{margin-left:auto;border:0;background:none;color:#17202b;font-size:19px;cursor:pointer}.profileAvatarRow{display:flex;justify-content:space-between;align-items:center;min-height:82px;padding:12px 20px 0}.profileAvatar{display:grid;place-items:center;width:72px;height:72px;margin-top:0;border:5px solid white;border-radius:50%;background:linear-gradient(135deg,#d9eee0,#badcc7);color:#237348;font-size:23px;font-weight:850;box-shadow:0 1px 4px #0002}.profileEditButton{margin-top:0;padding:9px 16px;border:1px solid #cfd6dd;border-radius:999px;background:#fff;color:#17202b;font-size:12px;font-weight:800;cursor:pointer}.profileIdentity{padding:0 21px 16px}.profileIdentity h2{font-size:22px;letter-spacing:-.035em}.profileHandle{display:block;margin-top:2px;color:#657587;font-size:13px}.profileBio{margin-top:13px;color:#293642;font-size:13px;line-height:1.5;white-space:pre-wrap}.profileAddBio{margin-top:10px;padding:0;border:0;background:none;color:#2588c9;font-size:12px;text-align:left;cursor:pointer}.profileMeta{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:12px;color:#617180;font-size:11px}.profileMeta a{color:#2588c9;text-decoration:none}.profileSocialCounts{display:flex;gap:16px;margin-top:13px;color:#637283;font-size:12px}.profileSocialCounts b{color:#17202b}.profileBadges{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}.profileBadges span{padding:5px 9px;border:1px solid #dce6df;border-radius:999px;background:#f7fbf8;color:#34754e;font-size:10px;font-weight:750}.profileTabs{position:sticky;top:58px;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);height:52px;border-bottom:1px solid #e7e9ec;background:rgba(255,255,255,.95);backdrop-filter:blur(10px)}.profileTabs button{position:relative;border:0;background:transparent;color:#657587;font-size:12px;font-weight:700;cursor:pointer}.profileTabs button.active{color:#17202b}.profileTabs button.active:after{position:absolute;bottom:0;left:50%;width:54px;height:3px;border-radius:4px 4px 0 0;background:#2394d2;content:"";transform:translateX(-50%)}.profilePost{display:flex;gap:12px;padding:15px 18px;border-bottom:1px solid #e8ebee}.profilePostAvatar{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#dcefe2;color:#27774a;font-size:12px;font-weight:850}.profilePostContent{min-width:0;flex:1}.profilePostContent header{display:flex;flex-wrap:wrap;align-items:center;gap:5px;color:#667587;font-size:11px}.profilePostContent header strong{color:#18212a;font-size:12px}.profilePostContent p{margin-top:6px;color:#202a34;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.profilePostContent footer{display:flex;justify-content:space-between;gap:7px;margin-top:13px;color:#627181;font-size:10px}.profilePostContent blockquote{margin:9px 0 0;padding:10px 12px;border:1px solid #e2e7eb;border-radius:10px;color:#263440;font-size:11px;line-height:1.45}.profilePostContent blockquote p{margin:4px 0 0;font-size:11px}.profileEmpty{display:grid;justify-items:center;gap:8px;padding:50px 20px;text-align:center}.profileEmpty strong{font-size:15px}.profileEmpty span{max-width:300px;color:#6c7c8b;font-size:12px;line-height:1.5}.profileAccountSection{width:100%;padding:17px 14px 16px;color:#1a2630}.accountSectionHeading,.accountSubheading{display:flex;align-items:center;justify-content:space-between;gap:12px}.accountSectionHeading{margin:0 2px 14px}.accountSectionHeading h2{font-size:17px;letter-spacing:-.02em}.accountSectionHeading p,.accountSubheading p{margin-top:3px;color:#71808d;font-size:10px}.accountSectionHeading>a{padding:7px 10px;border:1px solid #d9e2e7;border-radius:999px;color:#28784d;font-size:10px;font-weight:750;text-decoration:none;white-space:nowrap}.accountMetricGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.accountMetric{min-width:0;padding:11px 12px;border:1px solid #e3e9ec;border-radius:12px;background:#fff}.accountMetric.balanceMetric{border-color:#cde6d5;background:linear-gradient(135deg,#f2faf4,#fff)}.accountMetricLabel{display:flex;align-items:center;gap:6px;color:#6c7c88;font-size:9px}.accountMetricLabel img{opacity:.72}.accountMetric>strong{display:block;margin-top:9px;color:#1d2a34;font-size:15px;letter-spacing:-.02em}.balanceMetric>strong{color:#21834d;font-size:19px}.accountReviewCard{margin-top:13px;padding:14px;border:1px solid #e3e9ec;border-radius:14px;background:#fff}.accountSubheading h3,.accountReferralCard h3{font-size:13px;letter-spacing:-.01em}.reviewRate{display:grid;justify-items:end;color:#298552;font-size:16px;font-weight:850}.reviewRate small{color:#71808d;font-size:9px;font-weight:550}.reviewMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.reviewMetrics>div{display:grid;justify-items:center;gap:3px;padding:10px;border-radius:10px;background:#f5f8f6}.reviewMetrics>div:nth-child(2){background:#fff5f4}.reviewMetrics strong{color:#24804b;font-size:19px}.reviewMetrics>div:nth-child(2) strong{color:#c54c4c}.reviewMetrics span{color:#71808d;font-size:9px}.accountHint,.accountWarning{margin:10px 0 0;padding:9px 10px;border-radius:9px;background:#f2f8f3;color:#477558;font-size:10px;line-height:1.4}.accountWarning{background:#fff4f2;color:#a6453d}.accountReferralCard{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:13px;padding:15px;border:1px solid #f0dfbd;border-radius:14px;background:linear-gradient(115deg,#fffaf0,#fff)}.accountEyebrow{color:#a56b1d;font-size:8px;font-weight:850;letter-spacing:.13em}.accountReferralCard h3{margin-top:5px;color:#382a18}.referralCopy p{margin-top:7px;color:#6f5940;font-size:10px}.referralCopy p strong{color:#382a18;letter-spacing:.05em}.referralCopy small{display:block;margin-top:3px;color:#8c7559;font-size:9px}.referralActions{display:flex;flex-shrink:0;gap:6px}.referralActions button{padding:8px 11px;border:1px solid #e6d4b1;border-radius:9px;background:#fff;color:#855914;font-size:10px;font-weight:750;cursor:pointer}.referralActions button+button{border-color:#b27a26;background:#b27a26;color:white}.profileAccountDetails[open] .profileAccountSection{padding-bottom:16px}
+        @media(max-width:700px){.profileSocial{border:0}.profileAvatar{width:64px;height:64px;font-size:20px}.profileAvatarRow{min-height:72px;padding:10px 15px 0}.profileIdentity{padding-inline:16px}.profileSocialHeading{height:54px}.profileTabs{top:54px}.profilePost{padding:13px 12px;gap:9px}.profilePostAvatar{width:34px;height:34px;flex-basis:34px}.profilePostContent footer{font-size:9px;flex-wrap:wrap;justify-content:flex-start;gap:8px 14px}.profileAccountSection{padding:14px 10px}.accountMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.accountReferralCard{align-items:flex-start;flex-direction:column}.referralActions{width:100%}.referralActions button{flex:1}}
+      `}</style>
 
       <BottomNav />
-      {showBankModal && <BankAccountsModal onClose={() => setShowBankModal(false)} />}
       {modal === "edit" && profile && <EditProfileModal profile={profile} onClose={() => setModal(null)} onSaved={patchProfile} />}
-      {modal === "password" && <ChangePasswordModal onClose={() => setModal(null)} />}
-      {modal === "notifications" && <NotificationsModal onClose={() => setModal(null)} />}
-      {modal === "support" && <SupportModal onClose={() => setModal(null)} />}
-      {modal === "terms" && <TermsModal onClose={() => setModal(null)} />}
     </div>
   );
 }

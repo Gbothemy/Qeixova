@@ -51,7 +51,7 @@ export default function LoginPage() {
     });
     const data = await res.json().catch(() => ({}));
 
-    if (res.ok) router.push("/dashboard");
+    if (res.ok) router.push("/creator");
     else setError(data.error || "Login failed. Please try again.");
     setLoading(false);
   };

@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
         type: "account_update",
         title: "Account verified",
         message: "Your growth partner account email has been verified. You can now access matched missions and wallet features.",
-        href: "/dashboard",
+        href: "/creator",
         dedupeKey: `account:${user.id}:verified`,
         metadata: { verified: true },
       });

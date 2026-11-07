@@ -15,10 +15,12 @@ export async function ensureEmailVerificationSchema() {
       email TEXT NOT NULL,
       token TEXT NOT NULL UNIQUE,
       expires_at TIMESTAMPTZ NOT NULL,
+      reminder_sent_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (account_type, account_id)
     )
   `;
+  await sql`ALTER TABLE email_verifications ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ`;
 }
 
 export async function createEmailVerification(

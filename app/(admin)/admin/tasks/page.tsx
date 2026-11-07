@@ -79,6 +79,7 @@ function formatTimeRemaining(expiresAt: string | null | undefined, now: number) 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -90,12 +91,15 @@ export default function TasksPage() {
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/tasks");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Unable to load missions");
-      setTasks(data.tasks ?? []);
+      const res = await fetch("/api/admin/tasks", { cache: "no-store" });
+      const data = await res.json().catch(() => null) as { tasks?: Task[]; error?: string } | null;
+      if (!res.ok) throw new Error(data?.error || `Unable to load missions (server returned ${res.status})`);
+      if (!data || !Array.isArray(data.tasks)) throw new Error("The server returned an invalid missions response. Try again.");
+      setTasks(data.tasks);
+      setLoadFailed(false);
+      setNotice((current) => current?.type === "error" ? null : current);
     } catch (error) {
-      setTasks([]);
+      setLoadFailed(true);
       setNotice({ type: "error", message: error instanceof Error ? error.message : "Unable to load missions" });
     } finally { setLoading(false); }
   }, []);
@@ -192,6 +196,7 @@ export default function TasksPage() {
       {notice && (
         <div className={`adminResult${notice.type === "error" ? " error" : ""}`}>
           <span>{notice.message}</span>
+          {notice.type === "error" && <button type="button" onClick={() => void fetchTasks()} disabled={loading} style={{ marginLeft: "auto", border: "1px solid currentColor", borderRadius: 7, padding: "6px 10px", background: "transparent", color: "inherit", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Retry</button>}
           <button type="button" onClick={() => setNotice(null)}>x</button>
         </div>
       )}
@@ -216,7 +221,7 @@ export default function TasksPage() {
             {loading ? (
               <tr><td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>Loading...</td></tr>
             ) : tasks.length === 0 ? (
-              <tr><td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>No missions found</td></tr>
+              <tr><td colSpan={10} style={{ ...TD, textAlign: "center", color: "#667085", padding: 40 }}>{loadFailed ? "Missions could not be loaded. Check the message above and try again." : "No missions found"}</td></tr>
             ) : tasks.map(t => {
               const mt = MISSION_COLORS[t.mission_type ?? "engagement"] ?? MISSION_COLORS.engagement;
               return (

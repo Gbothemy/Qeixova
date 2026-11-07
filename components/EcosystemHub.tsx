@@ -39,7 +39,7 @@ export default function EcosystemHub({ mode }: { mode: "contributor" | "business
   const subtitle = mode === "business"
     ? "Campaign operations, verification, analytics, funding, and trust controls."
     : "Discovery, participation, payments, reputation, referrals, and community growth.";
-  const homeHref = mode === "business" ? "/business/dashboard" : "/dashboard";
+  const homeHref = mode === "business" ? "/business/dashboard" : "/creator";
 
   return (
     <main className={`page-body ecosystemHub ${mode === "business" ? "business-page-pro" : ""}`}>

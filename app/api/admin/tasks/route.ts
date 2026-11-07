@@ -16,10 +16,11 @@ import { canonicalizeInterests } from "@/lib/interestTaxonomy";
 import { activateMissionExpiryByTask, calculateMissionExpiry, expireElapsedMissions } from "@/lib/missionExpiry";
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAuth(req,"campaigns.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS qlt_bonus INTEGER NOT NULL DEFAULT 0`;
-  await expireElapsedMissions();
-  const tasks = await sql`
+  try {
+    if (!await checkAdminAuth(req,"campaigns.read")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS qlt_bonus INTEGER NOT NULL DEFAULT 0`;
+    await expireElapsedMissions();
+    const tasks = await sql`
     SELECT
       t.*,
       COALESCE(t.mission_type, 'engagement') AS mission_type,
@@ -44,8 +45,12 @@ export async function GET(req: NextRequest) {
     LEFT JOIN completions c ON c.task_id = t.id
     GROUP BY t.id, b.name
     ORDER BY t.created_at DESC, t.category, t.reward DESC
-  `;
-  return NextResponse.json({ tasks });
+    `;
+    return NextResponse.json({ tasks });
+  } catch (error) {
+    console.error("[admin/tasks] Could not load missions", error);
+    return NextResponse.json({ error: "Could not load missions. Check the database connection and try again." }, { status: 503 });
+  }
 }
 
 export async function POST(req: NextRequest) {

@@ -91,7 +91,7 @@ export default function NotificationsPage() {
   return (
     <div className="notificationsPage page-body">
       <header className="notificationsHero">
-        <Link href="/dashboard" className="notificationsBack" aria-label="Back to dashboard">←</Link>
+        <Link href="/creator" className="notificationsBack" aria-label="Back to Home">←</Link>
         <div>
           <span>Activity center</span>
           <h1>Notifications</h1>
