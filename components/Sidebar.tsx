@@ -1,126 +1,69 @@
 "use client";
-import Link from "next/link";
+
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const nav = [
-  { href: "/dashboard",   label: "Home",     icon: "/icon-home.svg",        desc: "Dashboard" },
-  { href: "/tasks",       label: "Missions", icon: "/icon-task.svg",        desc: "Browse & earn" },
-  { href: "/growth",      label: "Growth",   icon: "/icon-analytics.svg",   desc: "Ecosystem flows" },
-  { href: "/leaderboard", label: "Ranks",    icon: "/icon-leaderboard.svg", desc: "Leaderboard" },
-  { href: "/wallet",      label: "Wallet",   icon: "/icon-wallet.svg",      desc: "Balance & withdraw" },
-  { href: "/profile",     label: "Profile",  icon: "/icon-profile.svg",     desc: "Account settings" },
-  { href: "/notifications", label: "Notifications", icon: "/icon-notifications.svg", desc: "Activity updates" },
-  { href: "/tasks/submit", label: "My Missions", icon: "/icon-task.svg", desc: "Selected work & submissions" },
+  { href: "/creator", label: "Home", icon: "/icon-home.svg" },
+  { href: "/tasks", label: "Missions", icon: "/icon-task.svg" },
+  { href: "/notifications", label: "Notifications", icon: "/icon-notifications.svg" },
+  { href: "/messages", label: "Messages", icon: "/icon-chat.svg" },
+  { href: "/growth", label: "Growth", icon: "/icon-analytics.svg" },
+  { href: "/leaderboard", label: "Ranks", icon: "/icon-leaderboard.svg" },
+  { href: "/wallet", label: "Wallet", icon: "/icon-wallet.svg" },
+  { href: "/profile", label: "Profile", icon: "/icon-profile.svg" },
+  { href: "/settings", label: "Settings", icon: "/icon-settings.svg" },
 ];
 
 export default function Sidebar() {
   const path = usePathname();
   const router = useRouter();
-  const [stats, setStats] = useState({ balance: 0, today_earned: 0, tasks_today: 0, streak: 0, fullName: "", xp: 0, levelName: "Starter", badgeColor: "var(--qeixova-color-33-33-33)" });
+  const [user, setUser] = useState({ fullName: "", balance: 0, xp: 0, levelName: "Starter" });
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.user) setStats(s => ({ ...s, fullName: d.user.full_name, streak: d.user.streak ?? 0, xp: d.user.xp ?? 0, levelName: d.user.levelName ?? "Starter", badgeColor: d.user.badgeColor ?? "var(--qeixova-color-33-33-33)" }));
+    fetch("/api/auth/me").then(response => response.ok ? response.json() : null).then(data => {
+      if (data?.user) setUser(current => ({ ...current, fullName: data.user.full_name, xp: data.user.xp ?? 0, levelName: data.user.levelName ?? "Starter" }));
     }).catch(() => {});
-    fetch("/api/wallet").then(r => r.ok ? r.json() : null).then(d => {
-      if (d) setStats(s => ({ ...s, balance: d.balance ?? 0, today_earned: d.stats?.today_earned ?? 0, tasks_today: d.stats?.tasks_today ?? 0 }));
+    fetch("/api/wallet").then(response => response.ok ? response.json() : null).then(data => {
+      if (data) setUser(current => ({ ...current, balance: data.balance ?? 0 }));
     }).catch(() => {});
-  }, [path]);
+  }, []);
+
+  const initials = user.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "Q";
 
   return (
-    <aside className="sidebar">
-      {/* Logo */}
-      <div style={{ padding: "32px 24px 24px", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Image src="/qeixova-icon.png" alt="Qeixova" width={40} height={40} style={{ borderRadius: 12, objectFit: "contain" }} />
-          <div>
-            <p style={{ fontWeight: 800, fontSize: 16, color: "var(--text)", letterSpacing: -0.5 }}>Qeixova</p>
-            <p style={{ fontSize: 11, color: "var(--muted)" }}>Earn by doing</p>
-          </div>
-        </div>
-      </div>
+    <aside className="sidebar xStyleSidebar" aria-label="Primary navigation">
+      <Link href="/creator" className="xStyleBrand" aria-label="Qeixova home">
+        <Image src="/qeixova-icon.png" alt="" width={36} height={36} />
+        <span>Qeixova</span>
+      </Link>
 
-      {/* Balance pill */}
-      <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ background: "linear-gradient(135deg, var(--accent), var(--accent))", borderRadius: 14, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(245,166,35,0.08)" }} />
-          <p style={{ fontSize: 11, color: "var(--muted-2)", marginBottom: 4 }}>Available Balance</p>
-          <p style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", letterSpacing: -0.5 }}>
-            {stats.balance.toLocaleString()} QLT
-          </p>
-          <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, fontWeight: 600, opacity: 0.85 }}>
-            +{stats.today_earned.toLocaleString()} QLT today &middot; {stats.tasks_today} tasks
-          </p>
-        </div>
-      </div>
-
-      {/* Nav links */}
-      <nav style={{ padding: "12px 12px", flex: 1 }}>
-        {nav.map((item) => {
-          const active = path === item.href || (item.href === "/tasks/submit" && path.startsWith("/tasks/submit/"));
-          return (
-            <Link key={item.href} href={item.href} data-tour={item.href === "/tasks" ? "missions-link" : item.href === "/tasks/submit" ? "my-missions-link" : undefined} style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "11px 14px", borderRadius: 12, textDecoration: "none",
-              background: active ? "rgba(26,239,34,0.08)" : "transparent",
-              marginBottom: 2, transition: "background 0.15s",
-              border: active ? "1px solid rgba(26,239,34,0.18)" : "1px solid transparent",
-            }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: active ? "linear-gradient(135deg, var(--accent), var(--accent))" : "var(--card-bg)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: active ? "0 3px 10px rgba(26,239,34,0.18)" : "none",
-                flexShrink: 0,
-              }}>
-                <Image src={item.icon} alt={item.label} width={20} height={20} className={active ? "theme-icon active" : "theme-icon"} style={{ objectFit: "contain" }} />
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: active ? 700 : 500, color: active ? "var(--accent)" : "var(--muted-2)" }}>{item.label}</p>
-                <p style={{ fontSize: 11, color: "var(--muted)" }}>{item.desc}</p>
-              </div>
-              {active && <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: "var(--accent)" }} />}
-            </Link>
-          );
+      <nav className="xStyleNav">
+        {nav.map(item => {
+          const active = path === item.href || (item.href === "/tasks" && path.startsWith("/tasks/"));
+          return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} data-tour={item.href === "/tasks" ? "missions-link" : undefined} className={`xStyleNavLink${active ? " active" : ""}`}>
+            <Image src={item.icon} alt="" width={23} height={23} className={active ? "theme-icon active" : "theme-icon"} />
+            <span>{item.label}</span>
+          </Link>;
         })}
       </nav>
 
-      {/* Bottom section */}
-      <div style={{ padding: "16px 20px 24px", borderTop: "1px solid var(--qeixova-color-dd-dd-dd)" }}>
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}><ThemeToggle /></div>
-        <div style={{ background: "linear-gradient(135deg, var(--accent-2), var(--accent-2))", borderRadius: 14, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -15, right: -15, width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
-          <p style={{ fontSize: 13, fontWeight: 700, color: "var(--qeixova-color-ff-ff-ff)", marginBottom: 3 }}>
-            {stats.streak > 0 ? `${stats.streak}-day streak!` : "Start your streak!"}
-          </p>
-          <p style={{ fontSize: 11, color: "rgba(0,0,0,0.65)" }}>Keep completing missions daily</p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, padding: "0 4px" }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent-2), var(--accent-2))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Image src="/icon-profile.svg" alt="User" width={18} height={18} className="theme-icon active" style={{ objectFit: "contain" }} />
-          </div>
-          <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{stats.fullName || "Loading..."}</p>
-            <p style={{ fontSize: 11, color: "var(--muted)" }}>
-              <span style={{ color: stats.badgeColor, fontWeight: 700 }}>{stats.levelName}</span>
-              {stats.xp > 0 && <span style={{ color: "#F5A623" }}> &middot; {stats.xp.toLocaleString()} QLT progress</span>}
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <Link href="/creator" className="xStylePostButton">Create post</Link>
 
-            <button
-              onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); }}
-              title="Log out"
-              style={{ background: "rgba(229,62,62,0.1)", border: "1px solid rgba(229,62,62,0.2)", borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
-            >
-              <Image src="/icon-password.svg" alt="Logout" width={14} height={14} className="theme-icon" />
-            </button>
-          </div>
-        </div>
+      <div className="xStyleProfileFooter">
+        <Link href="/profile" className="xStyleProfileIdentity" aria-label="Open your profile">
+          <span className="xStyleAvatar">{initials}</span>
+          <span className="xStyleProfileText"><strong>{user.fullName || "Qeixova contributor"}</strong><small>{user.fullName ? `@${user.fullName.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24)}` : "Your account"}</small></span>
+        </Link>
+        <div className="xStyleFooterActions"><span className="xStyleBalance" title="Available wallet balance">{user.balance.toLocaleString()} QLT</span><ThemeToggle compact /><button type="button" className="xStyleLogout" aria-label="Log out" title="Log out" onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); }}>···</button></div>
       </div>
+      <style jsx>{`
+        .xStyleSidebar{display:flex;flex-direction:column;gap:8px;width:280px;padding:8px 20px 12px;background:var(--bg);border-right:1px solid var(--border);box-shadow:none}.xStyleBrand{display:flex;align-items:center;gap:13px;min-height:54px;padding:0 10px;color:var(--text);font-size:19px;font-weight:800;letter-spacing:-.035em;text-decoration:none}.xStyleBrand img{width:34px;height:34px;object-fit:contain}.xStyleNav{display:flex;flex:1;flex-direction:column;gap:3px;padding:0 0 6px}.xStyleNavLink{display:flex;align-items:center;gap:16px;min-height:48px;padding:0 12px;border-radius:12px;color:var(--text);font-size:16px;font-weight:500;text-decoration:none;transition:background .14s ease,color .14s ease}.xStyleNavLink img{flex:0 0 24px;object-fit:contain}.xStyleNavLink:hover{background:color-mix(in srgb,var(--accent) 8%,var(--bg))}.xStyleNavLink.active{background:rgba(26,239,34,.11);color:#159532;font-weight:750}.xStylePostButton{display:flex;align-items:center;justify-content:center;min-height:54px;margin:2px 0 12px;border-radius:999px;background:#13171b;color:white;font-size:15px;font-weight:800;text-decoration:none;transition:filter .15s ease}.xStylePostButton:hover{filter:brightness(1.15)}.xStyleProfileFooter{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 6px;margin-top:auto;padding:12px 4px 2px;border-top:1px solid var(--border)}.xStyleProfileIdentity{display:flex;align-items:center;gap:10px;min-width:0;color:var(--text);text-decoration:none}.xStyleAvatar{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#dff1e5;color:#267b48;font-size:12px;font-weight:800}.xStyleProfileText{display:grid;min-width:0;gap:3px}.xStyleProfileText strong{overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.xStyleProfileText small{overflow:hidden;color:var(--muted);font-size:11px;text-overflow:ellipsis;white-space:nowrap}.xStyleFooterActions{display:flex;align-items:center;gap:4px}.xStyleBalance{color:var(--muted);font-size:9px;white-space:nowrap}.xStyleLogout{width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:var(--text);font-size:20px;line-height:1;cursor:pointer}.xStyleLogout:hover{background:var(--card-bg)}
+        @media(min-width:1024px){.xStyleSidebar{position:sticky;top:0;height:100vh;min-height:100vh;overflow-y:auto}.xStyleNavLink{min-height:52px;font-size:17px}.xStylePostButton{min-height:56px;font-size:16px}}
+      `}</style>
     </aside>
   );
 }

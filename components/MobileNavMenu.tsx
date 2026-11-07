@@ -7,12 +7,14 @@ import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const links = [
-  { href: "/dashboard", label: "Home", icon: "/icon-home.svg" },
+  { href: "/creator", label: "Home", icon: "/icon-home.svg" },
+  { href: "/profile", label: "Profile", icon: "/icon-profile.svg" },
+  { href: "/settings", label: "Settings", icon: "/icon-settings.svg" },
   { href: "/tasks", label: "Missions", icon: "/icon-task.svg" },
   { href: "/growth", label: "Growth", icon: "/icon-analytics.svg" },
+  { href: "/messages", label: "Messages", icon: "/icon-chat.svg" },
   { href: "/leaderboard", label: "Ranks", icon: "/icon-leaderboard.svg" },
   { href: "/wallet", label: "Wallet", icon: "/icon-wallet.svg" },
-  { href: "/profile", label: "Profile", icon: "/icon-profile.svg" },
   { href: "/notifications", label: "Notifications", icon: "/icon-notifications.svg" },
   { href: "/tasks/submit", label: "My Missions", icon: "/icon-task.svg" },
 ];
@@ -33,7 +35,7 @@ export default function MobileNavMenu() {
   return (
     <header className={`mobile-nav-menu${open ? " mobile-nav-menu--open" : ""}`}>
       <div className="mobile-nav-menu__bar">
-        <Link href="/dashboard" className="mobile-nav-menu__brand" onClick={() => setOpen(false)}>
+        <Link href="/creator" className="mobile-nav-menu__brand" onClick={() => setOpen(false)}>
           <Image src="/qeixova-icon.png" alt="" width={30} height={30} />
           <span>Qeixova</span>
         </Link>
