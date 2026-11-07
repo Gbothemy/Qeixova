@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 
 type Filter = "all" | "unread" | "read";
+type Category = "all" | "social" | "missions" | "earnings" | "account";
 type Notification = {
   id: number;
   type: string;
@@ -40,6 +41,7 @@ export default function NotificationsPage() {
   const router = useRouter();
   const [items, setItems] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
+  const [category, setCategory] = useState<Category>("all");
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -49,7 +51,7 @@ export default function NotificationsPage() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`/api/contributor/notifications?filter=${filter}&limit=100`, { cache: "no-store" });
+      const response = await fetch(`/api/contributor/notifications?filter=${filter}&category=${category}&limit=100`, { cache: "no-store" });
       if (response.status === 401) {
         router.push("/login");
         return;
@@ -63,7 +65,7 @@ export default function NotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, router]);
+  }, [filter, category, router]);
 
   useEffect(() => { void loadNotifications(); }, [loadNotifications]);
 
@@ -101,10 +103,17 @@ export default function NotificationsPage() {
       </header>
 
       <section className="notificationsToolbar" aria-label="Notification controls">
-        <div className="notificationFilters">
-          {(["all", "unread", "read"] as Filter[]).map(value => (
-            <button key={value} type="button" className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{value}</button>
-          ))}
+        <div className="notificationFilterGroups">
+          <div className="notificationFilters" aria-label="Read status">
+            {(["all", "unread", "read"] as Filter[]).map(value => (
+              <button key={value} type="button" aria-pressed={filter === value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{value}</button>
+            ))}
+          </div>
+          <div className="notificationCategories" aria-label="Notification category">
+            {(["all", "social", "missions", "earnings", "account"] as Category[]).map(value => (
+              <button key={value} type="button" aria-pressed={category === value} className={category === value ? "active" : ""} onClick={() => setCategory(value)}>{value}</button>
+            ))}
+          </div>
         </div>
         <button className="markAllButton" type="button" onClick={markAllRead} disabled={unread === 0 || updating}>{updating ? "Updating…" : "Mark all read"}</button>
       </section>
@@ -127,11 +136,11 @@ export default function NotificationsPage() {
         .notificationsHero{position:relative;display:grid;grid-template-columns:46px minmax(0,1fr) 54px;gap:18px;align-items:center;padding:52px 34px 30px;background:radial-gradient(circle at 90% 5%,rgba(26,239,34,.13),transparent 38%),linear-gradient(135deg,var(--qeixova-color-f2-ef-f2),var(--qeixova-color-f6-f5-f6));border-bottom:1px solid var(--qeixova-color-db-d7-db)}
         .notificationsHero span{color:#1AEF22;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.notificationsHero h1{margin:4px 0 2px;font-size:26px}.notificationsHero p{color:var(--qeixova-color-5a-55-5a);font-size:12px}
         .notificationsBack,.notificationsBell{display:grid;place-items:center;width:46px;height:46px;border:1px solid var(--qeixova-color-d4-cf-d4);border-radius:14px;background:var(--qeixova-color-ea-e7-ea);color:var(--qeixova-color-0a-0a-0a);text-decoration:none;font-size:20px;transition:.18s ease}.notificationsBack:hover{border-color:var(--qeixova-color-b4-ab-b4);transform:translateX(-2px)}.notificationsBell{width:54px;height:54px;background:rgba(26,239,34,.09);border-color:rgba(26,239,34,.26);box-shadow:0 10px 30px rgba(26,239,34,.06)}.notificationsBell img{filter:none}
-        .notificationsToolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 34px;border-bottom:1px solid var(--qeixova-color-dd-d9-dd);background:var(--qeixova-color-f2-ef-f2)}.notificationFilters{display:flex;gap:8px;min-width:0}.notificationFilters button,.markAllButton{min-height:40px;border:1px solid var(--qeixova-color-d2-cd-d2);border-radius:11px;background:var(--qeixova-color-e8-e5-e8);color:var(--qeixova-color-51-4a-50);padding:9px 15px;font-size:11px;font-weight:800;text-transform:capitalize;cursor:pointer;transition:.18s ease}.notificationFilters button:hover,.markAllButton:hover:not(:disabled){border-color:var(--qeixova-color-b4-ab-b4);color:var(--qeixova-color-00-00-00)}.notificationFilters button.active{background:#1AEF22;border-color:#1AEF22;color:#051006;box-shadow:0 7px 20px rgba(26,239,34,.15)}.markAllButton{color:#F5A623;white-space:nowrap}.markAllButton:disabled{opacity:.42;cursor:not-allowed}
+        .notificationsToolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 34px;border-bottom:1px solid var(--qeixova-color-dd-d9-dd);background:var(--qeixova-color-f2-ef-f2)}.notificationFilterGroups{display:grid;gap:10px;min-width:0}.notificationFilters,.notificationCategories{display:flex;flex-wrap:wrap;gap:7px;min-width:0}.notificationFilters button,.notificationCategories button,.markAllButton{min-height:36px;border:1px solid var(--qeixova-color-d2-cd-d2);border-radius:999px;background:var(--qeixova-color-e8-e5-e8);color:var(--qeixova-color-51-4a-50);padding:8px 13px;font-size:10px;font-weight:800;text-transform:capitalize;cursor:pointer;transition:.18s ease}.notificationFilters button:hover,.notificationCategories button:hover,.markAllButton:hover:not(:disabled){border-color:var(--qeixova-color-b4-ab-b4);color:var(--qeixova-color-00-00-00)}.notificationFilters button.active,.notificationCategories button.active{background:#1AEF22;border-color:#1AEF22;color:#051006;box-shadow:0 7px 20px rgba(26,239,34,.15)}.notificationCategories button{min-height:31px;padding:6px 11px;font-weight:700}.markAllButton{color:#F5A623;white-space:nowrap}.markAllButton:disabled{opacity:.42;cursor:not-allowed}
         .notificationsList{display:grid;gap:12px;padding:24px 34px}.notificationCard{display:grid;grid-template-columns:10px minmax(0,1fr);gap:16px;width:100%;padding:20px 22px;border:1px solid var(--qeixova-color-db-d7-db);border-radius:17px;background:linear-gradient(145deg,var(--qeixova-color-ed-ea-ed),var(--qeixova-color-f1-ef-f1));color:var(--qeixova-color-0a-0a-0a);text-align:left;text-decoration:none;font:inherit;cursor:pointer;box-shadow:0 12px 28px rgba(0,0,0,.14);transition:.18s ease}.notificationCard:hover{transform:translateY(-2px);border-color:var(--qeixova-color-be-b6-be);background:var(--qeixova-color-ea-e6-ea)}.notificationCard.unread{background:linear-gradient(135deg,rgba(26,239,34,.105),var(--qeixova-color-ee-ea-ee) 45%,var(--qeixova-color-f0-ed-f0));border-color:rgba(26,239,34,.28)}.notificationDot{width:10px;height:10px;border-radius:50%;margin-top:5px;box-shadow:0 0 0 4px rgba(255,255,255,.035)}.notificationCopy{min-width:0}.notificationTitle{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.notificationTitle strong{font-size:15px;line-height:1.35;overflow-wrap:anywhere}.notificationTitle time{flex-shrink:0;color:var(--qeixova-color-7a-74-79);font-size:11px}.notificationCopy>p{margin:7px 0 14px;color:var(--qeixova-color-46-3f-45);font-size:13px;line-height:1.58;overflow-wrap:anywhere}.notificationMeta{display:flex;justify-content:space-between;align-items:center;gap:10px}.notificationMeta span{padding:4px 9px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}.notificationMeta .unread{background:rgba(26,239,34,.12);color:#1AEF22}.notificationMeta .read{background:var(--qeixova-color-dc-d8-dc);color:var(--qeixova-color-62-5b-61)}.notificationMeta b{color:#F5A623;font-size:11px}
         .notificationsState{display:grid;place-items:center;padding:64px 20px;border:1px solid var(--qeixova-color-df-df-df);border-radius:16px;background:var(--qeixova-color-ef-ef-ef);text-align:center}.notificationsState strong{margin-top:13px;font-size:16px}.notificationsState p{max-width:320px;margin-top:6px;color:var(--qeixova-color-66-66-66);font-size:12px;line-height:1.55}.emptyBell{display:grid;place-items:center;width:62px;height:62px;border-radius:18px;background:rgba(26,239,34,.08);border:1px solid rgba(26,239,34,.18)}.notificationSpinner{width:28px;height:28px;border:3px solid var(--qeixova-color-db-db-db);border-top-color:#1AEF22;border-radius:50%;animation:spin .8s linear infinite}.notificationsError{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 14px;border:1px solid rgba(229,62,62,.3);border-radius:12px;background:rgba(229,62,62,.08);color:#ff9d9d;font-size:12px}.notificationsError button{border:0;border-radius:8px;background:#e53e3e;color:var(--qeixova-color-00-00-00);padding:7px 10px;font-weight:800;cursor:pointer}@keyframes spin{to{transform:rotate(360deg)}}
         @media(min-width:768px){.notificationsPage{padding-bottom:90px}.notificationCard{min-height:126px}}
-        @media(max-width:640px){.notificationsPage{border:0}.notificationsHero{grid-template-columns:42px minmax(0,1fr) 46px;gap:12px;padding:36px 18px 24px}.notificationsBack{width:42px;height:42px}.notificationsBell{width:46px;height:46px}.notificationsToolbar{align-items:stretch;flex-direction:column;padding:14px 16px}.notificationFilters{display:grid;grid-template-columns:repeat(3,1fr)}.markAllButton{width:100%}.notificationsList{padding:16px}.notificationCard{padding:17px 16px;gap:12px}.notificationTitle strong{font-size:14px}.notificationCopy>p{font-size:12px}}
+        @media(max-width:640px){.notificationsPage{border:0}.notificationsHero{grid-template-columns:42px minmax(0,1fr) 46px;gap:12px;padding:36px 18px 24px}.notificationsBack{width:42px;height:42px}.notificationsBell{width:46px;height:46px}.notificationsToolbar{align-items:stretch;flex-direction:column;padding:14px 16px}.notificationFilterGroups{gap:9px}.notificationFilters{display:grid;grid-template-columns:repeat(3,1fr)}.notificationFilters button{padding-inline:8px}.notificationCategories{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px;scrollbar-width:none}.notificationCategories::-webkit-scrollbar{display:none}.notificationCategories button{flex:0 0 auto}.markAllButton{width:100%}.notificationsList{padding:16px}.notificationCard{padding:17px 16px;gap:12px}.notificationTitle strong{font-size:14px}.notificationCopy>p{font-size:12px}}
       `}</style>
     </div>
   );

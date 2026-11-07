@@ -233,7 +233,7 @@ export default function TaskCard({ task, onStart, onSelect, selected }: TaskCard
           border-radius: 12px;
           background: var(--mission-bg);
           color: var(--mission-color);
-          font-weight: 950;
+          font-weight: 800;
           flex-shrink: 0;
         }
         .missionBody {

@@ -60,6 +60,9 @@ export async function GET(request: NextRequest) {
         AND (${feedTab} <> 'saved' OR EXISTS (
           SELECT 1 FROM creator_post_bookmarks saved WHERE saved.user_id = ${session.userId} AND saved.post_id = p.id
         ))
+        AND (p.user_id = ${session.userId} OR NOT EXISTS (
+          SELECT 1 FROM creator_muted_users m WHERE m.user_id = ${session.userId} AND m.muted_user_id = p.user_id
+        ))
       GROUP BY p.id, u.full_name
       ORDER BY CASE WHEN ${feedTab} = 'popular' THEN COUNT(DISTINCT l.user_id) * 2 + COUNT(DISTINCT v.viewer_id) END DESC NULLS LAST,
         p.created_at DESC
@@ -130,6 +133,19 @@ export async function POST(request: NextRequest) {
         await notifyCreator(creatorId, "New contributor following you", `${session.fullName || "A contributor"} followed your creator profile.`, "/creator", `creator-follow:${session.userId}:${creatorId}`);
       }
       return NextResponse.json({ ok: true, followed: !existing.length });
+    }
+
+    if (action === "toggle_mute") {
+      const creatorId = Number(payload.creatorId);
+      if (!Number.isSafeInteger(creatorId) || creatorId <= 0 || creatorId === session.userId) {
+        return NextResponse.json({ error: "Choose another contributor to mute." }, { status: 400 });
+      }
+      const creator = await sql`SELECT id FROM users WHERE id = ${creatorId} AND COALESCE(email_verified, false) = true LIMIT 1`;
+      if (!creator.length) return NextResponse.json({ error: "That contributor is not available." }, { status: 404 });
+      const existing = await sql`SELECT 1 FROM creator_muted_users WHERE user_id = ${session.userId} AND muted_user_id = ${creatorId} LIMIT 1`;
+      if (existing.length) await sql`DELETE FROM creator_muted_users WHERE user_id = ${session.userId} AND muted_user_id = ${creatorId}`;
+      else await sql`INSERT INTO creator_muted_users (user_id, muted_user_id) VALUES (${session.userId}, ${creatorId}) ON CONFLICT DO NOTHING`;
+      return NextResponse.json({ ok: true, muted: !existing.length });
     }
 
     const postId = Number(payload.postId);

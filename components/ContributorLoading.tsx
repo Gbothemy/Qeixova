@@ -51,7 +51,7 @@ export default function ContributorLoading({
           background: linear-gradient(135deg, var(--accent), var(--accent-2));
           color: var(--qeixova-color-fa-fa-fa);
           font-size: 20px;
-          font-weight: 950;
+          font-weight: 800;
         }
 
         .loadingCopy {
@@ -63,7 +63,7 @@ export default function ContributorLoading({
           margin: 0;
           color: var(--text);
           font-size: 16px;
-          font-weight: 950;
+          font-weight: 800;
           letter-spacing: 0;
         }
 

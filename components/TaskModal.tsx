@@ -706,7 +706,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
         .pendingReward span {
           color: var(--accent-2);
           font-size: 11px;
-          font-weight: 950;
+          font-weight: 800;
           text-transform: uppercase;
           letter-spacing: .06em;
         }
@@ -836,7 +836,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
         .campaignCaptionBlock span {
           color: var(--accent);
           font-size: 10px;
-          font-weight: 950;
+          font-weight: 800;
           text-transform: uppercase;
           letter-spacing: .04em;
         }
@@ -907,7 +907,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           color: #17200c;
           padding: 9px 12px;
           font-size: 12px;
-          font-weight: 950;
+          font-weight: 800;
           text-decoration: none;
         }
         .stepList {
@@ -942,7 +942,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           background: #a8f542;
           color: #17200c;
           font-size: 12px;
-          font-weight: 950;
+          font-weight: 800;
         }
         .stepList p {
           margin: 2px 0 0;
@@ -965,7 +965,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           color: var(--button-text, var(--qeixova-color-ff-ff-ff));
           padding: 15px;
           font-size: 15px;
-          font-weight: 950;
+          font-weight: 800;
           cursor: pointer;
           box-shadow: 0 14px 30px rgba(245,166,35,.18);
         }
@@ -999,7 +999,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
         .platformChoiceHead span {
           color: var(--accent-2);
           font-size: 10px;
-          font-weight: 950;
+          font-weight: 800;
           text-transform: uppercase;
         }
         .platformChoiceHead strong {
@@ -1010,7 +1010,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           color: var(--accent);
           font-size: 13px;
           font-style: normal;
-          font-weight: 950;
+          font-weight: 800;
           white-space: nowrap;
           /* no-op refresh - header vars */
         }
@@ -1068,7 +1068,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           background: rgba(245,166,35,.08);
           color: var(--accent-2);
           padding: 18px;
-          font-weight: 950;
+          font-weight: 800;
           cursor: pointer;
         }
         .proofUpload small {
@@ -1136,7 +1136,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           border-radius: 18px;
           background: rgba(26,239,34,.1);
           color: var(--accent);
-          font-weight: 950;
+          font-weight: 800;
         }
         .pendingReward {
           width: 100%;
@@ -1148,7 +1148,7 @@ export default function TaskModal({ task, onClose, onComplete, startAtProof = fa
           background: linear-gradient(135deg, var(--accent-2), #d89420);
           color: var(--qeixova-color-ff-ff-ff);
           padding: 14px 18px;
-          font-weight: 950;
+          font-weight: 800;
           cursor: pointer;
         }
         @media (max-width: 640px) {

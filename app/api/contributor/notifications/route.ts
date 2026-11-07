@@ -10,6 +10,10 @@ function normalizeFilter(value: string | null) {
   return value === "read" || value === "unread" ? value : "all";
 }
 
+function normalizeCategory(value: string | null) {
+  return value === "social" || value === "missions" || value === "earnings" || value === "account" ? value : "all";
+}
+
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,6 +23,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const filter = normalizeFilter(searchParams.get("filter"));
+  const category = normalizeCategory(searchParams.get("category"));
   const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? 12)));
 
   const notifications = await sql`
@@ -29,6 +34,12 @@ export async function GET(req: NextRequest) {
       AND (${filter} = 'all'
         OR (${filter} = 'unread' AND read_at IS NULL)
         OR (${filter} = 'read' AND read_at IS NOT NULL)
+      )
+      AND (${category} = 'all'
+        OR (${category} = 'social' AND type = 'growth_activity')
+        OR (${category} = 'missions' AND type IN ('task_available', 'task_reminder', 'submission_received', 'submission_approved', 'submission_rejected'))
+        OR (${category} = 'earnings' AND type IN ('reward_credited', 'withdrawal_update'))
+        OR (${category} = 'account' AND type IN ('account_update', 'announcement'))
       )
     ORDER BY created_at DESC
     LIMIT ${limit}

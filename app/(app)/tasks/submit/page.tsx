@@ -109,8 +109,8 @@ export default function MyMissionsPage() {
       <div style={{ width: "min(100%, 820px)", margin: "0 auto" }}>
         <header style={{ display: "flex", alignItems: "end", justifyContent: "space-between", gap: 16, padding: "8px 0 20px" }}>
           <div>
-            <span style={{ color: "#1AEF22", fontSize: 10, fontWeight: 950, letterSpacing: 1, textTransform: "uppercase" }}>Mission workspace</span>
-            <h1 style={{ marginTop: 6, color: "var(--qeixova-color-0a-0a-0a)", fontSize: "clamp(27px, 5vw, 36px)", lineHeight: 1.08, fontWeight: 950 }}>My Missions</h1>
+            <span style={{ color: "#1AEF22", fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>Mission workspace</span>
+            <h1 style={{ marginTop: 6, color: "var(--qeixova-color-0a-0a-0a)", fontSize: "clamp(27px, 5vw, 36px)", lineHeight: 1.08, fontWeight: 800 }}>My Missions</h1>
             <p style={{ maxWidth: 560, marginTop: 8, color: "var(--qeixova-color-47-42-46)", fontSize: 13, lineHeight: 1.6 }}>Your selected work, ready when you are. Start a mission for its instructions, then submit proof here when you finish.</p>
           </div>
           <Link href="/tasks" style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40, border: "1px solid var(--qeixova-color-cf-c9-cf)", borderRadius: 10, background: "var(--qeixova-color-ee-eb-ee)", color: "var(--qeixova-color-1a-17-1a)", padding: "0 13px", textDecoration: "none", fontSize: 12, fontWeight: 850 }}>Browse missions</Link>
@@ -136,7 +136,7 @@ export default function MyMissionsPage() {
               <article key={task.id} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "center", gap: 14, padding: "15px 16px", border: "1px solid var(--qeixova-color-d6-d1-d5)", borderRadius: 14, background: "linear-gradient(120deg, rgba(255,255,255,.018), var(--qeixova-color-ef-ed-ee) 55%)" }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, marginBottom: 7 }}>
-                    <span style={{ border: "1px solid rgba(26,239,34,.23)", borderRadius: 999, background: "rgba(26,239,34,.07)", color: "#1aef22", padding: "4px 8px", fontSize: 9, fontWeight: 950, letterSpacing: .35, textTransform: "uppercase" }}>{started ? "In progress" : "Selected"}</span>
+                    <span style={{ border: "1px solid rgba(26,239,34,.23)", borderRadius: 999, background: "rgba(26,239,34,.07)", color: "#1aef22", padding: "4px 8px", fontSize: 9, fontWeight: 800, letterSpacing: .35, textTransform: "uppercase" }}>{started ? "In progress" : "Selected"}</span>
                     <span style={{ color: "var(--qeixova-color-6d-66-6c)", fontSize: 10 }}>{task.category}</span>
                   </div>
                   <h3 style={{ overflowWrap: "anywhere", color: "var(--qeixova-color-0a-0a-0a)", fontSize: 15, fontWeight: 900 }}>{task.title}</h3>
@@ -147,7 +147,7 @@ export default function MyMissionsPage() {
                     if (started && task.mission_key !== "qeixova-awareness-verification") { setActiveMode("proof"); setActiveTask(task); }
                     else if (started) startMission(task);
                     else startMission(task);
-                  }} data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-start" : undefined} style={{ minWidth: 132, minHeight: 40, border: 0, borderRadius: 10, background: "#1aef22", color: "var(--qeixova-color-f9-ef-f9)", padding: "0 12px", fontSize: 12, fontWeight: 950, cursor: "pointer" }}>{started && task.mission_key !== "qeixova-awareness-verification" ? "Submit proof" : started ? "Review instructions" : "Start mission"}</button>
+                  }} data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-start" : undefined} style={{ minWidth: 132, minHeight: 40, border: 0, borderRadius: 10, background: "#1aef22", color: "var(--qeixova-color-f9-ef-f9)", padding: "0 12px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>{started && task.mission_key !== "qeixova-awareness-verification" ? "Submit proof" : started ? "Review instructions" : "Start mission"}</button>
                   {started && <button type="button" data-tour={task.mission_key === "qeixova-awareness-verification" ? "welcome-view-instructions" : undefined} onClick={() => startMission(task)} style={{ border: 0, background: "transparent", color: "var(--qeixova-color-51-4b-50)", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>View instructions</button>}
                   <button type="button" onClick={() => removeMission(task.id)} style={{ border: 0, background: "transparent", color: "var(--qeixova-color-73-6d-72)", fontSize: 10, cursor: "pointer" }}>Remove</button>
                 </div>

@@ -1,6 +1,7 @@
 import Sidebar from "@/components/Sidebar";
 import MobileNavMenu from "@/components/MobileNavMenu";
 import GuidedWelcomeMission from "@/components/GuidedWelcomeMission";
+import ContributorRightRail from "@/components/ContributorRightRail";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +10,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <GuidedWelcomeMission />
       <Sidebar />
       <div className="main-content">
-        {children}
+        <div className="contributorWorkspace">
+          <div className="contributorWorkspaceMain">{children}</div>
+          <ContributorRightRail />
+        </div>
       </div>
     </div>
   );

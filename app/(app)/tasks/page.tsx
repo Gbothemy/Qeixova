@@ -197,7 +197,7 @@ export default function TasksPage() {
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 16, alignItems: "start" }}>
             <div>
               <p style={{ color: "#F5A623", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>Matched mission board</p>
-              <h1 style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 28, lineHeight: 1.1, fontWeight: 950, letterSpacing: 0, margin: 0 }}>Missions matching your profile</h1>
+              <h1 style={{ color: "var(--qeixova-color-0a-0a-0a)", fontSize: 28, lineHeight: 1.1, fontWeight: 800, letterSpacing: 0, margin: 0 }}>Missions matching your profile</h1>
               <p style={{ color: "var(--qeixova-color-55-55-55)", fontSize: 13, marginTop: 8, lineHeight: 1.6, maxWidth: 560 }}>Campaigns with matching interests appear here, regardless of profession or location.</p>
             </div>
             {meta && (
