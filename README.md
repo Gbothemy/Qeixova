@@ -32,9 +32,9 @@ Before deploying to production, configure these environment variables in Vercel 
 | `NEXT_PUBLIC_APP_URL` | Recommended | Absolute URL used in emails and redirects |
 | `GMAIL_USER` | Optional | Gmail sender account |
 | `GMAIL_APP_PASSWORD` | Optional | Gmail app password |
-| `PAYSTACK_SECRET_KEY` | Later | Paystack server-side integration |
-| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | Later | Paystack client-side public key |
-| `PAYSTACK_WEBHOOK_SECRET` | Later | Paystack webhook verification |
+| `FLUTTERWAVE_SECRET_KEY` | Required for payments | Flutterwave server-side secret key (`FLWSECK...`) for wallet and Premium checkout |
+| `FLUTTERWAVE_WEBHOOK_SECRET_HASH` | Recommended | Verifies Flutterwave webhook signatures |
+| `FLUTTERWAVE_V3_API_BASE_URL` | Optional | Overrides the Flutterwave V3 API endpoint |
 
 Use `.env.example` as the safe template. Never commit real `.env`, `.env.local`, or `.env.production` secrets.
 

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { ensureCreatorSchema } from "@/lib/contributorFeatures";
 import { createContributorNotification } from "@/lib/contributorNotifications";
 import { sql } from "@/lib/db";
+import { ensurePremiumSubscriptionTable } from "@/lib/premium";
 
 async function notifyCreator(userId: number, title: string, message: string, href: string, dedupeKey: string) {
   try {
@@ -37,8 +38,12 @@ export async function GET(request: NextRequest) {
     const offset = Number.isSafeInteger(offsetValue) ? Math.max(0, Math.min(offsetValue, 100_000)) : 0;
     const requestedTab = request.nextUrl.searchParams.get("tab");
     const feedTab = requestedTab === "following" || requestedTab === "popular" || requestedTab === "saved" ? requestedTab : "for-you";
+    await ensurePremiumSubscriptionTable();
     const posts = await sql`
       SELECT p.id, p.user_id, p.body, p.created_at, p.updated_at, u.full_name AS author_name,
+        EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps
+          WHERE ps.user_id = p.user_id AND ps.status = 'active'
+            AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
         COUNT(DISTINCT l.user_id)::int AS like_count,
         COUNT(DISTINCT v.viewer_id)::int AS view_count,
         COUNT(DISTINCT c.id)::int AS comment_count,
@@ -80,6 +85,7 @@ export async function GET(request: NextRequest) {
         ...post,
         id: Number(post.id),
         user_id: Number(post.user_id),
+        is_premium: Boolean(post.is_premium),
         edited: new Date(post.updated_at).getTime() > new Date(post.created_at).getTime() + 1000,
         like_count: Number(post.like_count),
         view_count: Number(post.view_count),

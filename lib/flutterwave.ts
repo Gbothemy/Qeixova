@@ -61,9 +61,13 @@ export function qltToFlutterwaveNaira(amountQlt: number) {
 }
 
 function getFlutterwaveSecretKey() {
-  const key = process.env.FLUTTERWAVE_SECRET_KEY || process.env.FLW_SECRET_KEY;
-  if (!key) throw new Error("FLUTTERWAVE_SECRET_KEY is not configured");
-  return key;
+  const configured = [process.env.FLUTTERWAVE_SECRET_KEY, process.env.FLW_SECRET_KEY]
+    .map((value) => value?.trim().replace(/^(["'])(.*)\1$/, "$2").trim())
+    .filter((value): value is string => Boolean(value));
+  const key = configured.find((value) => /^FLWSECK(?:_TEST)?-/i.test(value));
+  if (key) return key;
+  if (!configured.length) throw new Error("Set FLUTTERWAVE_SECRET_KEY to a Flutterwave secret key.");
+  throw new Error("The configured Flutterwave key is not a secret key. Use an active FLWSECK key from your Flutterwave dashboard.");
 }
 
 function normalizeCheckoutEmail(email: string) {
@@ -93,6 +97,9 @@ async function readFlutterwaveJson<T>(response: Response): Promise<T> {
     error?: { message?: string };
   };
   if (!response.ok) {
+    if (response.status === 401 || /invalid authorization key|authorization required|invalid secret key/i.test(data.message || data.error?.message || "")) {
+      throw new Error("Flutterwave rejected the configured secret key. Set an active FLWSECK key in FLUTTERWAVE_SECRET_KEY and make sure its test/live mode matches the Flutterwave account.");
+    }
     throw new Error(data.error?.message || data.message || `Flutterwave request failed with status ${response.status}`);
   }
   return data;

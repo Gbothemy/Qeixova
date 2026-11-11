@@ -4177,3 +4177,124 @@ input[type="number"] {
 .creatorPage .creatorPostMenuPanel button { display: block; width: 100%; min-height: 40px; border-radius: 7px; color: var(--text); text-align: left; white-space: normal; overflow-wrap: anywhere; }
 .creatorPage .creatorPostMenuPanel button:hover,
 .creatorPage .creatorPostMenuPanel button:focus-visible { background: color-mix(in srgb, var(--accent) 10%, var(--card-bg)); outline: none; }
+
+/* Creator overview cards: consistent avatar, hierarchy, spacing, and touch targets. */
+.creatorPage .creatorProfileCard,
+.creatorPage .creatorRailCard {
+  border-color: color-mix(in srgb, var(--border) 82%, #74b889) !important;
+  border-radius: 17px !important;
+  background: var(--card-bg) !important;
+  box-shadow: 0 5px 18px rgba(23, 58, 35, .045);
+}
+.creatorPage .creatorProfileCard { padding-bottom: 0; }
+.creatorPage .creatorProfileCover { height: 82px !important; background: linear-gradient(115deg, #dff2e5 0%, #e5f1f1 54%, #f5eee0 100%) !important; }
+.creatorPage .creatorProfileRow { margin: -26px 15px 10px !important; }
+.creatorPage .creatorProfileRow > a.creatorAvatar,
+.creatorPage .creatorProfileRow > a.creatorAvatar:link,
+.creatorPage .creatorProfileRow > a.creatorAvatar:visited {
+  display: grid !important;
+  flex: 0 0 58px !important;
+  width: 58px !important;
+  height: 58px !important;
+  place-items: center !important;
+  border: 3px solid var(--card-bg) !important;
+  border-radius: 50% !important;
+  background: linear-gradient(145deg, #e9f6ed, #d2ead9) !important;
+  color: #247747 !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  box-shadow: 0 1px 3px rgba(10, 30, 15, .12);
+}
+.creatorPage .creatorProfileRow > a.creatorAvatar:hover { box-shadow: 0 0 0 3px #32985c2b; }
+.creatorPage .creatorProfileRow .creatorProfileEdit,
+.creatorPage .creatorProfileRow .creatorProfileEdit:visited {
+  min-height: 34px;
+  padding: 0 11px !important;
+  border-color: var(--border) !important;
+  border-radius: 999px !important;
+  background: var(--card-bg);
+  font-size: 11px !important;
+}
+.creatorPage .creatorProfileCard > strong,
+.creatorPage .creatorProfileCard > .creatorProfileHandle,
+.creatorPage .creatorProfileCard > p { margin-inline: 16px !important; }
+.creatorPage .creatorProfileCard > strong { color: var(--text); font-size: 15px !important; font-weight: 800; letter-spacing: -.015em; }
+.creatorPage .creatorProfileHandle { margin-top: 3px !important; color: var(--muted); font-size: 12px !important; }
+.creatorPage .creatorProfileCard > p { margin-top: 9px !important; margin-bottom: 14px !important; color: var(--muted); font-size: 12px !important; line-height: 1.5 !important; }
+.creatorPage .creatorProfileStats { gap: 18px !important; padding: 12px 16px 14px !important; border-top-color: var(--border); font-size: 11px !important; }
+.creatorPage .creatorProfileStats b { margin-right: 3px; color: var(--text); font-size: 13px !important; }
+.creatorPage .creatorRailCard { padding: 16px !important; }
+.creatorPage .creatorRailHeading { margin-bottom: 12px !important; }
+.creatorPage .creatorRailHeading h2 { color: var(--text); font-size: 14px !important; font-weight: 800; letter-spacing: -.015em; }
+.creatorPage .creatorRailHeading > span { color: #21854d !important; font-size: 16px; }
+.creatorPage .creatorMetric { min-height: 42px; padding: 9px 0 !important; border-top-color: var(--border); font-size: 12px !important; }
+.creatorPage .creatorMetric strong { color: var(--text); font-size: 15px !important; font-weight: 800; }
+.creatorPage .creatorRewardLink,
+.creatorPage .creatorRewardLink:visited { min-height: 40px; margin-top: 8px !important; padding-top: 11px !important; border-top-color: var(--border); color: #277747 !important; font-size: 13px !important; font-weight: 750; }
+.creatorPage .creatorRewardLink svg { flex: 0 0 18px; width: 18px !important; height: 18px !important; }
+.creatorPage .creatorRewardLink .creatorLinkArrow { margin-left: auto; font-size: 14px; }
+.creatorPage .rewardCard { padding: 18px !important; border-color: #cfe5d5 !important; background: linear-gradient(145deg, color-mix(in srgb, #edf8f0 78%, var(--card-bg)), var(--card-bg)) !important; }
+.creatorPage .rewardCard .creatorEyebrow { color: #267d48; font-size: 10px !important; letter-spacing: .14em; }
+.creatorPage .rewardCard h2 { margin-top: 8px !important; color: var(--text); font-size: 17px !important; letter-spacing: -.02em; }
+.creatorPage .rewardCard > p { margin: 8px 0 13px !important; color: var(--muted); font-size: 12px !important; line-height: 1.55 !important; }
+.creatorPage .creatorSetupLine { gap: 8px !important; color: #477558; font-size: 11px !important; }
+.creatorPage .creatorSetupLine i { flex: 0 0 8px; width: 8px !important; height: 8px !important; }
+.creatorPage .rewardCard > small { margin-top: 8px !important; color: var(--muted); font-size: 11px !important; line-height: 1.5 !important; }
+.creatorPage .peopleCard .creatorRailHeading button { padding: 6px 9px; border-radius: 999px; background: #eef7f0; font-size: 11px !important; }
+.creatorPage .peopleCard .suggestion { gap: 10px; padding: 11px 0; }
+.creatorPage .peopleCard .suggestion .creatorAvatar { flex: 0 0 38px; width: 38px; height: 38px; font-size: 10px; }
+.creatorPage .peopleCard .suggestion strong { color: var(--text); font-size: 12px !important; }
+.creatorPage .peopleCard .suggestion small { color: var(--muted); font-size: 10px !important; }
+.creatorPage .peopleCard .suggestion button { min-height: 30px; padding: 0 11px; font-size: 10px !important; }
+.creatorPage .noSuggestions { font-size: 12px !important; line-height: 1.5; }
+[data-theme="dark"] .creatorPage .creatorProfileCard,
+[data-theme="dark"] .creatorPage .creatorRailCard { border-color: #304237 !important; background: #101812 !important; box-shadow: 0 5px 18px rgba(0, 0, 0, .15); }
+[data-theme="dark"] .creatorPage .creatorProfileCover { background: linear-gradient(115deg, #1b3524 0%, #1b2b2b 54%, #30281b 100%) !important; }
+[data-theme="dark"] .creatorPage .creatorProfileRow > a.creatorAvatar,
+[data-theme="dark"] .creatorPage .creatorProfileRow > a.creatorAvatar:link,
+[data-theme="dark"] .creatorPage .creatorProfileRow > a.creatorAvatar:visited { border-color: #101812 !important; background: linear-gradient(145deg, #1c3826, #162a1d) !important; color: #9fe0b0 !important; }
+[data-theme="dark"] .creatorPage .rewardCard { border-color: #344b3a !important; background: linear-gradient(145deg, #17271c, #101812) !important; }
+[data-theme="dark"] .creatorPage .creatorSetupLine { color: #b6d7be; }
+[data-theme="dark"] .creatorPage .peopleCard .creatorRailHeading button { background: #1b3021; color: #a5dfb3; }
+@media (max-width: 760px) {
+  .creatorPage .creatorProfileCard,
+  .creatorPage .creatorRailCard { border-radius: 16px !important; }
+  .creatorPage .creatorProfileCard > strong { font-size: 15px !important; }
+  .creatorPage .creatorProfileCard > p,
+  .creatorPage .creatorMetric,
+  .creatorPage .rewardCard > p,
+  .creatorPage .rewardCard > small { font-size: 12px !important; }
+}
+
+/* Keep the Premium check aligned with the contributor name in each feed. */
+.creatorPage .creatorPostHeader .premiumVerifiedBadge,
+.communityFeed .postCard h2 .premiumVerifiedBadge {
+  display: inline-block;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  margin-inline: 1px 2px;
+  vertical-align: middle;
+}
+.creatorPage .creatorPostHeader .premiumVerifiedBadge > path:first-child,
+.communityFeed .postCard h2 .premiumVerifiedBadge > path:first-child { fill: #1f9b57; }
+.creatorPage .creatorPostHeader .premiumVerifiedBadge .premiumVerifiedCheck,
+.communityFeed .postCard h2 .premiumVerifiedBadge .premiumVerifiedCheck {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.communityFeed .postCard h2 { display: flex; align-items: center; gap: 5px; }
+.publicProfilePage .publicProfileHeadingName { gap: 7px; line-height: 1.15; }
+.publicProfilePage .publicProfileIdentity h1 { align-items: center; }
+.publicProfilePage .publicProfileIdentity h1 .premiumVerifiedBadge { flex: 0 0 18px; width: 18px; height: 18px; }
+.publicProfilePage .publicProfileHeadingName .premiumVerifiedBadge { flex: 0 0 15px; width: 15px; height: 15px; }
+.publicProfilePage .publicPost header .premiumVerifiedBadge { flex: 0 0 15px; width: 15px; height: 15px; }
+@media (max-width: 760px) {
+  .creatorPage .creatorPostHeader .premiumVerifiedBadge { flex-basis: 14px; width: 14px; height: 14px; }
+  .communityFeed .postCard h2 .premiumVerifiedBadge { flex-basis: 14px; width: 14px; height: 14px; }
+}

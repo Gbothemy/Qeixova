@@ -3,10 +3,13 @@ import { platformFeatureEnabled } from "@/lib/adminPlatform";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { createContributorNotification } from "@/lib/contributorNotifications";
+import { ensurePremiumSubscriptionTable } from "@/lib/premium";
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  await ensurePremiumSubscriptionTable();
 
   const posts = await sql`
     SELECT
@@ -14,6 +17,9 @@ export async function GET() {
       u.full_name AS author_name,
       COALESCE(l.name, 'Starter') AS author_level,
       COALESCE(l.badge_color, '#1AEF22') AS badge_color,
+      EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps
+        WHERE ps.user_id = p.user_id AND ps.status = 'active'
+          AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
       COUNT(DISTINCT r.user_id)::int AS reaction_count,
       COUNT(DISTINCT c.id)::int AS comment_count,
       BOOL_OR(r.user_id = ${session.userId}) AS reacted
@@ -49,6 +55,7 @@ export async function GET() {
     posts: posts.map((post) => ({
       ...post,
       comments: commentsByPost.get(Number(post.id)) ?? [],
+      is_premium: Boolean(post.is_premium),
     })),
   });
 }

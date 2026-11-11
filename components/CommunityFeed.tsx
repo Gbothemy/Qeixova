@@ -11,6 +11,7 @@ type Comment = {
   body: string;
   created_at: string;
   author_name: string;
+  is_premium: boolean;
 };
 
 type Post = {
@@ -30,6 +31,10 @@ type Post = {
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "Q";
+}
+
+function PremiumBadge() {
+  return <svg className="premiumVerifiedBadge" viewBox="0 0 24 24" role="img" aria-label="Premium verified" title="Premium verified"><path d="M12 1.8 14.8 3l3-.1 1.2 2.7 2.5 1.7-.6 2.9.6 2.9-2.5 1.7-1.2 2.7-3-.1-2.8 1.2-2.8-1.2-3 .1L5 14.8l-2.5-1.7.6-2.9-.6-2.9L5 5.6 6.2 2.9l3 .1L12 1.8Z"/><path className="premiumVerifiedCheck" d="m8.1 11.9 2.4 2.4 5.5-5.5"/></svg>;
 }
 
 function relativeTime(value: string) {
@@ -142,7 +147,7 @@ export default function CommunityFeed() {
             <article className="postCard" key={post.id}>
               <header>
                 <Link href={post.author_id === user?.id ? "/profile" : `/profile/${post.author_id}`} className="avatar profileAvatarLink" aria-label={`Open ${post.author_name}'s profile`} style={{ borderColor: post.badge_color }}>{initials(post.author_name)}</Link>
-                <div><h2><Link href={post.author_id === user?.id ? "/profile" : `/profile/${post.author_id}`} className="feedAuthorLink">{post.author_name}</Link></h2><p>{post.author_level} growth partner · {relativeTime(post.created_at)}</p></div>
+                <div><h2><Link href={post.author_id === user?.id ? "/profile" : `/profile/${post.author_id}`} className="feedAuthorLink">{post.author_name}</Link>{post.is_premium ? <PremiumBadge /> : null}</h2><p>{post.author_level} growth partner · {relativeTime(post.created_at)}</p></div>
                 <span className="topic">{post.topic}</span>
               </header>
               <p className="postBody">{post.body}</p>
