@@ -4,12 +4,14 @@ import { sql } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { displayLevel } from "@/lib/levels";
 import { ensureCreatorSchema } from "@/lib/contributorFeatures";
+import { ensurePremiumSubscriptionTable } from "@/lib/premium";
 
 export async function GET() {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await ensureCreatorSchema();
+    await ensurePremiumSubscriptionTable();
 
     const [userRows, taskRows, earnRows, withdrawRows, referralRows, milestoneRows, creatorCounts, creatorPosts, creatorReplies, creatorReposts] = await Promise.all([
       sql`
@@ -19,7 +21,12 @@ export async function GET() {
           l.name AS level_name,
           l.badge_color,
           u.referral_code, u.created_at, u.trust_level, u.approved_count,
-          u.rejected_count, u.trust_score, u.xp, u.total_earned_qlt, u.bonus_earned_qlt
+          u.rejected_count, u.trust_score, u.xp, u.total_earned_qlt, u.bonus_earned_qlt,
+          EXISTS (
+            SELECT 1 FROM contributor_premium_subscriptions ps
+            WHERE ps.user_id = u.id AND ps.status = 'active'
+              AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())
+          ) AS is_premium
         FROM users u
         LEFT JOIN levels l ON l.id = u.level_id
         WHERE u.id = ${session.userId}

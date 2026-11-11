@@ -15,6 +15,7 @@ interface Profile {
   approved_count: number; rejected_count: number;
   xp?: number; trust_score?: number; level_name?: string;
   badge_color?: string; milestones_claimed?: number;
+  is_premium: boolean;
   total_earned_qlt: number; bonus_earned_qlt: number;
   creator_follower_count: number; creator_following_count: number;
   creator_posts: CreatorPost[]; creator_replies: CreatorReply[]; creator_reposts: CreatorRepost[];
@@ -27,6 +28,10 @@ type ProfileComment = { id: number; post_id: number; user_id: number; body: stri
 type ProfileTab = "Posts" | "Replies" | "Reposts" | "Media";
 
 type ModalType = "edit" | null;
+
+function PremiumBadge() {
+  return <svg className="profilePremiumBadge" viewBox="0 0 24 24" role="img" aria-label="Premium verified"><path d="M12 1.8 14.8 3l3-.1 1.2 2.7 2.5 1.7-.6 2.9.6 2.9-2.5 1.7-1.2 2.7-3-.1-2.8 1.2-2.8-1.2-3 .1L5 14.8l-2.5-1.7.6-2.9-.6-2.9L5 5.6 6.2 2.9l3 .1L12 1.8Z"/><path d="m8.1 11.9 2.4 2.4 5.5-5.5" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
 
 function timeAgo(d: string) {
   const diff = Date.now() - new Date(d).getTime();
@@ -229,7 +234,7 @@ export default function ProfilePage() {
       <section className="profileSocial">
         <header className="profileSocialHeading"><Link href="/creator" aria-label="Back to Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg></Link><div><strong>{profile.full_name}</strong><span>{profile.creator_posts.length.toLocaleString()} posts</span></div></header>
         <div className="profileAvatarRow"><div className="profileAvatar">{profile.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</div><button type="button" className="profileEditButton" onClick={() => setModal("edit")}>Edit profile</button></div>
-        <div className="profileIdentity"><h2>{profile.full_name}</h2><span className="profileHandle">@{profile.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "contributor"}</span>
+        <div className="profileIdentity"><h2>{profile.full_name}{profile.is_premium ? <PremiumBadge /> : null}</h2><span className="profileHandle">@{profile.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "contributor"}</span>
           {profile.bio ? <p className="profileBio">{profile.bio}</p> : <button type="button" className="profileAddBio" onClick={() => setModal("edit")}>Add a bio to tell the community about yourself.</button>}
           <div className="profileMeta">{profile.occupation ? <span>💼 {profile.occupation}</span> : null}{profile.location ? <span>⌖ {profile.location}</span> : null}{profile.website ? <a href={/^https?:\/\//i.test(profile.website) ? profile.website : `https://${profile.website}`} target="_blank" rel="noreferrer">↗ {profile.website}</a> : null}<span>▦ Joined {new Date(profile.created_at).toLocaleDateString([], { month: "long", year: "numeric" })}</span></div>
           <div className="profileSocialCounts"><span><b>{Number(profile.creator_following_count).toLocaleString()}</b> Following</span><span><b>{Number(profile.creator_follower_count).toLocaleString()}</b> Followers</span></div>
@@ -253,7 +258,7 @@ export default function ProfilePage() {
           {profileTab === "Posts" && profile.creator_posts.map(post => <article className="profilePost" key={post.id}>
             <Link className="profileTimelineAvatar" href="/profile" aria-label="Open your profile">{profileInitials}</Link>
             <div className="profilePostContent">
-              <header><Link href="/profile" className="profilePostAuthor">{profile.full_name}</Link><span>@{profile.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "contributor"}</span><span>·</span><time dateTime={post.created_at}>{timeAgo(post.created_at)}</time></header>
+              <header><Link href="/profile" className="profilePostAuthor">{profile.full_name}</Link>{profile.is_premium ? <PremiumBadge /> : null}<span>@{profile.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "contributor"}</span><span>·</span><time dateTime={post.created_at}>{timeAgo(post.created_at)}</time></header>
               <p>{post.body}</p>
               <div className="profilePostActions" aria-label="Post actions">
                 <button type="button" aria-label={`Reply to post, ${post.comment_count} replies`} aria-expanded={openComments.has(post.id)} onClick={() => togglePostComments(post.id)}><ProfileActionIcon name="reply" /><span>{post.comment_count.toLocaleString()}</span></button>

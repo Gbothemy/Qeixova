@@ -4073,6 +4073,8 @@ input[type="number"] {
 .profileSocial .profilePostAuthor,
 .profileSocial .profilePostAuthor:visited { color: var(--text) !important; font-size: 13px; font-weight: 800; text-decoration: none; }
 .profileSocial .profilePostAuthor:hover { text-decoration: underline; }
+.profileSocial .profilePremiumBadge { display: inline-block; flex: 0 0 17px; width: 17px; height: 17px; margin-left: 5px; vertical-align: -3px; }
+.profileSocial .profilePremiumBadge > path:first-child { fill: #1f9b57; }
 .profileSocial .profilePostOpen { margin-left: auto; padding: 2px 8px; border-radius: 999px; color: var(--muted); text-decoration: none; }
 .profileSocial .profilePostOpen:hover { background: var(--card-bg); color: var(--text); }
 .profileSocial .profilePostContent > p { margin: 8px 0 12px; line-height: 1.55; overflow-wrap: anywhere; }
