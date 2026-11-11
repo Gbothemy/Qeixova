@@ -4073,12 +4073,12 @@ input[type="number"] {
 .profileSocial .profilePostAuthor,
 .profileSocial .profilePostAuthor:visited { color: var(--text) !important; font-size: 13px; font-weight: 800; text-decoration: none; }
 .profileSocial .profilePostAuthor:hover { text-decoration: underline; }
-.profileSocial .profilePremiumBadge { display: inline-block; flex: 0 0 17px; width: 17px; height: 17px; margin-left: 5px; vertical-align: -3px; }
+.profileSocial .profilePremiumBadge { display: block; flex: 0 0 17px; width: 17px; height: 17px; margin: 0; vertical-align: middle; overflow: visible; }
 .profileSocial .profilePremiumBadge > path:first-child { fill: #1f9b57; }
-.profileSocial .profileIdentity h2 { display: flex; align-items: center; flex-wrap: wrap; column-gap: 7px; }
-.profileSocial .profileIdentity h2 .profilePremiumBadge { display: block; flex: 0 0 19px; width: 19px; height: 19px; margin: 0; vertical-align: middle; }
-.profileSocial .profilePostContent > header .profilePremiumBadge { display: block; flex: 0 0 16px; width: 16px; height: 16px; margin: 0 1px 0 -1px; vertical-align: middle; }
-.profileSocial .profilePremiumBadge { overflow: visible; }
+.profileSocial .profileIdentity h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.profileSocial .profileIdentity h2 .profilePremiumBadge { flex-basis: 19px; width: 19px; height: 19px; }
+.profileSocial .profilePostAuthor { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.profileSocial .profilePostAuthor .profilePremiumBadge { flex-basis: 16px; width: 16px; height: 16px; }
 .profileSocial .profilePostOpen { margin-left: auto; padding: 2px 8px; border-radius: 999px; color: var(--muted); text-decoration: none; }
 .profileSocial .profilePostOpen:hover { background: var(--card-bg); color: var(--text); }
 .profileSocial .profilePostContent > p { margin: 8px 0 12px; line-height: 1.55; overflow-wrap: anywhere; }
