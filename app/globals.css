@@ -4298,3 +4298,9 @@ input[type="number"] {
   .creatorPage .creatorPostHeader .premiumVerifiedBadge { flex-basis: 14px; width: 14px; height: 14px; }
   .communityFeed .postCard h2 .premiumVerifiedBadge { flex-basis: 14px; width: 14px; height: 14px; }
 }
+.publicProfilePage .premiumVerifiedBadge,
+.creatorPage .creatorPostHeader .premiumVerifiedBadge,
+.communityFeed .postCard h2 .premiumVerifiedBadge {
+  align-self: center;
+  transform: translateY(2px);
+}
