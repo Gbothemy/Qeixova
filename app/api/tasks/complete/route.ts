@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { hasActivePremium } from "@/lib/premium";
 import { sql } from "@/lib/db";
 import { verifyProof } from "@/lib/verifyProof";
 import { checkDailyCap, updateStreak, QLT_PROGRESS_REWARDS } from "@/lib/missionEngine";
@@ -301,6 +302,7 @@ export async function POST(req: NextRequest) {
     }
 
     const allowedTypes = getAllowedMissionTypes(userLevelRows[0]?.unlock_features);
+    if (await hasActivePremium(session.userId)) allowedTypes.add("premium");
     const missionType = task.mission_type ?? "engagement";
     if (task.mission_key !== AWARENESS_MISSION_KEY && !allowedTypes.has(missionType)) {
       return NextResponse.json({ error: "This mission type is not unlocked for your level yet." }, { status: 403 });

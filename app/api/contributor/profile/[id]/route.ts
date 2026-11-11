@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { ensureCreatorSchema } from "@/lib/contributorFeatures";
 import { sql } from "@/lib/db";
+import { hasActivePremium } from "@/lib/premium";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -15,7 +16,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 
   try {
     await ensureCreatorSchema();
-    const [users, posts, follows] = await Promise.all([
+    const [users, posts, follows, isPremium] = await Promise.all([
       sql`SELECT u.id, u.full_name, u.bio, u.website, u.location, u.occupation, u.created_at,
           COALESCE(l.level_number, u.level, 0) AS level, l.name AS level_name, l.badge_color
         FROM users u LEFT JOIN levels l ON l.id = u.level_id
@@ -31,12 +32,14 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
           (SELECT COUNT(*)::int FROM creator_follows WHERE creator_id = ${creatorId}) AS follower_count,
           (SELECT COUNT(*)::int FROM creator_follows WHERE follower_id = ${creatorId}) AS following_count,
           EXISTS(SELECT 1 FROM creator_follows WHERE follower_id = ${session.userId} AND creator_id = ${creatorId}) AS followed`,
+      hasActivePremium(creatorId),
     ]);
 
     if (!users.length) return NextResponse.json({ error: "Contributor not found." }, { status: 404 });
     return NextResponse.json({
       profile: {
         ...users[0],
+        is_premium: isPremium,
         follower_count: Number(follows[0]?.follower_count ?? 0),
         following_count: Number(follows[0]?.following_count ?? 0),
         followed: Boolean(follows[0]?.followed),

@@ -14,6 +14,8 @@ const nav = [
   { href: "/growth", label: "Growth", icon: "/icon-analytics.svg" },
   { href: "/leaderboard", label: "Ranks", icon: "/icon-leaderboard.svg" },
   { href: "/wallet", label: "Wallet", icon: "/icon-wallet.svg" },
+  { href: "/account-earnings", label: "Account & earnings", icon: "/icon-wallet.svg" },
+  { href: "/premium", label: "Premium", icon: "/icon-creator.svg" },
   { href: "/profile", label: "Profile", icon: "/icon-profile.svg" },
   { href: "/settings", label: "Settings", icon: "/icon-settings.svg" },
 ];

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { hasActivePremium } from "@/lib/premium";
 import { sql } from "@/lib/db";
 import { canonicalizeInterests, interestMatches } from "@/lib/interestTaxonomy";
 import { ensureUniversalCampaignTables } from "@/lib/universalCampaignEngine";
@@ -126,6 +127,7 @@ export async function GET() {
 
     const userLevelNum = Math.max(1, displayLevel(user.level_number));
     const allowedMissionTypes = getAllowedMissionTypes(user.unlock_features);
+    if (await hasActivePremium(session.userId)) allowedMissionTypes.add("premium");
 
     // Fetch active missions with completion status
     const tasks = await sql`

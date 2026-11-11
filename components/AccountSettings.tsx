@@ -24,7 +24,7 @@ const categories: Category[] = [
     { title: "Bank accounts", detail: "Manage your withdrawal destination.", icon: "/icon-bank.svg", action: "bank" },
   ] },
   { id: "premium", label: "Premium", description: "Explore contributor benefits and account upgrades.", options: [
-    { title: "Contributor benefits", detail: "Explore ways to grow your profile and participation.", icon: "/icon-creator.svg", href: "/growth" },
+    { title: "Premium subscription", detail: "View the Premium plan and subscription price.", icon: "/icon-creator.svg", href: "/premium" },
   ] },
   { id: "security", label: "Security and account access", description: "Keep your account secure and manage sign-in details.", options: [
     { title: "Change your password", detail: "Change your password at any time.", icon: "/icon-password.svg", action: "password" },

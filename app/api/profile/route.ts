@@ -49,12 +49,16 @@ export async function GET() {
         (SELECT COUNT(*)::int FROM creator_follows WHERE follower_id = ${session.userId}) AS following`,
       sql`SELECT p.id, p.body, p.created_at, COUNT(DISTINCT l.user_id)::int AS like_count,
         COUNT(DISTINCT v.viewer_id)::int AS view_count, COUNT(DISTINCT c.id)::int AS comment_count,
-        COUNT(DISTINCT r.user_id)::int AS repost_count
+        COUNT(DISTINCT r.user_id)::int AS repost_count,
+        COALESCE(BOOL_OR(l.user_id = ${session.userId}), false) AS liked,
+        COALESCE(BOOL_OR(r.user_id = ${session.userId}), false) AS reposted,
+        COALESCE(BOOL_OR(b.user_id = ${session.userId}), false) AS bookmarked
         FROM creator_posts p
         LEFT JOIN creator_post_likes l ON l.post_id = p.id
         LEFT JOIN creator_post_views v ON v.post_id = p.id
         LEFT JOIN creator_post_comments c ON c.post_id = p.id
         LEFT JOIN creator_post_reposts r ON r.post_id = p.id
+        LEFT JOIN creator_post_bookmarks b ON b.post_id = p.id
         WHERE p.user_id = ${session.userId}
         GROUP BY p.id ORDER BY p.created_at DESC LIMIT 50`,
       sql`SELECT c.id, c.body, c.created_at, p.id AS post_id, p.body AS post_body,
@@ -77,7 +81,7 @@ export async function GET() {
         level: displayLevel(user.level),
         creator_follower_count: Number(creatorCounts[0]?.followers ?? 0),
         creator_following_count: Number(creatorCounts[0]?.following ?? 0),
-        creator_posts: creatorPosts.map((post) => ({ ...post, id: Number(post.id), like_count: Number(post.like_count), view_count: Number(post.view_count), comment_count: Number(post.comment_count), repost_count: Number(post.repost_count) })),
+        creator_posts: creatorPosts.map((post) => ({ ...post, id: Number(post.id), like_count: Number(post.like_count), view_count: Number(post.view_count), comment_count: Number(post.comment_count), repost_count: Number(post.repost_count), liked: Boolean(post.liked), reposted: Boolean(post.reposted), bookmarked: Boolean(post.bookmarked) })),
         creator_replies: creatorReplies.map((reply) => ({ ...reply, id: Number(reply.id), post_id: Number(reply.post_id) })),
         creator_reposts: creatorReposts.map((repost) => ({ ...repost, post_id: Number(repost.post_id) })),
         tasks_completed:   taskRows[0]?.total ?? 0,

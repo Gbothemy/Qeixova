@@ -100,12 +100,16 @@ async function readFlutterwaveJson<T>(response: Response): Promise<T> {
 
 export async function initializeFlutterwavePayment(input: {
   email: string;
-  amountQlt: number;
+  amountQlt?: number;
+  amountNaira?: number;
   reference: string;
   callbackUrl: string;
   metadata?: Record<string, unknown>;
+  title?: string;
+  description?: string;
 }) {
-  const amount = qltToFlutterwaveNaira(input.amountQlt);
+  const amount = input.amountNaira ?? qltToFlutterwaveNaira(input.amountQlt ?? 0);
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error("Payment amount must be greater than zero");
 
   const response = await fetch(`${getFlutterwaveV3BaseUrl()}/payments`, {
     method: "POST",
@@ -122,12 +126,13 @@ export async function initializeFlutterwavePayment(input: {
         phonenumber: "08000000000",
       },
       customizations: {
-        title: "Qeixova Wallet Funding",
-        description: "Top up your Qeixova business campaign wallet.",
+        title: input.title || "Qeixova Wallet Funding",
+        description: input.description || "Top up your Qeixova business campaign wallet.",
       },
       meta: {
         ...input.metadata,
-        amountQlt: input.amountQlt,
+        ...(input.amountQlt !== undefined ? { amountQlt: input.amountQlt } : {}),
+        ...(input.amountNaira !== undefined ? { amountNaira: input.amountNaira } : {}),
       },
     }),
   });

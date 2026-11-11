@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import ContributorLoading from "@/components/ContributorLoading";
 import { useAuth } from "@/lib/useAuth";
@@ -85,10 +86,14 @@ export default function WalletPage() {
   const missionQltNeeded = Math.max(0, WITHDRAWAL_UNLOCK_QLT - Number(user?.total_earned_qlt ?? 0));
 
   return (
-    <div className="page-body" style={{ background: "var(--qeixova-color-ff-ff-ff)", minHeight: "100vh" }}>
+    <div className="page-body walletPage" style={{ background: "var(--qeixova-color-ff-ff-ff)", minHeight: "100vh", paddingBottom: 90 }}>
       {/* Header */}
-      <div className="page-header" style={{ background: "var(--qeixova-color-f5-f5-f5)", borderBottom: "1px solid var(--qeixova-color-dd-dd-dd)", padding: "52px 20px 32px", position: "relative", overflow: "hidden" }}>
+      <div className="page-header walletHero" style={{ background: "var(--qeixova-color-f5-f5-f5)", border: "1px solid var(--qeixova-color-dd-dd-dd)", borderTop: 0, borderRadius: "0 0 22px 22px", padding: "18px 20px 24px", position: "relative", overflow: "hidden", width: "min(100%, 850px)", margin: "0 auto 18px", boxShadow: "0 8px 24px rgba(20,40,25,.06)" }}>
         <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(26,239,34,0.03)" }} />
+        <div className="walletHeaderNavigation">
+          <Link href="/account-earnings" aria-label="Back to Account and earnings" className="walletBackButton"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg></Link>
+          <div><span>ACCOUNT</span><strong>Wallet details</strong></div>
+        </div>
         <p style={{ color: "var(--qeixova-color-44-44-44)", fontSize: 13, marginBottom: 4 }}>Points Balance</p>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <Image src="/icon-wallet.svg" alt="wallet" width={24} height={24} style={{ objectFit: "contain", marginBottom: -4 }} />
@@ -110,7 +115,7 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <div className="wallet-layout" style={{ display: "block" }}>
+      <div className="wallet-layout" style={{ display: "block", width: "min(100%, 850px)", margin: "0 auto" }}>
         {/* Pending QLT Banner */}
         {pendingQlt > 0 && (
           <div style={{ padding: "16px 16px 0" }}>
@@ -260,6 +265,18 @@ export default function WalletPage() {
           )}
         </div>
       </div>
+      <style jsx>{`
+        .walletHeaderNavigation{position:relative;z-index:1;display:flex;align-items:center;gap:12px;margin-bottom:21px}
+        .walletHeaderNavigation>div{display:grid;gap:2px}
+        .walletHeaderNavigation>div span{color:#32834e;font-size:9px;font-weight:850;letter-spacing:.13em}
+        .walletHeaderNavigation>div strong{color:var(--qeixova-color-0a-0a-0a);font-size:16px}
+        .walletHero>p,.walletHero>div:not(.walletHeaderNavigation){position:relative;z-index:1}
+        .walletPage .walletHeaderNavigation .walletBackButton,.walletPage .walletHeaderNavigation .walletBackButton:link,.walletPage .walletHeaderNavigation .walletBackButton:visited{display:grid;flex:0 0 40px;place-items:center;width:40px;height:40px;border:1px solid var(--qeixova-color-dd-dd-dd);border-radius:50%;background:var(--qeixova-color-ee-ee-ee);color:var(--qeixova-color-0a-0a-0a);text-decoration:none!important;transition:background .15s,border-color .15s,transform .15s}
+        .walletPage .walletHeaderNavigation .walletBackButton:hover{border-color:#60a875;background:rgba(48,131,78,.1);transform:translateX(-2px)}
+        .walletBackButton svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+        .walletBackButton:focus-visible{outline:3px solid #32834e;outline-offset:3px}
+        @media(max-width:700px){.walletHero{border-radius:0 0 18px 18px!important;margin-bottom:13px!important;padding:13px 14px 18px!important}.walletHeaderNavigation{margin-bottom:18px}.wallet-layout>div{padding-inline:10px!important}}
+      `}</style>
       <BottomNav />
     </div>
   );

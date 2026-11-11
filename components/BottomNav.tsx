@@ -15,19 +15,28 @@ const nav = [
 export default function BottomNav() {
   const path = usePathname();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   useEffect(() => {
     let active = true;
-    const loadUnread = async () => {
-      const response = await fetch("/api/contributor/messages", { cache: "no-store" }).catch(() => null);
-      if (!response?.ok) return;
-      const data = await response.json().catch(() => ({}));
+    const loadUnreadCounts = async () => {
+      const [messagesResponse, notificationsResponse] = await Promise.all([
+        fetch("/api/contributor/messages", { cache: "no-store" }).catch(() => null),
+        fetch("/api/contributor/notifications?filter=all&category=all&limit=1", { cache: "no-store" }).catch(() => null),
+      ]);
       if (!active) return;
-      const chats = Array.isArray(data.conversations) ? data.conversations : [];
-      const requests = Array.isArray(data.requests) ? data.requests : [];
-      setUnreadMessages([...chats, ...requests].reduce((total, chat) => total + Number(chat.unread_count || 0), 0));
+      if (messagesResponse?.ok) {
+        const data = await messagesResponse.json().catch(() => ({}));
+        const chats = Array.isArray(data.conversations) ? data.conversations : [];
+        const requests = Array.isArray(data.requests) ? data.requests : [];
+        setUnreadMessages([...chats, ...requests].reduce((total, chat) => total + Number(chat.unread_count || 0), 0));
+      }
+      if (notificationsResponse?.ok) {
+        const data = await notificationsResponse.json().catch(() => ({}));
+        setUnreadNotifications(Number(data.unread || 0));
+      }
     };
-    void loadUnread();
-    const timer = window.setInterval(() => void loadUnread(), 6000);
+    void loadUnreadCounts();
+    const timer = window.setInterval(() => void loadUnreadCounts(), 6000);
     return () => { active = false; window.clearInterval(timer); };
   }, []);
   return (
@@ -51,6 +60,7 @@ export default function BottomNav() {
               className={`contributor-bottom-nav__icon theme-icon${active ? " active" : ""}`}
             />
             {item.href === "/messages" && unreadMessages > 0 ? <span className="contributor-bottom-nav__badge" aria-label={`${unreadMessages} unread messages`}>{unreadMessages > 99 ? "99+" : unreadMessages}</span> : null}
+            {item.href === "/notifications" && unreadNotifications > 0 ? <span className="contributor-bottom-nav__badge" aria-label={`${unreadNotifications} unread notifications`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span> : null}
             <span className="contributor-bottom-nav__label">{item.label}</span>
           </Link>
         );

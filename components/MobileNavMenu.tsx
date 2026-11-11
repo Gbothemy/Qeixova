@@ -6,17 +6,25 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 
-const links = [
-  { href: "/profile", label: "Profile", icon: "/icon-profile.svg" },
-  { href: "/messages", label: "Messages", icon: "/icon-chat.svg" },
-  { href: "/notifications", label: "Notifications", icon: "/icon-notifications.svg" },
-  { href: "/tasks", label: "Missions", icon: "/icon-task.svg" },
-  { href: "/growth", label: "Growth", icon: "/icon-analytics.svg" },
-  { href: "/leaderboard", label: "Ranks", icon: "/icon-leaderboard.svg" },
-  { href: "/wallet", label: "Wallet", icon: "/icon-wallet.svg" },
-  { href: "/settings", label: "Settings", icon: "/icon-settings.svg" },
-  { href: "/creator", label: "Home", icon: "/icon-home.svg" },
-  { href: "/tasks/submit", label: "My Missions", icon: "/icon-task.svg" },
+const linkGroups = [
+  { label: "Community", links: [
+    { href: "/creator", label: "Home", icon: "/icon-home.svg" },
+    { href: "/profile", label: "Profile", icon: "/icon-profile.svg" },
+    { href: "/messages", label: "Messages", icon: "/icon-chat.svg" },
+    { href: "/notifications", label: "Notifications", icon: "/icon-notifications.svg" },
+  ] },
+  { label: "Grow and earn", links: [
+    { href: "/tasks", label: "Missions", icon: "/icon-task.svg" },
+    { href: "/tasks/submit", label: "My Missions", icon: "/icon-task.svg" },
+    { href: "/growth", label: "Growth", icon: "/icon-analytics.svg" },
+    { href: "/leaderboard", label: "Ranks", icon: "/icon-leaderboard.svg" },
+    { href: "/wallet", label: "Wallet", icon: "/icon-wallet.svg" },
+    { href: "/account-earnings", label: "Account & earnings", icon: "/icon-wallet.svg" },
+  ] },
+  { label: "Account", links: [
+    { href: "/premium", label: "Premium", icon: "/icon-creator.svg" },
+    { href: "/settings", label: "Settings", icon: "/icon-settings.svg" },
+  ] },
 ];
 
 export default function MobileNavMenu() {
@@ -81,13 +89,16 @@ export default function MobileNavMenu() {
               </Link>
               <div className="mobile-nav-menu__counts"><span><b>{profile.following.toLocaleString()}</b> Following</span><span><b>{profile.followers.toLocaleString()}</b> Followers</span></div>
             </section>
-            {links.map((link) => {
-              const active = pathname === link.href || (link.href === "/tasks" && pathname.startsWith("/tasks/"));
-              return <Link key={link.href} href={link.href} data-tour={link.href === "/tasks" ? "missions-link" : link.href === "/tasks/submit" ? "my-missions-link" : undefined} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)} className={`mobile-nav-menu__link${active ? " active" : ""}`}>
-                <Image src={link.icon} alt="" width={20} height={20} className={active ? "theme-icon active" : "theme-icon"} />
-                <span>{link.label}</span>
-              </Link>;
-            })}
+            {linkGroups.map((group) => <section className="mobile-nav-menu__link-group" key={group.label} aria-label={group.label}>
+              <h2>{group.label}</h2>
+              {group.links.map((link) => {
+                const active = (!link.href.includes("#") && pathname === link.href) || (link.href === "/tasks" && pathname.startsWith("/tasks/"));
+                return <Link key={link.label} href={link.href} data-tour={link.href === "/tasks" ? "missions-link" : link.href === "/tasks/submit" ? "my-missions-link" : undefined} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)} className={`mobile-nav-menu__link${active ? " active" : ""}`}>
+                  <Image src={link.icon} alt="" width={20} height={20} className={active ? "theme-icon active" : "theme-icon"} />
+                  <span>{link.label}</span>
+                </Link>;
+              })}
+            </section>)}
             <div className="mobile-nav-menu__theme"><ThemeToggle /></div>
           </nav>
         </>

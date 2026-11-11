@@ -10,7 +10,7 @@ export async function GET() {
 
   const posts = await sql`
     SELECT
-      p.id, p.body, p.topic, p.created_at,
+      p.id, p.user_id AS author_id, p.body, p.topic, p.created_at,
       u.full_name AS author_name,
       COALESCE(l.name, 'Starter') AS author_level,
       COALESCE(l.badge_color, '#1AEF22') AS badge_color,
@@ -22,14 +22,14 @@ export async function GET() {
     LEFT JOIN levels l ON l.id = u.level_id
     LEFT JOIN community_post_reactions r ON r.post_id = p.id
     LEFT JOIN community_post_comments c ON c.post_id = p.id
-    GROUP BY p.id, u.full_name, l.name, l.badge_color
+    GROUP BY p.id, p.user_id, u.full_name, l.name, l.badge_color
     ORDER BY p.created_at DESC
     LIMIT 25
   `;
 
   const comments = await sql`
     SELECT
-      c.id, c.post_id, c.body, c.created_at,
+      c.id, c.post_id, c.user_id AS author_id, c.body, c.created_at,
       u.full_name AS author_name
     FROM community_post_comments c
     JOIN users u ON u.id = c.user_id

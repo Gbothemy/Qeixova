@@ -1,8 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Bell shape -->
-  <path d="M50 14c-16.6 0-28 12.4-28 28v18l-8 10h72l-8-10V42c0-15.6-11.4-28-28-28z" fill="white"/>
-  <!-- Bell bottom -->
-  <path d="M42 80c0 4.4 3.6 8 8 8s8-3.6 8-8" fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
-  <!-- Notification dot -->
-  <circle cx="68" cy="22" r="10" fill="#1AEF22"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/>
+  <path d="M10 21h4"/>
 </svg>
