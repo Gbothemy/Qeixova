@@ -13,6 +13,8 @@ export async function GET() {
       sql`SELECT p.id, p.user_id, p.business_id, p.body, p.media_url, p.media_type, p.created_at, p.updated_at,
           COALESCE(u.full_name, b.name) AS author_name, u.avatar_url AS author_avatar_url,
           (p.business_id IS NOT NULL) AS is_business,
+          (EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = p.user_id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW()))
+            OR EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.business_id = p.business_id AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW()))) AS is_premium,
           (SELECT COUNT(*)::int FROM creator_post_likes l WHERE l.post_id = p.id) AS like_count,
           (SELECT COUNT(*)::int FROM creator_post_comments c WHERE c.post_id = p.id) AS comment_count
         FROM creator_posts p LEFT JOIN users u ON u.id = p.user_id LEFT JOIN businesses b ON b.id = p.business_id
@@ -20,7 +22,7 @@ export async function GET() {
         ORDER BY p.created_at DESC LIMIT 100`,
       sql`SELECT ends_at, is_permanent FROM contributor_premium_subscriptions WHERE business_id = ${session.businessId} AND status = 'active' AND starts_at <= NOW() AND (is_permanent = TRUE OR ends_at > NOW()) ORDER BY ends_at DESC LIMIT 1`,
     ]);
-    return NextResponse.json({ posts: posts.map((post) => ({ ...post, id: Number(post.id), user_id: post.user_id === null ? null : Number(post.user_id), business_id: post.business_id === null ? null : Number(post.business_id), is_business: Boolean(post.is_business), like_count: Number(post.like_count), comment_count: Number(post.comment_count) })), premium: { active: Boolean(premium[0]), endsAt: premium[0]?.ends_at ?? null, permanent: Boolean(premium[0]?.is_permanent) } });
+    return NextResponse.json({ posts: posts.map((post) => ({ ...post, id: Number(post.id), user_id: post.user_id === null ? null : Number(post.user_id), business_id: post.business_id === null ? null : Number(post.business_id), is_business: Boolean(post.is_business), is_premium: Boolean(post.is_premium), like_count: Number(post.like_count), comment_count: Number(post.comment_count) })), premium: { active: Boolean(premium[0]), endsAt: premium[0]?.ends_at ?? null, permanent: Boolean(premium[0]?.is_permanent) } });
   } catch (error) {
     console.error("Business Creator feed failed:", error);
     return NextResponse.json({ error: "Creator feed could not load right now." }, { status: 503 });

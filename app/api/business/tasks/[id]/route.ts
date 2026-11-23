@@ -6,6 +6,7 @@ import { log } from "@/lib/auditLog";
 import { sendMissionApprovedEmail, sendMissionRejectedEmail } from "@/lib/email";
 import { ensureBusinessWalletTables } from "@/lib/businessWallet";
 import { refundUnusedCampaignBudget, reviewCampaignSubmission, transitionCampaignStatus } from "@/lib/universalCampaignEngine";
+import { ensurePremiumSubscriptionTable } from "@/lib/premium";
 
 type ProofPlatform = { id: string; label: string; platform: string; rewardQlt: number };
 
@@ -50,6 +51,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+  await ensurePremiumSubscriptionTable();
 
   const taskRows = await sql`
     SELECT t.*,
@@ -68,7 +70,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const completions = await sql`
     SELECT c.id, c.status, c.completed_at, c.rejection_reason, c.proof_value, c.qlt_awarded,
-      u.full_name, u.email
+      u.full_name, u.email,
+      EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = u.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium
     FROM completions c
     JOIN users u ON u.id = c.user_id
     WHERE c.task_id = ${Number(id)}

@@ -6,10 +6,12 @@ import Link from "next/link";
 import Image from "next/image";
 import BusinessLoading from "@/components/BusinessLoading";
 import BusinessSidebar from "@/components/BusinessSidebar";
+import PremiumBadge from "@/components/PremiumBadge";
 
 interface Completion {
   id: number;
   full_name: string;
+  is_premium?: boolean;
   email: string;
   status: string;
   completed_at: string;
@@ -250,7 +252,7 @@ export default function TaskDetailPage() {
                         <Image src="/icon-profile.svg" alt="" width={16} height={16} style={{ objectFit: "contain", opacity: 0.3 }} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{completion.full_name}</p>
+                        <p style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, color: "var(--qeixova-color-0a-0a-0a)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{completion.full_name}{completion.is_premium ? <PremiumBadge /> : null}</p>
                         <p style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", marginTop: 1 }}>{completion.email} - {new Date(completion.completed_at).toLocaleDateString()}</p>
                         <ProofSummary summary={completion.proof_summary} />
                         {typeof completion.qlt_awarded === "number" && (

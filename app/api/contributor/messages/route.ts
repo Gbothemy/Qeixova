@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { ensureCreatorSchema, ensureMessagingSchema } from "@/lib/contributorFeatures";
 import { sql } from "@/lib/db";
+import { ensurePremiumSubscriptionTable } from "@/lib/premium";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    await Promise.all([ensureMessagingSchema(), ensureCreatorSchema()]);
+    await Promise.all([ensureMessagingSchema(), ensureCreatorSchema(), ensurePremiumSubscriptionTable()]);
     const conversationId = Number(request.nextUrl.searchParams.get("conversationId"));
     if (Number.isSafeInteger(conversationId) && conversationId > 0) {
       const access = await sql`
@@ -15,6 +16,9 @@ export async function GET(request: NextRequest) {
           CASE WHEN c.participant_low = ${session.userId} THEN high.id ELSE low.id END AS other_id,
           CASE WHEN c.participant_low = ${session.userId} THEN high.full_name ELSE low.full_name END AS other_name,
           CASE WHEN c.participant_low = ${session.userId} THEN high.avatar_url ELSE low.avatar_url END AS other_avatar_url,
+          CASE WHEN c.participant_low = ${session.userId}
+            THEN EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = high.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW()))
+            ELSE EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = low.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) END AS other_is_premium,
           EXISTS (SELECT 1 FROM contributor_user_blocks b WHERE (b.blocker_id = c.participant_low AND b.blocked_id = c.participant_high) OR (b.blocker_id = c.participant_high AND b.blocked_id = c.participant_low)) AS blocked
         FROM contributor_conversations c
         JOIN users low ON low.id = c.participant_low
@@ -37,6 +41,9 @@ export async function GET(request: NextRequest) {
         CASE WHEN c.participant_low = ${session.userId} THEN high.id ELSE low.id END AS other_id,
         CASE WHEN c.participant_low = ${session.userId} THEN high.full_name ELSE low.full_name END AS other_name,
         CASE WHEN c.participant_low = ${session.userId} THEN high.avatar_url ELSE low.avatar_url END AS other_avatar_url,
+        CASE WHEN c.participant_low = ${session.userId}
+          THEN EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = high.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW()))
+          ELSE EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = low.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) END AS other_is_premium,
         latest.body AS last_message, latest.created_at AS last_message_at,
         (SELECT COUNT(*)::int FROM contributor_messages unread WHERE unread.conversation_id = c.id AND unread.sender_id <> ${session.userId} AND unread.read_at IS NULL) AS unread_count
       FROM contributor_conversations c
@@ -49,7 +56,9 @@ export async function GET(request: NextRequest) {
       ORDER BY COALESCE(latest.created_at, c.created_at) DESC LIMIT 100
     `;
     const people = await sql`
-      SELECT u.id, u.full_name, u.avatar_url FROM users u WHERE u.id <> ${session.userId} AND COALESCE(u.email_verified, false) = true
+      SELECT u.id, u.full_name, u.avatar_url,
+        EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = u.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium
+      FROM users u WHERE u.id <> ${session.userId} AND COALESCE(u.email_verified, false) = true
         AND EXISTS (SELECT 1 FROM creator_follows f WHERE f.follower_id = ${session.userId} AND f.creator_id = u.id)
         AND EXISTS (SELECT 1 FROM creator_follows f WHERE f.follower_id = u.id AND f.creator_id = ${session.userId})
         AND NOT EXISTS (SELECT 1 FROM contributor_user_blocks b WHERE (b.blocker_id = ${session.userId} AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = ${session.userId}))

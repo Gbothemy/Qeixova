@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { ensurePremiumSubscriptionTable } from "@/lib/premium";
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  await ensurePremiumSubscriptionTable();
   const [topEarners, topQLT, monthlyRankRows, allTimeRankRows] = await Promise.all([
     sql`
       WITH monthly AS (
         SELECT
           u.id,
           u.full_name,
+          EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = u.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
           u.created_at,
           GREATEST(1, COALESCE(l.level_number, u.level, 1))::int AS level_number,
           COALESCE(l.name, 'Starter') AS level_name,
@@ -43,6 +46,7 @@ export async function GET() {
         SELECT
           u.id,
           u.full_name,
+          EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = u.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
           u.created_at,
           GREATEST(1, COALESCE(l.level_number, u.level, 1))::int AS level_number,
           COALESCE(l.name, 'Starter') AS level_name,

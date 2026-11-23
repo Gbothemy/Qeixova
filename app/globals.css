@@ -4328,3 +4328,6 @@ input[type="number"] {
 .businessCreatorPosts .businessPostAvatar.contributorAvatar { overflow:hidden; }
 .businessCreatorPosts .businessPostAvatar.contributorAvatar img { display:block; width:100%; height:100%; border-radius:inherit; object-fit:cover; }
 .messageAvatar{overflow:hidden}.messageAvatar img{display:block;width:100%;height:100%;border-radius:inherit;object-fit:cover}
+.premiumVerifiedBadge{display:inline-block;flex:0 0 15px;width:15px;height:15px;vertical-align:middle}
+.premiumVerifiedBadge>path:first-child{fill:#1f9b57}
+.premiumVerifiedBadge .premiumVerifiedCheck{fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}

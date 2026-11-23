@@ -8,6 +8,7 @@ export interface AuthUser {
   email: string;
   fullName: string;
   avatarUrl: string | null;
+  isPremium: boolean;
   balance: number;
   streak: number;
   level: number;
@@ -47,6 +48,7 @@ export function useAuth(redirectIfUnauth = true) {
             email: data.user.email,
             fullName: data.user.full_name,
             avatarUrl: data.user.avatar_url ?? null,
+            isPremium: Boolean(data.user.is_premium),
             balance: data.user.balance,
             streak: data.user.streak ?? 0,
             level: data.user.level ?? 1,

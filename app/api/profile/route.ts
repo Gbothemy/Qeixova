@@ -69,11 +69,13 @@ export async function GET() {
         WHERE p.user_id = ${session.userId}
         GROUP BY p.id ORDER BY p.created_at DESC LIMIT 50`,
       sql`SELECT c.id, c.body, c.created_at, p.id AS post_id, p.body AS post_body,
-        u.full_name AS post_author
+        u.full_name AS post_author,
+        EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = u.id AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS post_author_is_premium
         FROM creator_post_comments c JOIN creator_posts p ON p.id = c.post_id
         JOIN users u ON u.id = p.user_id
         WHERE c.user_id = ${session.userId} ORDER BY c.created_at DESC LIMIT 50`,
-      sql`SELECT r.created_at, p.id AS post_id, p.body AS post_body, u.full_name AS post_author
+      sql`SELECT r.created_at, p.id AS post_id, p.body AS post_body, u.full_name AS post_author,
+        EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = u.id AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS post_author_is_premium
         FROM creator_post_reposts r JOIN creator_posts p ON p.id = r.post_id
         JOIN users u ON u.id = p.user_id
         WHERE r.user_id = ${session.userId} ORDER BY r.created_at DESC LIMIT 50`,

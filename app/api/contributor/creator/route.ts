@@ -19,10 +19,12 @@ export async function GET(request: NextRequest) {
 
   try {
     await ensureCreatorSchema();
+    await ensurePremiumSubscriptionTable();
     const requestedPostId = Number(request.nextUrl.searchParams.get("postId"));
     if (Number.isSafeInteger(requestedPostId) && requestedPostId > 0) {
       const comments = await sql`
         SELECT c.id, c.post_id, c.body, c.created_at, c.user_id, u.full_name AS author_name, u.avatar_url AS author_avatar_url,
+          EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = c.user_id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
           (SELECT COUNT(*)::int FROM creator_comment_reactions r WHERE r.comment_id = c.id) AS reaction_count,
           EXISTS(SELECT 1 FROM creator_comment_reactions r WHERE r.comment_id = c.id AND r.user_id = ${session.userId}) AS reacted
         FROM creator_post_comments c JOIN users u ON u.id = c.user_id
@@ -216,7 +218,8 @@ export async function POST(request: NextRequest) {
         VALUES (${postId}, ${session.userId}, ${body}) RETURNING id, post_id, user_id, body, created_at
       `;
       if (Number(post[0].user_id) !== session.userId) await notifyCreator(Number(post[0].user_id), "New reply on your creator post", `${session.fullName || "A contributor"} replied: ${body.slice(0, 100)}`, `/creator?post=${postId}`, `creator-comment:${rows[0].id}`);
-      return NextResponse.json({ ok: true, comment: { ...rows[0], id: Number(rows[0].id), post_id: Number(rows[0].post_id), user_id: Number(rows[0].user_id), author_name: session.fullName, reaction_count: 0, reacted: false } }, { status: 201 });
+      const premium = await sql`SELECT EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = ${session.userId} AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS active`;
+      return NextResponse.json({ ok: true, comment: { ...rows[0], id: Number(rows[0].id), post_id: Number(rows[0].post_id), user_id: Number(rows[0].user_id), author_name: session.fullName, is_premium: Boolean(premium[0]?.active), reaction_count: 0, reacted: false } }, { status: 201 });
     }
     if (action === "toggle_repost" || action === "toggle_bookmark") {
       const table = action === "toggle_repost" ? "creator_post_reposts" : "creator_post_bookmarks";

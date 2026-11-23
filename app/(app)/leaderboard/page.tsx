@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import ContributorLoading from "@/components/ContributorLoading";
+import PremiumBadge from "@/components/PremiumBadge";
 
 interface Leader {
   id: number;
   rank: number;
   full_name: string;
+  is_premium?: boolean;
   level_number: number;
   level_name: string;
   badge_color: string;
@@ -82,7 +84,7 @@ export default function LeaderboardPage() {
               <span style={{ fontSize: 13, fontWeight: 800, color: i < 3 ? MEDAL_COLORS[i] : "var(--qeixova-color-44-44-44)" }}>#{u.rank ?? i + 1}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "var(--qeixova-color-0a-0a-0a)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.full_name}</p>
+              <p style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 700, color: "var(--qeixova-color-0a-0a-0a)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.full_name}{u.is_premium ? <PremiumBadge /> : null}</p>
               <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8, background: (u.badge_color ?? "var(--qeixova-color-33-33-33)") + "22", color: u.badge_color ?? "var(--qeixova-color-33-33-33)" }}>
                 L{u.level_number ?? 1} {u.level_name ?? "Starter"}
               </span>

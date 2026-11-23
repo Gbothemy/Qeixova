@@ -4,17 +4,20 @@ import { sql } from "@/lib/db";
 import { displayLevel } from "@/lib/levels";
 import { WITHDRAWAL_UNLOCK_LEVEL, WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
 import { ensureCreatorSchema } from "@/lib/contributorFeatures";
+import { ensurePremiumSubscriptionTable } from "@/lib/premium";
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await ensureCreatorSchema();
+  await ensurePremiumSubscriptionTable();
 
   const rows = await sql`
     SELECT
       u.id, u.email, u.full_name, u.avatar_url, u.balance, u.streak, u.referral_code,
       u.trust_score, u.daily_earned, u.approved_count, u.rejected_count,
       u.total_earned_qlt, u.bonus_earned_qlt, u.created_at,
+      EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = u.id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
       l.level_number, l.name AS level_name, l.badge_color, l.badge_emoji,
       l.daily_cap_qlt, l.min_qlt, l.max_qlt, l.unlock_features
     FROM users u
@@ -56,6 +59,7 @@ export async function GET() {
       email: user.email,
       full_name: user.full_name,
       avatar_url: user.avatar_url ?? null,
+      is_premium: Boolean(user.is_premium),
       balance: user.balance,
       streak: user.streak ?? 0,
       referral_code: user.referral_code,
