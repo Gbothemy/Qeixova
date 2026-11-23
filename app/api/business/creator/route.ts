@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
   const body = typeof payload.body === "string" ? payload.body.trim() : "";
   const mediaUrl = payload.mediaUrl ?? null;
   const mediaType = payload.mediaType ?? null;
-  if (body.length > 1200 || (body.length < 3 && !mediaUrl)) return NextResponse.json({ error: "Add a message between 3 and 1,200 characters." }, { status: 400 });
+  if (body.length > 1200 || (body.length < 1 && !mediaUrl)) return NextResponse.json({ error: "Write at least one character or attach media." }, { status: 400 });
   try {
     await ensureBusinessPremiumSchema();
     const active = await sql`SELECT 1 FROM contributor_premium_subscriptions WHERE business_id = ${session.businessId} AND status = 'active' AND starts_at <= NOW() AND (is_permanent = TRUE OR ends_at > NOW()) LIMIT 1`;
@@ -160,7 +160,7 @@ export async function PATCH(request: NextRequest) {
   const postId = Number(payload.postId);
   const body = typeof payload.body === "string" ? payload.body.trim() : "";
   if (!Number.isSafeInteger(postId) || postId <= 0) return NextResponse.json({ error: "Post not found." }, { status: 400 });
-  if (body.length < 3 || body.length > 1200) return NextResponse.json({ error: "Posts must contain 3 to 1,200 characters." }, { status: 400 });
+  if (body.length < 1 || body.length > 1200) return NextResponse.json({ error: "Posts must contain 1 to 1,200 characters." }, { status: 400 });
   try {
     await ensureCreatorSchema();
     const rows = await sql`UPDATE creator_posts SET body = ${body}, updated_at = NOW() WHERE id = ${postId} AND business_id = ${session.businessId} RETURNING id`;

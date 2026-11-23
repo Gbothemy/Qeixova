@@ -9,7 +9,7 @@ export function ensureCreatorSchema() {
     CREATE TABLE IF NOT EXISTS creator_posts (
       id BIGSERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      body TEXT NOT NULL CHECK (char_length(body) BETWEEN 3 AND 1200),
+      body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 1200),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
@@ -28,13 +28,14 @@ export function ensureCreatorSchema() {
   END $$`;
   await sql`DO $$ BEGIN
     ALTER TABLE creator_posts DROP CONSTRAINT IF EXISTS creator_posts_body_check;
+    ALTER TABLE creator_posts DROP CONSTRAINT IF EXISTS creator_posts_body_or_media_check;
     IF NOT EXISTS (
       SELECT 1 FROM pg_constraint
       WHERE conname = 'creator_posts_body_or_media_check'
         AND conrelid = 'creator_posts'::regclass
     ) THEN
       ALTER TABLE creator_posts ADD CONSTRAINT creator_posts_body_or_media_check
-        CHECK ((char_length(body) BETWEEN 3 AND 1200) OR media_url IS NOT NULL);
+        CHECK ((char_length(body) BETWEEN 1 AND 1200) OR media_url IS NOT NULL);
     END IF;
   END $$`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT ''`;
