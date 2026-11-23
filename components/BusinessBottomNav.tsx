@@ -8,7 +8,7 @@ const nav = [
   { href: "/business/dashboard", label: "Overview", icon: "/icon-home.svg" },
   { href: "/business/tasks", label: "Campaigns", icon: "/icon-task.svg" },
   { href: "/business/tasks/new", label: "Create", icon: "/icon-content.svg" },
-  { href: "/business/creator", label: "Creator", icon: "/icon-chat.svg" },
+  { href: "/business/creator", label: "Home", icon: "/icon-home.svg" },
   { href: "/business/wallet", label: "Billing", icon: "/icon-wallet.svg" },
 ];
 
