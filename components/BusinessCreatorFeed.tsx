@@ -16,7 +16,6 @@ export default function BusinessCreatorFeed() {
   const [body, setBody] = useState("");
   const [media, setMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [premium, setPremium] = useState(false);
-  const [endsAt, setEndsAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -34,7 +33,6 @@ export default function BusinessCreatorFeed() {
     setBusinessName(businessData.business?.name || "Business");
     setPosts(Array.isArray(data.posts) ? data.posts : []);
     setPremium(Boolean(data.premium?.active));
-    setEndsAt(data.premium?.endsAt ?? null);
     setLoading(false);
   }, [router]);
 
@@ -73,7 +71,6 @@ export default function BusinessCreatorFeed() {
     <header className="bcTopbar"><div className="bcBrand"><span className="bcMark">Q</span><div><small>QEIXOVA COMMUNITY</small><h1>Home</h1></div></div><label className="bcSearch"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search creator posts" aria-label="Search creator posts"/></label><span className="bcTopLink">Creator feed</span></header>
     <div className="bcLayout"><section className="bcFeed" aria-label="Shared Creator feed">
       <nav className="bcTabs" aria-label="Feed filters">{([ ["all", "For you"], ["businesses", "Businesses"], ["contributors", "Contributors"], ["popular", "Popular"] ] as const).map(([value, label]) => <button key={value} type="button" className={tab === value ? "active" : ""} aria-pressed={tab === value} onClick={() => setTab(value)}>{label}</button>)}</nav>
-      <Link href="/business/premium" className="bcPremium"><div><strong>{premium ? "Business Premium is active" : "Business Premium"}</strong><p>{premium ? endsAt ? `Access through ${new Date(endsAt).toLocaleDateString([], { dateStyle: "medium" })}.` : "Longer posts and photo or video posts are unlocked." : "Post short updates for free. Premium unlocks longer posts plus photo and video posts."}</p></div><span>{premium ? "View membership" : "Subscribe · ₦5,700 / month"}</span></Link>
       {notice ? <p className="businessCreatorNotice" role="status">{notice}</p> : null}
       <section className="bcComposer"><span className="bcAvatar bcCurrent">{businessName.slice(0, 2).toUpperCase()}</span><div className="bcComposeMain"><label htmlFor="business-creator-post">Post as {businessName || "your business"}</label><textarea id="business-creator-post" maxLength={premium ? 1200 : 280} value={body} onChange={(event) => setBody(event.target.value)} placeholder="What valuable idea would you like to share?"/><div className="bcComposeActions"><span>{body.length}/1,200</span>{premium ? <label className="bcMediaPick">Photo/video<input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" onChange={(event) => chooseMedia(event.target.files?.[0])}/></label> : <span className="bcPremiumHint">Premium unlocks photo and video posts</span>}<button disabled={busy || (body.trim().length < 3 && !media)} onClick={() => void publish()}>{busy ? "Posting…" : "Post"}</button></div>{media ? <div className="businessCreatorPreview">{media.type === "video" ? <video src={media.url} controls playsInline/> : <img src={media.url} alt="Post preview"/>}<button type="button" onClick={() => setMedia(null)} aria-label="Remove media">×</button></div> : null}</div></section>
       <div className="bcFeedLabel"><strong>{tab === "all" ? "Growth Community" : tab === "businesses" ? "Business updates" : tab === "contributors" ? "Contributor posts" : "Popular posts"}</strong><span>{visiblePosts.length} posts</span></div>
