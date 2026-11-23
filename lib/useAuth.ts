@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PROFILE_AVATAR_UPDATED } from "@/lib/profileAvatar";
 
 export interface AuthUser {
   id: number;
   email: string;
   fullName: string;
+  avatarUrl: string | null;
   balance: number;
   streak: number;
   level: number;
@@ -44,6 +46,7 @@ export function useAuth(redirectIfUnauth = true) {
             id: data.user.id,
             email: data.user.email,
             fullName: data.user.full_name,
+            avatarUrl: data.user.avatar_url ?? null,
             balance: data.user.balance,
             streak: data.user.streak ?? 0,
             level: data.user.level ?? 1,
@@ -67,6 +70,15 @@ export function useAuth(redirectIfUnauth = true) {
       .catch(() => { if (redirectIfUnauth) router.push("/login"); })
       .finally(() => setLoading(false));
   }, [router, redirectIfUnauth]);
+
+  useEffect(() => {
+    const updateAvatar = (event: Event) => {
+      const avatarUrl = (event as CustomEvent<{ avatarUrl: string | null }>).detail?.avatarUrl ?? null;
+      setUser((current) => current ? { ...current, avatarUrl } : current);
+    };
+    window.addEventListener(PROFILE_AVATAR_UPDATED, updateAvatar);
+    return () => window.removeEventListener(PROFILE_AVATAR_UPDATED, updateAvatar);
+  }, []);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });

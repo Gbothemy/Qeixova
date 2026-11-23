@@ -32,12 +32,18 @@ export async function POST(req: NextRequest) {
 
   const {
     bank_name, account_number, account_name, referralCode,
-    profession, interests, age_range, gender, country, state,
+    profession, interests, platforms, age_range, gender, country, state,
   } = await req.json();
 
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT NOT NULL DEFAULT 'Nigeria'`;
 
   const normalizedInterests = canonicalizeInterests(interests, 5);
+  const normalizedPlatforms = Array.isArray(platforms)
+    ? [...new Set(platforms
+      .filter((platform): platform is string => typeof platform === "string")
+      .map((platform) => platform.trim())
+      .filter(Boolean))].slice(0, 4)
+    : [];
 
   // Save bank account if provided
   if (bank_name && account_number && account_name) {
@@ -54,7 +60,7 @@ export async function POST(req: NextRequest) {
     UPDATE users SET
       profession   = ${profession || null},
       interests    = ${normalizedInterests},
-      platforms    = ${[]},
+      platforms    = ${normalizedPlatforms},
       age_range    = ${age_range || null},
       gender       = ${gender || null},
       country      = ${country || "Nigeria"},

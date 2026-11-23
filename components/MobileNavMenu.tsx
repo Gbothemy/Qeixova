@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { PROFILE_AVATAR_UPDATED } from "@/lib/profileAvatar";
 
 const linkGroups = [
   { label: "Community", links: [
@@ -16,7 +17,6 @@ const linkGroups = [
   { label: "Grow and earn", links: [
     { href: "/tasks", label: "Missions", icon: "/icon-task.svg" },
     { href: "/tasks/submit", label: "My Missions", icon: "/icon-task.svg" },
-    { href: "/growth", label: "Growth", icon: "/icon-analytics.svg" },
     { href: "/leaderboard", label: "Ranks", icon: "/icon-leaderboard.svg" },
     { href: "/wallet", label: "Wallet", icon: "/icon-wallet.svg" },
     { href: "/account-earnings", label: "Account & earnings", icon: "/icon-wallet.svg" },
@@ -30,7 +30,7 @@ const linkGroups = [
 export default function MobileNavMenu() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [profile, setProfile] = useState({ name: "", following: 0, followers: 0 });
+  const [profile, setProfile] = useState({ name: "", avatarUrl: null as string | null, following: 0, followers: 0 });
 
   useEffect(() => {
     let active = true;
@@ -40,12 +40,19 @@ export default function MobileNavMenu() {
         if (!active || !data?.profile) return;
         setProfile({
           name: data.profile.full_name || "",
+          avatarUrl: data.profile.avatar_url ?? null,
           following: Number(data.profile.creator_following_count || 0),
           followers: Number(data.profile.creator_follower_count || 0),
         });
       })
       .catch(() => {});
     return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    const updateAvatar = (event: Event) => setProfile(current => ({ ...current, avatarUrl: (event as CustomEvent<{ avatarUrl: string | null }>).detail?.avatarUrl ?? null }));
+    window.addEventListener(PROFILE_AVATAR_UPDATED, updateAvatar);
+    return () => window.removeEventListener(PROFILE_AVATAR_UPDATED, updateAvatar);
   }, []);
 
   useEffect(() => {
@@ -80,7 +87,7 @@ export default function MobileNavMenu() {
           <nav id="mobile-nav-menu-links" className="mobile-nav-menu__panel" aria-label="More navigation">
             <section className="mobile-nav-menu__profile">
               <div className="mobile-nav-menu__profile-top">
-                <Link href="/profile" className="mobile-nav-menu__avatar" onClick={() => setOpen(false)} aria-label="Open your profile">{profile.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "Q"}</Link>
+                <Link href="/profile" className="mobile-nav-menu__avatar" onClick={() => setOpen(false)} aria-label="Open your profile">{profile.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : profile.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "Q"}</Link>
                 <Link href="/creator" className="mobile-nav-menu__quick-action" onClick={() => setOpen(false)} aria-label="Create a post">+</Link>
               </div>
               <Link href="/profile" className="mobile-nav-menu__identity" onClick={() => setOpen(false)}>

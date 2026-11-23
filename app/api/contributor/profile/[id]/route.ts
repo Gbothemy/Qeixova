@@ -17,11 +17,11 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   try {
     await ensureCreatorSchema();
     const [users, posts, follows, isPremium] = await Promise.all([
-      sql`SELECT u.id, u.full_name, u.bio, u.website, u.location, u.occupation, u.created_at,
+      sql`SELECT u.id, u.full_name, u.bio, u.avatar_url, u.website, u.location, u.occupation, u.created_at,
           COALESCE(l.level_number, u.level, 0) AS level, l.name AS level_name, l.badge_color
         FROM users u LEFT JOIN levels l ON l.id = u.level_id
         WHERE u.id = ${creatorId} AND COALESCE(u.email_verified, false) = true LIMIT 1`,
-      sql`SELECT p.id, p.body, p.created_at,
+      sql`SELECT p.id, p.body, p.media_url, p.media_type, p.created_at,
           (SELECT COUNT(*)::int FROM creator_post_likes x WHERE x.post_id = p.id) AS like_count,
           (SELECT COUNT(*)::int FROM creator_post_views x WHERE x.post_id = p.id) AS view_count,
           (SELECT COUNT(*)::int FROM creator_post_comments x WHERE x.post_id = p.id) AS comment_count,

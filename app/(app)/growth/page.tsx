@@ -1,11 +1,5 @@
-import BottomNav from "@/components/BottomNav";
-import CommunityFeed from "@/components/CommunityFeed";
+import { redirect } from "next/navigation";
 
 export default function GrowthPage() {
-  return (
-    <>
-      <CommunityFeed />
-      <BottomNav />
-    </>
-  );
+  redirect("/creator");
 }

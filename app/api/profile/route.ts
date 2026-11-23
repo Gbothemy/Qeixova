@@ -16,7 +16,7 @@ export async function GET() {
     const [userRows, taskRows, earnRows, withdrawRows, referralRows, milestoneRows, creatorCounts, creatorPosts, creatorReplies, creatorReposts] = await Promise.all([
       sql`
         SELECT
-          u.id, u.email, u.full_name, u.phone, u.bio, u.website, u.location, u.occupation, u.balance, u.streak,
+          u.id, u.email, u.full_name, u.phone, u.bio, u.avatar_url, u.website, u.location, u.occupation, u.balance, u.streak,
           COALESCE(l.level_number, u.level, 0) AS level,
           l.name AS level_name,
           l.badge_color,
@@ -54,7 +54,7 @@ export async function GET() {
       sql`SELECT
         (SELECT COUNT(*)::int FROM creator_follows WHERE creator_id = ${session.userId}) AS followers,
         (SELECT COUNT(*)::int FROM creator_follows WHERE follower_id = ${session.userId}) AS following`,
-      sql`SELECT p.id, p.body, p.created_at, COUNT(DISTINCT l.user_id)::int AS like_count,
+      sql`SELECT p.id, p.body, p.media_url, p.media_type, p.created_at, COUNT(DISTINCT l.user_id)::int AS like_count,
         COUNT(DISTINCT v.viewer_id)::int AS view_count, COUNT(DISTINCT c.id)::int AS comment_count,
         COUNT(DISTINCT r.user_id)::int AS repost_count,
         COALESCE(BOOL_OR(l.user_id = ${session.userId}), false) AS liked,
@@ -120,6 +120,19 @@ export async function PATCH(req: NextRequest) {
       await ensureCreatorSchema();
       await sql`UPDATE users SET full_name = ${full_name.trim()}, phone = ${phone || null}, bio = ${bio.trim()}, website = ${website.trim() || null}, location = ${location.trim() || null}, occupation = ${occupation.trim() || null} WHERE id = ${session.userId}`;
       return NextResponse.json({ ok: true });
+    }
+
+    if (body.action === "update_avatar") {
+      await ensureCreatorSchema();
+      await ensurePremiumSubscriptionTable();
+      const access = await sql`SELECT 1 FROM contributor_premium_subscriptions WHERE user_id = ${session.userId} AND status = 'active' AND starts_at <= NOW() AND (is_permanent = TRUE OR ends_at > NOW()) LIMIT 1`;
+      if (!access.length) return NextResponse.json({ error: "A Premium subscription is required to set a profile photo." }, { status: 403 });
+      const avatar = body.avatar;
+      if (avatar !== null && (typeof avatar !== "string" || !/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(avatar) || avatar.length > 1_700_000)) {
+        return NextResponse.json({ error: "Choose a JPG, PNG, WebP or GIF image smaller than 1.2 MB." }, { status: 400 });
+      }
+      await sql`UPDATE users SET avatar_url = ${avatar} WHERE id = ${session.userId}`;
+      return NextResponse.json({ ok: true, avatar_url: avatar });
     }
 
     if (body.action === "change_password") {

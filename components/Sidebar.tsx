@@ -5,13 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { PROFILE_AVATAR_UPDATED } from "@/lib/profileAvatar";
 
 const nav = [
   { href: "/creator", label: "Home", icon: "/icon-home.svg" },
   { href: "/tasks", label: "Missions", icon: "/icon-task.svg" },
   { href: "/notifications", label: "Notifications", icon: "/icon-notifications.svg" },
   { href: "/messages", label: "Messages", icon: "/icon-chat.svg" },
-  { href: "/growth", label: "Growth", icon: "/icon-analytics.svg" },
   { href: "/leaderboard", label: "Ranks", icon: "/icon-leaderboard.svg" },
   { href: "/wallet", label: "Wallet", icon: "/icon-wallet.svg" },
   { href: "/account-earnings", label: "Account & earnings", icon: "/icon-wallet.svg" },
@@ -23,15 +23,21 @@ const nav = [
 export default function Sidebar() {
   const path = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState({ fullName: "", balance: 0, xp: 0, levelName: "Starter" });
+  const [user, setUser] = useState({ fullName: "", avatarUrl: null as string | null, balance: 0, xp: 0, levelName: "Starter" });
 
   useEffect(() => {
     fetch("/api/auth/me").then(response => response.ok ? response.json() : null).then(data => {
-      if (data?.user) setUser(current => ({ ...current, fullName: data.user.full_name, xp: data.user.xp ?? 0, levelName: data.user.levelName ?? "Starter" }));
+      if (data?.user) setUser(current => ({ ...current, fullName: data.user.full_name, avatarUrl: data.user.avatar_url ?? null, xp: data.user.xp ?? 0, levelName: data.user.levelName ?? "Starter" }));
     }).catch(() => {});
     fetch("/api/wallet").then(response => response.ok ? response.json() : null).then(data => {
       if (data) setUser(current => ({ ...current, balance: data.balance ?? 0 }));
     }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const updateAvatar = (event: Event) => setUser(current => ({ ...current, avatarUrl: (event as CustomEvent<{ avatarUrl: string | null }>).detail?.avatarUrl ?? null }));
+    window.addEventListener(PROFILE_AVATAR_UPDATED, updateAvatar);
+    return () => window.removeEventListener(PROFILE_AVATAR_UPDATED, updateAvatar);
   }, []);
 
   const initials = user.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "Q";
@@ -57,7 +63,7 @@ export default function Sidebar() {
 
       <div className="xStyleProfileFooter">
         <Link href="/profile" className="xStyleProfileIdentity" aria-label="Open your profile">
-          <span className="xStyleAvatar">{initials}</span>
+          <span className="xStyleAvatar">{user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials}</span>
           <span className="xStyleProfileText"><strong>{user.fullName || "Qeixova contributor"}</strong><small>{user.fullName ? `@${user.fullName.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24)}` : "Your account"}</small></span>
         </Link>
         <div className="xStyleFooterActions"><span className="xStyleBalance" title="Available wallet balance">{user.balance.toLocaleString()} QLT</span><ThemeToggle compact /><button type="button" className="xStyleLogout" aria-label="Log out" title="Log out" onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); }}>···</button></div>

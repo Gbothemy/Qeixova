@@ -5,6 +5,21 @@ import { sendBusinessWelcomeEmail, sendWelcomeEmail } from "@/lib/email";
 import { createContributorNotification } from "@/lib/contributorNotifications";
 
 function redirectTo(req: NextRequest, path: string, params: Record<string, string>) {
+  if (req.headers.get("accept")?.includes("application/json")) {
+    const verifyError = params.verify_error;
+    const verified = params.verified === "1";
+    return NextResponse.json(
+      {
+        ok: verified,
+        verified,
+        accountType: params.account_type ?? "contributor",
+        error: verifyError,
+        redirectTo: path,
+      },
+      { status: verifyError ? 400 : 200 },
+    );
+  }
+
   const url = new URL(path, req.url);
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value);
@@ -45,7 +60,7 @@ export async function GET(req: NextRequest) {
       if (updated[0]) {
         sendBusinessWelcomeEmail(updated[0].email, updated[0].name).catch(() => {});
       }
-      return redirectTo(req, "/business/login", { verified: "1" });
+      return redirectTo(req, "/business/login", { verified: "1", account_type: "business" });
     }
 
     const updated = await sql`

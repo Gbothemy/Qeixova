@@ -3,14 +3,16 @@ import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { displayLevel } from "@/lib/levels";
 import { WITHDRAWAL_UNLOCK_LEVEL, WITHDRAWAL_UNLOCK_QLT } from "@/lib/rewardRules";
+import { ensureCreatorSchema } from "@/lib/contributorFeatures";
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureCreatorSchema();
 
   const rows = await sql`
     SELECT
-      u.id, u.email, u.full_name, u.balance, u.streak, u.referral_code,
+      u.id, u.email, u.full_name, u.avatar_url, u.balance, u.streak, u.referral_code,
       u.trust_score, u.daily_earned, u.approved_count, u.rejected_count,
       u.total_earned_qlt, u.bonus_earned_qlt, u.created_at,
       l.level_number, l.name AS level_name, l.badge_color, l.badge_emoji,
@@ -53,6 +55,7 @@ export async function GET() {
       id: user.id,
       email: user.email,
       full_name: user.full_name,
+      avatar_url: user.avatar_url ?? null,
       balance: user.balance,
       streak: user.streak ?? 0,
       referral_code: user.referral_code,

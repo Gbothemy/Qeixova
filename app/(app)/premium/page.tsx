@@ -47,20 +47,9 @@ export default function PremiumPage() {
   return (
     <main className="page-body premiumPage">
       <header className="premiumHeader">
-        <Link href="/creator" aria-label="Back to Home">←</Link>
+        <Link href="/creator" aria-label="Back to Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg></Link>
         <div><span>QEXIOVA MEMBERSHIP</span><h1>Premium</h1></div>
       </header>
-      <section className="premiumOffer">
-        <div className="premiumMark" aria-hidden="true">✦</div>
-        <p className="premiumEyebrow">PREMIUM MEMBERSHIP</p>
-        <h2>More from your Qeixova journey</h2>
-        <p className="premiumDescription">Unlock access to Premium missions and take part in more opportunities across the community.</p>
-        <div className="premiumPrice"><span>₦</span>5,700</div>
-        <p className="premiumPriceNote">One month of Premium access</p>
-        <button type="button" className="premiumSubscribe" disabled={loading || active || startingCheckout} onClick={() => void startSubscription()}>{active ? "Premium active" : startingCheckout ? "Opening secure checkout…" : loading ? "Loading…" : "Subscribe for ₦5,700 / month"}</button>
-        {active && permanent ? <p className="premiumSecure">Your account has permanent Premium access.</p> : active && endsAt ? <p className="premiumSecure">Your current access runs through {new Date(endsAt).toLocaleDateString([], { dateStyle: "medium" })}.</p> : null}
-        {notice ? <p className="premiumNotice" role="status">{notice}</p> : !active ? <p className="premiumSecure">Secure payment powered by Flutterwave.</p> : null}
-      </section>
       <section className="premiumBenefits" aria-labelledby="premium-benefits-title">
         <div className="benefitsHeading"><div><span>MEMBER BENEFITS</span><h2 id="premium-benefits-title">More ways to create and grow</h2></div><span className="benefitCount">7 benefits</span></div>
         <div className="benefitGrid">
@@ -73,10 +62,21 @@ export default function PremiumPage() {
           <article className="benefitCard reachBenefit"><span className="benefitIcon reachIcon" aria-hidden="true">◎</span><div><h3>More post visibility</h3><p>Get increased reach so more contributors can discover your posts.</p></div><div className="reachSignal"><i/><i/><i/><i/><i/><span>Wider contributor reach</span></div></article>
         </div>
       </section>
+      <section className="premiumOffer">
+        <div className="premiumMark" aria-hidden="true">✦</div>
+        <p className="premiumEyebrow">PREMIUM MEMBERSHIP</p>
+        <h2>More from your Qeixova journey</h2>
+        <p className="premiumDescription">Unlock access to Premium missions and take part in more opportunities across the community.</p>
+        <div className="premiumPrice"><span>₦</span>5,700</div>
+        <p className="premiumPriceNote">One month of Premium access</p>
+        <button type="button" className="premiumSubscribe" disabled={loading || active || startingCheckout} onClick={() => void startSubscription()}>{active ? "Premium active" : startingCheckout ? "Opening secure checkout…" : loading ? "Loading…" : "Subscribe for ₦5,700 / month"}</button>
+        {active && permanent ? <p className="premiumSecure">Your account has permanent Premium access.</p> : active && endsAt ? <p className="premiumSecure">Your current access runs through {new Date(endsAt).toLocaleDateString([], { dateStyle: "medium" })}.</p> : null}
+        {notice ? <p className="premiumNotice" role="status">{notice}</p> : !active ? <p className="premiumSecure">Secure payment powered by Flutterwave.</p> : null}
+      </section>
       <style jsx>{`
         .premiumPage{min-height:100vh;padding:20px 16px 100px;background:var(--bg);color:var(--text)}
         .premiumHeader{display:flex;align-items:center;gap:14px;width:min(100%,680px);margin:0 auto 24px;padding-bottom:17px;border-bottom:1px solid var(--border)}
-        .premiumHeader>a{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--border);border-radius:50%;color:var(--text);font-size:23px;text-decoration:none}
+        .premiumHeader>a{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border:1px solid var(--border);border-radius:50%;color:var(--text);text-decoration:none;transition:background .15s,border-color .15s}.premiumHeader>a:hover{border-color:#9bceaa;background:#f0f8f2}.premiumHeader>a svg{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
         .premiumHeader span{color:#30814b;font-size:10px;font-weight:850;letter-spacing:.13em}.premiumHeader h1{margin-top:3px;font-size:22px;letter-spacing:-.03em}
         .premiumOffer{position:relative;overflow:hidden;width:min(100%,560px);margin:0 auto;padding:32px 25px 25px;border:1px solid #cde5d3;border-radius:22px;background:linear-gradient(145deg,#f0f9f2 0%,var(--bg) 74%);text-align:center;box-shadow:0 10px 35px rgba(35,105,60,.08)}
         .premiumOffer:before{position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#21a255,#8bd89d);content:""}

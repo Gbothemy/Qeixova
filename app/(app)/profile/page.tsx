@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import BottomNav from "@/components/BottomNav";
 import ContributorLoading from "@/components/ContributorLoading";
+import { announceProfileAvatarUpdate } from "@/lib/profileAvatar";
 
 interface Profile {
-  id: number; full_name: string; email: string; phone: string; bio?: string; website?: string | null; location?: string | null; occupation?: string | null;
+  id: number; full_name: string; email: string; phone: string; bio?: string; avatar_url?: string | null; website?: string | null; location?: string | null; occupation?: string | null;
   balance: number; streak: number; level: number;
   referral_code: string; tasks_completed: number;
   tasks_today: number; total_earned: number;
@@ -21,10 +22,10 @@ interface Profile {
   creator_posts: CreatorPost[]; creator_replies: CreatorReply[]; creator_reposts: CreatorRepost[];
 }
 
-type CreatorPost = { id: number; body: string; created_at: string; like_count: number; view_count: number; comment_count: number; repost_count: number; liked: boolean; reposted: boolean; bookmarked: boolean };
+type CreatorPost = { id: number; body: string; media_url?: string | null; media_type?: string | null; created_at: string; like_count: number; view_count: number; comment_count: number; repost_count: number; liked: boolean; reposted: boolean; bookmarked: boolean };
 type CreatorReply = { id: number; body: string; created_at: string; post_id: number; post_body: string; post_author: string };
 type CreatorRepost = { created_at: string; post_id: number; post_body: string; post_author: string };
-type ProfileComment = { id: number; post_id: number; user_id: number; body: string; created_at: string; author_name: string };
+type ProfileComment = { id: number; post_id: number; user_id: number; body: string; created_at: string; author_name: string; author_avatar_url?: string | null };
 type ProfileTab = "Posts" | "Replies" | "Reposts" | "Media";
 
 type ModalType = "edit" | null;
@@ -98,6 +99,23 @@ function EditProfileModal({ profile, onClose, onSaved }: { profile: Profile; onC
   const [occupation, setOccupation] = useState(profile.occupation || "");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+
+  const uploadAvatar = async (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 1_200_000) { setMsg({ type: "error", text: "Choose an image smaller than 1.2 MB." }); return; }
+    setAvatarBusy(true); setMsg(null);
+    const reader = new FileReader();
+    reader.onerror = () => { setAvatarBusy(false); setMsg({ type: "error", text: "The image could not be read." }); };
+    reader.onload = async () => {
+      const response = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_avatar", avatar: reader.result }) }).catch(() => null);
+      const result = response ? await response.json().catch(() => ({})) : {};
+      if (response?.ok) { onSaved({ avatar_url: result.avatar_url }); announceProfileAvatarUpdate(result.avatar_url ?? null); setMsg({ type: "success", text: "Profile photo updated." }); }
+      else setMsg({ type: "error", text: result.error || "The profile photo could not be saved." });
+      setAvatarBusy(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const save = async () => {
     setSaving(true); setMsg(null);
@@ -111,6 +129,10 @@ function EditProfileModal({ profile, onClose, onSaved }: { profile: Profile; onC
   return (
     <Modal title="Edit Profile" onClose={onClose}>
       {msg && <Alert msg={msg} />}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+        {profile.avatar_url ? <img src={profile.avatar_url} alt="Your profile photo" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover" }} /> : <div aria-hidden="true" style={{ display: "grid", placeItems: "center", width: 56, height: 56, borderRadius: "50%", background: "#d9eee0", color: "#206a3f", fontWeight: 800 }}>{profile.full_name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</div>}
+        <div><label htmlFor="profile-avatar-upload" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, padding: "0 13px", border: "1px solid #ccd8cf", borderRadius: 10, cursor: avatarBusy ? "wait" : "pointer", fontSize: 13, fontWeight: 700 }}>{avatarBusy ? "Uploading…" : profile.avatar_url ? "Change photo" : "Upload profile photo"}</label><input id="profile-avatar-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={avatarBusy || !profile.is_premium} onChange={event => { void uploadAvatar(event.target.files?.[0]); event.currentTarget.value = ""; }} style={{ position: "absolute", width: 1, height: 1, opacity: 0 }} aria-label="Upload profile photo" />{!profile.is_premium ? <p style={{ marginTop: 5, fontSize: 11, color: "#6c7c8b" }}>Premium access is required to upload a profile photo.</p> : <p style={{ marginTop: 5, fontSize: 11, color: "#6c7c8b" }}>JPG, PNG, WebP or GIF · up to 1.2 MB</p>}</div>
+      </div>
       <Field label="Full Name" value={name} onChange={setName} placeholder="Your full name" />
       <div style={{ marginBottom: 14 }}><label htmlFor="profile-bio" style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>Bio · {bio.length}/280</label><textarea id="profile-bio" value={bio} maxLength={280} onChange={event => setBio(event.target.value)} placeholder="What would you like people to know about you?" style={{ width: "100%", minHeight: 82, marginTop: 6, padding: "13px 14px", borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)", font: "inherit", resize: "vertical" }} /></div>
       <Field label="What you do" value={occupation} onChange={setOccupation} placeholder="e.g. Designer, student, creator" />
@@ -233,7 +255,7 @@ export default function ProfilePage() {
     <div className="page-body" style={{ background: "var(--bg)", minHeight: "100vh" }}>
       <section className="profileSocial">
         <header className="profileSocialHeading"><Link href="/creator" aria-label="Back to Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg></Link><div><strong>{profile.full_name}</strong><span>{profile.creator_posts.length.toLocaleString()} posts</span></div></header>
-        <div className="profileAvatarRow"><div className="profileAvatar">{profile.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</div><button type="button" className="profileEditButton" onClick={() => setModal("edit")}>Edit profile</button></div>
+        <div className="profileAvatarRow"><div className="profileAvatar">{profile.avatar_url ? <img src={profile.avatar_url} alt={`${profile.full_name}'s profile`} /> : profile.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</div><button type="button" className="profileEditButton" onClick={() => setModal("edit")}>Edit profile</button></div>
         <div className="profileIdentity"><h2><span>{profile.full_name}</span>{profile.is_premium ? <PremiumBadge /> : null}</h2><span className="profileHandle">@{profile.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "contributor"}</span>
           {profile.bio ? <p className="profileBio">{profile.bio}</p> : <button type="button" className="profileAddBio" onClick={() => setModal("edit")}>Add a bio to tell the community about yourself.</button>}
           <div className="profileMeta">{profile.occupation ? <span>💼 {profile.occupation}</span> : null}{profile.location ? <span>⌖ {profile.location}</span> : null}{profile.website ? <a href={/^https?:\/\//i.test(profile.website) ? profile.website : `https://${profile.website}`} target="_blank" rel="noreferrer">↗ {profile.website}</a> : null}<span>▦ Joined {new Date(profile.created_at).toLocaleDateString([], { month: "long", year: "numeric" })}</span></div>
@@ -251,15 +273,16 @@ export default function ProfilePage() {
 
       </section></details>
         <nav className="profileTabs" role="tablist" aria-label="Profile timeline">
-          {(["Posts", "Replies", "Reposts", "Media"] as ProfileTab[]).map(tab => <button key={tab} id={`profile-tab-${tab.toLowerCase()}`} type="button" role="tab" aria-controls="profile-tabpanel" aria-selected={profileTab === tab} className={profileTab === tab ? "active" : ""} onClick={() => { setProfileTab(tab); setTimelineNotice(""); }}>{tab}<span>{tab === "Posts" ? profile.creator_posts.length : tab === "Replies" ? profile.creator_replies.length : tab === "Reposts" ? profile.creator_reposts.length : 0}</span></button>)}
+          {(["Posts", "Replies", "Reposts", "Media"] as ProfileTab[]).map(tab => <button key={tab} id={`profile-tab-${tab.toLowerCase()}`} type="button" role="tab" aria-controls="profile-tabpanel" aria-selected={profileTab === tab} className={profileTab === tab ? "active" : ""} onClick={() => { setProfileTab(tab); setTimelineNotice(""); }}>{tab}<span>{tab === "Posts" ? profile.creator_posts.length : tab === "Replies" ? profile.creator_replies.length : tab === "Reposts" ? profile.creator_reposts.length : profile.creator_posts.filter(post => post.media_url).length}</span></button>)}
         </nav>
         <div className="profileTimeline" id="profile-tabpanel" role="tabpanel" aria-labelledby={`profile-tab-${profileTab.toLowerCase()}`}>
           {timelineNotice ? <div className="profileTimelineNotice" role="status">{timelineNotice}<button type="button" onClick={() => setTimelineNotice("")} aria-label="Dismiss message">×</button></div> : null}
           {profileTab === "Posts" && profile.creator_posts.map(post => <article className="profilePost" key={post.id}>
-            <Link className="profileTimelineAvatar" href="/profile" aria-label="Open your profile">{profileInitials}</Link>
+            <Link className="profileTimelineAvatar" href="/profile" aria-label="Open your profile">{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : profileInitials}</Link>
             <div className="profilePostContent">
               <header><Link href="/profile" className="profilePostAuthor"><span>{profile.full_name}</span>{profile.is_premium ? <PremiumBadge /> : null}</Link><span>@{profile.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "contributor"}</span><span>·</span><time dateTime={post.created_at}>{timeAgo(post.created_at)}</time></header>
-              <p>{post.body}</p>
+              {post.body.trim() ? <p>{post.body}</p> : null}
+              {post.media_url ? post.media_type === "video" ? <video controls playsInline preload="metadata" style={{ width: "100%", maxHeight: 460, borderRadius: 14, marginTop: 8 }} aria-label="Post video"><source src={post.media_url} /></video> : <img src={post.media_url} alt="Post attachment" style={{ width: "100%", maxHeight: 460, objectFit: "cover", borderRadius: 14, marginTop: 8 }} /> : null}
               <div className="profilePostActions" aria-label="Post actions">
                 <button type="button" aria-label={`Reply to post, ${post.comment_count} replies`} aria-expanded={openComments.has(post.id)} onClick={() => togglePostComments(post.id)}><ProfileActionIcon name="reply" /><span>{post.comment_count.toLocaleString()}</span></button>
                 <button type="button" aria-label={post.reposted ? "Undo repost" : "Repost"} aria-pressed={post.reposted} disabled={postBusy === `toggle_repost:${post.id}`} className={post.reposted ? "isReposted" : ""} onClick={() => void sendPostAction("toggle_repost", post.id)}><ProfileActionIcon name="repost" /><span>{post.repost_count.toLocaleString()}</span></button>
@@ -269,15 +292,19 @@ export default function ProfilePage() {
                 <button type="button" aria-label="Share post" onClick={() => void shareProfilePost(post.id)}><ProfileActionIcon name="share" /></button>
               </div>
               {openComments.has(post.id) ? <section className="profilePostComments" aria-label="Replies to this post">
-                {(commentsByPost[post.id] || []).map(comment => <article className="profilePostComment" key={comment.id}><Link className="profileCommentAvatar" href={comment.user_id === profile.id ? "/profile" : `/profile/${comment.user_id}`} aria-label={`Open ${comment.author_name}'s profile`}>{comment.author_name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</Link><div><strong>{comment.author_name}<time>{timeAgo(comment.created_at)}</time></strong><p>{comment.body}</p></div></article>)}
-                <form className="profilePostReplyForm" onSubmit={event => void submitProfileReply(event, post.id)}><span className="profileCommentAvatar current">{profileInitials}</span><input aria-label="Write a reply" maxLength={500} placeholder="Write a reply…" value={commentDrafts[post.id] || ""} onChange={event => setCommentDrafts(current => ({ ...current, [post.id]: event.target.value }))} /><button type="submit" disabled={!commentDrafts[post.id]?.trim() || postBusy === `comment:${post.id}`}>{postBusy === `comment:${post.id}` ? "Sending…" : "Reply"}</button></form>
+                {(commentsByPost[post.id] || []).map(comment => <article className="profilePostComment" key={comment.id}><Link className="profileCommentAvatar" href={comment.user_id === profile.id ? "/profile" : `/profile/${comment.user_id}`} aria-label={`Open ${comment.author_name}'s profile`}>{comment.author_avatar_url ? <img src={comment.author_avatar_url} alt="" /> : comment.author_name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</Link><div><strong>{comment.author_name}<time>{timeAgo(comment.created_at)}</time></strong><p>{comment.body}</p></div></article>)}
+                <form className="profilePostReplyForm" onSubmit={event => void submitProfileReply(event, post.id)}><span className="profileCommentAvatar current">{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : profileInitials}</span><input aria-label="Write a reply" maxLength={500} placeholder="Write a reply…" value={commentDrafts[post.id] || ""} onChange={event => setCommentDrafts(current => ({ ...current, [post.id]: event.target.value }))} /><button type="submit" disabled={!commentDrafts[post.id]?.trim() || postBusy === `comment:${post.id}`}>{postBusy === `comment:${post.id}` ? "Sending…" : "Reply"}</button></form>
               </section> : null}
             </div>
           </article>)}
-          {profileTab === "Replies" && profile.creator_replies.map(reply => <article className="profilePost profilePostActivity" key={reply.id}><Link className="profileTimelineAvatar" href="/profile" aria-label="Open your profile">{profileInitials}</Link><div className="profilePostContent"><header><Link href="/profile" className="profilePostAuthor">{profile.full_name}</Link><span>replied to {reply.post_author}</span><time>{timeAgo(reply.created_at)}</time></header><p>{reply.body}</p><Link className="profileQuotedPost" href={`/creator?post=${reply.post_id}`}><strong>{reply.post_author}</strong><span>{reply.post_body}</span><small>Open conversation →</small></Link></div></article>)}
-          {profileTab === "Reposts" && profile.creator_reposts.map((repost, index) => <article className="profilePost profilePostActivity" key={`${repost.post_id}-${index}`}><Link className="profileTimelineAvatar" href="/profile" aria-label="Open your profile">{profileInitials}</Link><div className="profilePostContent"><header><Link href="/profile" className="profilePostAuthor">{profile.full_name}</Link><span>reposted</span><time>{timeAgo(repost.created_at)}</time></header><Link className="profileQuotedPost" href={`/creator?post=${repost.post_id}`}><strong>{repost.post_author}</strong><span>{repost.post_body}</span><small>Open original post →</small></Link></div></article>)}
-          {profileTab === "Media" ? <div className="profileEmpty"><strong>No media posts yet</strong><span>Photos and videos you share will appear here.</span><Link href="/creator">Create a post</Link></div> : null}
+          {profileTab === "Media" && profile.creator_posts.filter(post => post.media_url).map(post => <article className="profilePost" key={post.id}>
+            <Link className="profileTimelineAvatar" href="/profile" aria-label="Open your profile">{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : profileInitials}</Link><div className="profilePostContent"><header><Link href="/profile" className="profilePostAuthor">{profile.full_name}</Link><time dateTime={post.created_at}>{timeAgo(post.created_at)}</time></header>{post.body.trim() ? <p>{post.body}</p> : null}{post.media_type === "video" ? <video controls playsInline preload="metadata" style={{ width: "100%", maxHeight: 460, borderRadius: 14, marginTop: 8 }} aria-label="Post video"><source src={post.media_url || undefined} /></video> : <img src={post.media_url || ""} alt="Post attachment" style={{ width: "100%", maxHeight: 460, objectFit: "cover", borderRadius: 14, marginTop: 8 }} />}</div>
+          </article>)}
+          {profileTab === "Replies" && profile.creator_replies.map(reply => <article className="profilePost profilePostActivity" key={reply.id}><Link className="profileTimelineAvatar" href="/profile" aria-label="Open your profile">{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : profileInitials}</Link><div className="profilePostContent"><header><Link href="/profile" className="profilePostAuthor">{profile.full_name}</Link><span>replied to {reply.post_author}</span><time>{timeAgo(reply.created_at)}</time></header><p>{reply.body}</p><Link className="profileQuotedPost" href={`/creator?post=${reply.post_id}`}><strong>{reply.post_author}</strong><span>{reply.post_body}</span><small>Open conversation →</small></Link></div></article>)}
+          {profileTab === "Reposts" && profile.creator_reposts.map((repost, index) => <article className="profilePost profilePostActivity" key={`${repost.post_id}-${index}`}><Link className="profileTimelineAvatar" href="/profile" aria-label="Open your profile">{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : profileInitials}</Link><div className="profilePostContent"><header><Link href="/profile" className="profilePostAuthor">{profile.full_name}</Link><span>reposted</span><time>{timeAgo(repost.created_at)}</time></header><Link className="profileQuotedPost" href={`/creator?post=${repost.post_id}`}><strong>{repost.post_author}</strong><span>{repost.post_body}</span><small>Open original post →</small></Link></div></article>)}
+          {profileTab === "Media" && !profile.creator_posts.some(post => post.media_url) ? <div className="profileEmpty"><strong>No media posts yet</strong><span>Photos and videos you share will appear here.</span><Link href="/creator">Create a post</Link></div> : null}
           {profileTab === "Posts" && profile.creator_posts.length === 0 ? <div className="profileEmpty"><strong>Your profile starts here</strong><span>Share your first useful post from Home and it will appear here.</span></div> : null}
+          {profileTab === "Media" && !profile.creator_posts.some(post => post.media_url) ? <div className="profileEmpty"><strong>No media yet</strong><span>Photos and videos you post will appear here.</span></div> : null}
           {profileTab === "Replies" && profile.creator_replies.length === 0 ? <div className="profileEmpty"><strong>No replies yet</strong><span>Your conversations on posts will show up here.</span></div> : null}
           {profileTab === "Reposts" && profile.creator_reposts.length === 0 ? <div className="profileEmpty"><strong>No reposts yet</strong><span>Posts you repost will be collected here.</span></div> : null}
         </div>

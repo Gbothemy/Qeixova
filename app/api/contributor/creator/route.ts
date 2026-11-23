@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
     const requestedPostId = Number(request.nextUrl.searchParams.get("postId"));
     if (Number.isSafeInteger(requestedPostId) && requestedPostId > 0) {
       const comments = await sql`
-        SELECT c.id, c.post_id, c.body, c.created_at, c.user_id, u.full_name AS author_name
+        SELECT c.id, c.post_id, c.body, c.created_at, c.user_id, u.full_name AS author_name, u.avatar_url AS author_avatar_url,
+          (SELECT COUNT(*)::int FROM creator_comment_reactions r WHERE r.comment_id = c.id) AS reaction_count,
+          EXISTS(SELECT 1 FROM creator_comment_reactions r WHERE r.comment_id = c.id AND r.user_id = ${session.userId}) AS reacted
         FROM creator_post_comments c JOIN users u ON u.id = c.user_id
         WHERE c.post_id = ${requestedPostId}
         ORDER BY c.created_at ASC LIMIT 100
@@ -32,6 +34,8 @@ export async function GET(request: NextRequest) {
         id: Number(comment.id),
         post_id: Number(comment.post_id),
         user_id: Number(comment.user_id),
+        reaction_count: Number(comment.reaction_count),
+        reacted: Boolean(comment.reacted),
       })) });
     }
     const offsetValue = Number(request.nextUrl.searchParams.get("offset") || 0);
@@ -40,9 +44,12 @@ export async function GET(request: NextRequest) {
     const feedTab = requestedTab === "following" || requestedTab === "popular" || requestedTab === "saved" ? requestedTab : "for-you";
     await ensurePremiumSubscriptionTable();
     const posts = await sql`
-      SELECT p.id, p.user_id, p.body, p.created_at, p.updated_at, u.full_name AS author_name,
+      SELECT p.id, p.user_id, p.business_id, p.body, p.media_url, p.media_type, p.created_at, p.updated_at, COALESCE(u.full_name, bu.name) AS author_name, u.avatar_url AS author_avatar_url,
         EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps
           WHERE ps.user_id = p.user_id AND ps.status = 'active'
+            AND ps.business_id IS NULL AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW()))
+          OR EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps
+          WHERE ps.business_id = p.business_id AND ps.status = 'active'
             AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
         COUNT(DISTINCT l.user_id)::int AS like_count,
         COUNT(DISTINCT v.viewer_id)::int AS view_count,
@@ -53,7 +60,8 @@ export async function GET(request: NextRequest) {
         COALESCE(BOOL_OR(b.user_id = ${session.userId}), false) AS bookmarked,
         EXISTS(SELECT 1 FROM creator_follows f WHERE f.follower_id = ${session.userId} AND f.creator_id = p.user_id) AS followed
       FROM creator_posts p
-      JOIN users u ON u.id = p.user_id
+      LEFT JOIN users u ON u.id = p.user_id
+      LEFT JOIN businesses bu ON bu.id = p.business_id
       LEFT JOIN creator_post_likes l ON l.post_id = p.id
       LEFT JOIN creator_post_views v ON v.post_id = p.id
       LEFT JOIN creator_post_comments c ON c.post_id = p.id
@@ -68,7 +76,7 @@ export async function GET(request: NextRequest) {
         AND (p.user_id = ${session.userId} OR NOT EXISTS (
           SELECT 1 FROM creator_muted_users m WHERE m.user_id = ${session.userId} AND m.muted_user_id = p.user_id
         ))
-      GROUP BY p.id, u.full_name
+      GROUP BY p.id, u.full_name, u.avatar_url, bu.name
       ORDER BY CASE WHEN ${feedTab} = 'popular' THEN COUNT(DISTINCT l.user_id) * 2 + COUNT(DISTINCT v.viewer_id) END DESC NULLS LAST,
         p.created_at DESC
       LIMIT 30 OFFSET ${offset}
@@ -80,11 +88,14 @@ export async function GET(request: NextRequest) {
         (SELECT COUNT(*)::int FROM creator_follows f WHERE f.follower_id = ${session.userId}) AS following_count
       FROM creator_posts p WHERE p.user_id = ${session.userId}
     `;
+    const premiumAccess = await sql`SELECT 1 FROM contributor_premium_subscriptions WHERE user_id = ${session.userId} AND status = 'active' AND starts_at <= NOW() AND (is_permanent = TRUE OR ends_at > NOW()) LIMIT 1`;
     return NextResponse.json({
       posts: posts.map((post) => ({
         ...post,
         id: Number(post.id),
-        user_id: Number(post.user_id),
+        user_id: post.user_id === null ? null : Number(post.user_id),
+        business_id: post.business_id === null ? null : Number(post.business_id),
+        is_business: post.business_id !== null,
         is_premium: Boolean(post.is_premium),
         edited: new Date(post.updated_at).getTime() > new Date(post.created_at).getTime() + 1000,
         like_count: Number(post.like_count),
@@ -96,6 +107,7 @@ export async function GET(request: NextRequest) {
         bookmarked: Boolean(post.bookmarked),
         followed: Boolean(post.followed),
       })),
+      canPostMedia: premiumAccess.length > 0,
       summary: {
         post_count: Number(summary[0]?.post_count ?? 0),
         view_count: Number(summary[0]?.view_count ?? 0),
@@ -118,10 +130,31 @@ export async function POST(request: NextRequest) {
   const action = typeof payload.action === "string" ? payload.action : "publish";
   try {
     await ensureCreatorSchema();
+    if (action === "toggle_comment_reaction") {
+      const commentId = Number(payload.commentId);
+      if (!Number.isSafeInteger(commentId) || commentId <= 0) return NextResponse.json({ error: "Comment not found." }, { status: 400 });
+      const comment = await sql`SELECT id FROM creator_post_comments WHERE id = ${commentId} LIMIT 1`;
+      if (!comment.length) return NextResponse.json({ error: "Comment not found." }, { status: 404 });
+      const existing = await sql`SELECT 1 FROM creator_comment_reactions WHERE comment_id = ${commentId} AND user_id = ${session.userId} LIMIT 1`;
+      if (existing.length) await sql`DELETE FROM creator_comment_reactions WHERE comment_id = ${commentId} AND user_id = ${session.userId}`;
+      else await sql`INSERT INTO creator_comment_reactions (comment_id, user_id) VALUES (${commentId}, ${session.userId}) ON CONFLICT DO NOTHING`;
+      const count = await sql`SELECT COUNT(*)::int AS reaction_count FROM creator_comment_reactions WHERE comment_id = ${commentId}`;
+      return NextResponse.json({ ok: true, active: !existing.length, reactionCount: Number(count[0]?.reaction_count ?? 0) });
+    }
     if (action === "publish") {
       const body = typeof payload.body === "string" ? payload.body.trim() : "";
-      if (body.length < 3 || body.length > 1200) return NextResponse.json({ error: "Posts must contain 3 to 1,200 characters." }, { status: 400 });
-      const rows = await sql`INSERT INTO creator_posts (user_id, body) VALUES (${session.userId}, ${body}) RETURNING id`;
+      const mediaUrl = payload.mediaUrl ?? null;
+      const mediaType = payload.mediaType ?? null;
+      if (body.length > 1200 || (body.length < 3 && !mediaUrl)) return NextResponse.json({ error: "Add a caption or media to your post." }, { status: 400 });
+      if (mediaUrl !== null) {
+        await ensurePremiumSubscriptionTable();
+        const access = await sql`SELECT 1 FROM contributor_premium_subscriptions WHERE user_id = ${session.userId} AND status = 'active' AND starts_at <= NOW() AND (is_permanent = TRUE OR ends_at > NOW()) LIMIT 1`;
+        if (!access.length) return NextResponse.json({ error: "A Premium subscription is required to post photos and videos." }, { status: 403 });
+        const validType = mediaType === "image" ? /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/ : mediaType === "video" ? /^data:video\/(mp4|webm|quicktime);base64,[A-Za-z0-9+/=]+$/ : false;
+        const maxLength = mediaType === "image" ? 2_800_000 : 4_200_000;
+        if (typeof mediaUrl !== "string" || !validType || mediaUrl.length > maxLength) return NextResponse.json({ error: mediaType === "image" ? "Choose a JPG, PNG or WebP image under 2 MB." : "Choose an MP4, WebM or MOV video under 3 MB." }, { status: 400 });
+      } else if (mediaType !== null) return NextResponse.json({ error: "Invalid media attachment." }, { status: 400 });
+      const rows = await sql`INSERT INTO creator_posts (user_id, body, media_url, media_type) VALUES (${session.userId}, ${body || " "}, ${mediaUrl}, ${mediaType}) RETURNING id`;
       return NextResponse.json({ ok: true, postId: Number(rows[0]?.id) }, { status: 201 });
     }
 
@@ -183,7 +216,7 @@ export async function POST(request: NextRequest) {
         VALUES (${postId}, ${session.userId}, ${body}) RETURNING id, post_id, user_id, body, created_at
       `;
       if (Number(post[0].user_id) !== session.userId) await notifyCreator(Number(post[0].user_id), "New reply on your creator post", `${session.fullName || "A contributor"} replied: ${body.slice(0, 100)}`, `/creator?post=${postId}`, `creator-comment:${rows[0].id}`);
-      return NextResponse.json({ ok: true, comment: { ...rows[0], id: Number(rows[0].id), post_id: Number(rows[0].post_id), user_id: Number(rows[0].user_id), author_name: session.fullName } }, { status: 201 });
+      return NextResponse.json({ ok: true, comment: { ...rows[0], id: Number(rows[0].id), post_id: Number(rows[0].post_id), user_id: Number(rows[0].user_id), author_name: session.fullName, reaction_count: 0, reacted: false } }, { status: 201 });
     }
     if (action === "toggle_repost" || action === "toggle_bookmark") {
       const table = action === "toggle_repost" ? "creator_post_reposts" : "creator_post_bookmarks";
