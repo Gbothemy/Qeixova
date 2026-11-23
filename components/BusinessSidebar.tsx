@@ -11,6 +11,7 @@ const nav = [
   { href: "/business/tasks", label: "Campaigns", icon: "/icon-task.svg", desc: "Campaign manager" },
   { href: "/business/analytics", label: "Analytics", icon: "/icon-analytics.svg", desc: "Performance reports" },
   { href: "/business/creator", label: "Creator feed", icon: "/icon-chat.svg", desc: "Post to the community" },
+  { href: "/business/premium", label: "Business Premium", icon: "/icon-verified.svg", desc: "Membership and posting tools" },
   { href: "/business/tasks/new", label: "Create", icon: "/icon-content.svg", desc: "Guided campaign setup" },
   { href: "/business/wallet", label: "Billing", icon: "/icon-wallet.svg", desc: "Credits and spend" },
   { href: "/business/growth", label: "Alerts", icon: "/icon-notifications.svg", desc: "Notifications" },
