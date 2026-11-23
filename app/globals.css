@@ -4324,4 +4324,7 @@ input[type="number"] {
 .page-body.messagesPage a.messageAvatarLink img { display:block !important; width:100% !important; height:100% !important; border-radius:inherit !important; object-fit:cover !important; }
 .creatorMobileDiscoveryAvatar { flex:0 0 31px; overflow:hidden; }
 .creatorMobileDiscoveryAvatar img { display:block; width:100%; height:100%; border-radius:inherit; object-fit:cover; }
+.businessCreatorPosts .sharedFeedCaption { margin:0 0 12px; padding:0; border:0; color:var(--muted); font-size:11px; }
+.businessCreatorPosts .businessPostAvatar.contributorAvatar { overflow:hidden; }
+.businessCreatorPosts .businessPostAvatar.contributorAvatar img { display:block; width:100%; height:100%; border-radius:inherit; object-fit:cover; }
 .messageAvatar{overflow:hidden}.messageAvatar img{display:block;width:100%;height:100%;border-radius:inherit;object-fit:cover}
