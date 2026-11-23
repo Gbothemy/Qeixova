@@ -138,6 +138,22 @@ export function ensureCreatorSchema() {
       CHECK (user_id <> muted_user_id)
     )
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS creator_business_follows (
+      business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+      creator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (business_id, creator_id)
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS creator_business_muted_users (
+      business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+      muted_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (business_id, muted_user_id)
+    )
+  `;
   })().catch((error) => { creatorSchemaReady = null; throw error; });
   return creatorSchemaReady;
 }
