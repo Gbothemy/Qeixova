@@ -50,6 +50,12 @@ export function ensureCreatorSchema() {
       PRIMARY KEY (post_id, user_id)
     )
   `;
+  await sql`ALTER TABLE creator_post_likes DROP CONSTRAINT IF EXISTS creator_post_likes_pkey`;
+  await sql`ALTER TABLE creator_post_likes ALTER COLUMN user_id DROP NOT NULL`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_post_likes_user_unique ON creator_post_likes(post_id, user_id) WHERE user_id IS NOT NULL`;
+  await sql`ALTER TABLE creator_post_likes ADD COLUMN IF NOT EXISTS business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_post_likes_business_unique ON creator_post_likes(post_id, business_id) WHERE business_id IS NOT NULL`;
+  await sql`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='creator_post_likes_actor_check' AND conrelid='creator_post_likes'::regclass) THEN ALTER TABLE creator_post_likes ADD CONSTRAINT creator_post_likes_actor_check CHECK ((user_id IS NOT NULL AND business_id IS NULL) OR (user_id IS NULL AND business_id IS NOT NULL)); END IF; END $$`;
   await sql`
     CREATE TABLE IF NOT EXISTS creator_post_views (
       post_id BIGINT NOT NULL REFERENCES creator_posts(id) ON DELETE CASCADE,
@@ -77,6 +83,9 @@ export function ensureCreatorSchema() {
     )
   `;
   await sql`CREATE INDEX IF NOT EXISTS creator_post_comments_idx ON creator_post_comments(post_id, created_at)`;
+  await sql`ALTER TABLE creator_post_comments ALTER COLUMN user_id DROP NOT NULL`;
+  await sql`ALTER TABLE creator_post_comments ADD COLUMN IF NOT EXISTS business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE`;
+  await sql`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='creator_post_comments_actor_check' AND conrelid='creator_post_comments'::regclass) THEN ALTER TABLE creator_post_comments ADD CONSTRAINT creator_post_comments_actor_check CHECK ((user_id IS NOT NULL AND business_id IS NULL) OR (user_id IS NULL AND business_id IS NOT NULL)); END IF; END $$`;
   await sql`
     CREATE TABLE IF NOT EXISTS creator_comment_reactions (
       comment_id BIGINT NOT NULL REFERENCES creator_post_comments(id) ON DELETE CASCADE,
@@ -85,6 +94,12 @@ export function ensureCreatorSchema() {
       PRIMARY KEY (comment_id, user_id)
     )
   `;
+  await sql`ALTER TABLE creator_comment_reactions DROP CONSTRAINT IF EXISTS creator_comment_reactions_pkey`;
+  await sql`ALTER TABLE creator_comment_reactions ALTER COLUMN user_id DROP NOT NULL`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_comment_reactions_user_unique ON creator_comment_reactions(comment_id, user_id) WHERE user_id IS NOT NULL`;
+  await sql`ALTER TABLE creator_comment_reactions ADD COLUMN IF NOT EXISTS business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_comment_reactions_business_unique ON creator_comment_reactions(comment_id, business_id) WHERE business_id IS NOT NULL`;
+  await sql`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='creator_comment_reactions_actor_check' AND conrelid='creator_comment_reactions'::regclass) THEN ALTER TABLE creator_comment_reactions ADD CONSTRAINT creator_comment_reactions_actor_check CHECK ((user_id IS NOT NULL AND business_id IS NULL) OR (user_id IS NULL AND business_id IS NOT NULL)); END IF; END $$`;
   await sql`CREATE INDEX IF NOT EXISTS creator_comment_reactions_comment_idx ON creator_comment_reactions(comment_id)`;
   await sql`
     CREATE TABLE IF NOT EXISTS creator_post_reposts (
@@ -94,6 +109,12 @@ export function ensureCreatorSchema() {
       PRIMARY KEY (post_id, user_id)
     )
   `;
+  await sql`ALTER TABLE creator_post_reposts DROP CONSTRAINT IF EXISTS creator_post_reposts_pkey`;
+  await sql`ALTER TABLE creator_post_reposts ALTER COLUMN user_id DROP NOT NULL`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_post_reposts_user_unique ON creator_post_reposts(post_id, user_id) WHERE user_id IS NOT NULL`;
+  await sql`ALTER TABLE creator_post_reposts ADD COLUMN IF NOT EXISTS business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_post_reposts_business_unique ON creator_post_reposts(post_id, business_id) WHERE business_id IS NOT NULL`;
+  await sql`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='creator_post_reposts_actor_check' AND conrelid='creator_post_reposts'::regclass) THEN ALTER TABLE creator_post_reposts ADD CONSTRAINT creator_post_reposts_actor_check CHECK ((user_id IS NOT NULL AND business_id IS NULL) OR (user_id IS NULL AND business_id IS NOT NULL)); END IF; END $$`;
   await sql`
     CREATE TABLE IF NOT EXISTS creator_post_bookmarks (
       post_id BIGINT NOT NULL REFERENCES creator_posts(id) ON DELETE CASCADE,
@@ -102,6 +123,12 @@ export function ensureCreatorSchema() {
       PRIMARY KEY (post_id, user_id)
     )
   `;
+  await sql`ALTER TABLE creator_post_bookmarks DROP CONSTRAINT IF EXISTS creator_post_bookmarks_pkey`;
+  await sql`ALTER TABLE creator_post_bookmarks ALTER COLUMN user_id DROP NOT NULL`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_post_bookmarks_user_unique ON creator_post_bookmarks(post_id, user_id) WHERE user_id IS NOT NULL`;
+  await sql`ALTER TABLE creator_post_bookmarks ADD COLUMN IF NOT EXISTS business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_post_bookmarks_business_unique ON creator_post_bookmarks(post_id, business_id) WHERE business_id IS NOT NULL`;
+  await sql`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='creator_post_bookmarks_actor_check' AND conrelid='creator_post_bookmarks'::regclass) THEN ALTER TABLE creator_post_bookmarks ADD CONSTRAINT creator_post_bookmarks_actor_check CHECK ((user_id IS NOT NULL AND business_id IS NULL) OR (user_id IS NULL AND business_id IS NOT NULL)); END IF; END $$`;
   await sql`
     CREATE TABLE IF NOT EXISTS creator_muted_users (
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

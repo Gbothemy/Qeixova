@@ -23,11 +23,12 @@ export async function GET(request: NextRequest) {
     const requestedPostId = Number(request.nextUrl.searchParams.get("postId"));
     if (Number.isSafeInteger(requestedPostId) && requestedPostId > 0) {
       const comments = await sql`
-        SELECT c.id, c.post_id, c.body, c.created_at, c.user_id, u.full_name AS author_name, u.avatar_url AS author_avatar_url,
-          EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = c.user_id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
+        SELECT c.id, c.post_id, c.body, c.created_at, c.user_id, c.business_id, COALESCE(u.full_name, b.name) AS author_name, u.avatar_url AS author_avatar_url,
+          (c.business_id IS NOT NULL) AS is_business,
+          (EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.user_id = c.user_id AND ps.business_id IS NULL AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) OR EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps WHERE ps.business_id = c.business_id AND ps.status = 'active' AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW()))) AS is_premium,
           (SELECT COUNT(*)::int FROM creator_comment_reactions r WHERE r.comment_id = c.id) AS reaction_count,
           EXISTS(SELECT 1 FROM creator_comment_reactions r WHERE r.comment_id = c.id AND r.user_id = ${session.userId}) AS reacted
-        FROM creator_post_comments c JOIN users u ON u.id = c.user_id
+        FROM creator_post_comments c LEFT JOIN users u ON u.id = c.user_id LEFT JOIN businesses b ON b.id = c.business_id
         WHERE c.post_id = ${requestedPostId}
         ORDER BY c.created_at ASC LIMIT 100
       `;
@@ -35,7 +36,10 @@ export async function GET(request: NextRequest) {
         ...comment,
         id: Number(comment.id),
         post_id: Number(comment.post_id),
-        user_id: Number(comment.user_id),
+        user_id: comment.user_id === null ? null : Number(comment.user_id),
+        business_id: comment.business_id === null ? null : Number(comment.business_id),
+        is_business: Boolean(comment.is_business),
+        is_premium: Boolean(comment.is_premium),
         reaction_count: Number(comment.reaction_count),
         reacted: Boolean(comment.reacted),
       })) });
@@ -53,10 +57,10 @@ export async function GET(request: NextRequest) {
           OR EXISTS(SELECT 1 FROM contributor_premium_subscriptions ps
           WHERE ps.business_id = p.business_id AND ps.status = 'active'
             AND ps.starts_at <= NOW() AND (ps.is_permanent = TRUE OR ps.ends_at > NOW())) AS is_premium,
-        COUNT(DISTINCT l.user_id)::int AS like_count,
+        (SELECT COUNT(*)::int FROM creator_post_likes x WHERE x.post_id = p.id) AS like_count,
         COUNT(DISTINCT v.viewer_id)::int AS view_count,
         COUNT(DISTINCT c.id)::int AS comment_count,
-        COUNT(DISTINCT r.user_id)::int AS repost_count,
+        (SELECT COUNT(*)::int FROM creator_post_reposts x WHERE x.post_id = p.id) AS repost_count,
         COALESCE(BOOL_OR(l.user_id = ${session.userId}), false) AS liked,
         COALESCE(BOOL_OR(r.user_id = ${session.userId}), false) AS reposted,
         COALESCE(BOOL_OR(b.user_id = ${session.userId}), false) AS bookmarked,
@@ -79,7 +83,7 @@ export async function GET(request: NextRequest) {
           SELECT 1 FROM creator_muted_users m WHERE m.user_id = ${session.userId} AND m.muted_user_id = p.user_id
         ))
       GROUP BY p.id, u.full_name, u.avatar_url, bu.name
-      ORDER BY CASE WHEN ${feedTab} = 'popular' THEN COUNT(DISTINCT l.user_id) * 2 + COUNT(DISTINCT v.viewer_id) END DESC NULLS LAST,
+      ORDER BY CASE WHEN ${feedTab} = 'popular' THEN (SELECT COUNT(*) FROM creator_post_likes x WHERE x.post_id = p.id) * 2 + COUNT(DISTINCT v.viewer_id) END DESC NULLS LAST,
         p.created_at DESC
       LIMIT 30 OFFSET ${offset}
     `;
