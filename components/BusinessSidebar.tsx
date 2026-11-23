@@ -7,10 +7,10 @@ import { useEffect, useRef, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const nav = [
-  { href: "/business/dashboard", label: "Overview", icon: "/icon-home.svg", desc: "Account health" },
+  { href: "/business/creator", label: "Home", icon: "/icon-community.svg", desc: "Shared community feed" },
+  { href: "/business/dashboard", label: "Overview", icon: "/icon-target.svg", desc: "Account health" },
   { href: "/business/tasks", label: "Campaigns", icon: "/icon-task.svg", desc: "Campaign manager" },
   { href: "/business/analytics", label: "Analytics", icon: "/icon-analytics.svg", desc: "Performance reports" },
-  { href: "/business/creator", label: "Home", icon: "/icon-home.svg", desc: "Shared community feed" },
   { href: "/business/premium", label: "Business Premium", icon: "/icon-verified.svg", desc: "Membership and posting tools" },
   { href: "/business/tasks/new", label: "Create", icon: "/icon-content.svg", desc: "Guided campaign setup" },
   { href: "/business/wallet", label: "Billing", icon: "/icon-wallet.svg", desc: "Credits and spend" },
