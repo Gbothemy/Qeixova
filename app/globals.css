@@ -4331,7 +4331,7 @@ input[type="number"] {
 .premiumVerifiedBadge{display:inline-block;flex:0 0 15px;width:15px;height:15px;vertical-align:middle}
 .premiumVerifiedBadge>path:first-child{fill:#1f9b57}
 .premiumVerifiedBadge .premiumVerifiedCheck{fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.page-body.creatorPage .creatorPostMedia { height: auto; max-height: min(460px, 65dvh); object-fit: contain; background: color-mix(in srgb, var(--card-bg) 70%, var(--bg)); }
+.page-body.creatorPage .creatorPostMedia { width: 100%; height: min(460px, 65dvh); max-height: min(460px, 65dvh); object-fit: contain; background: color-mix(in srgb, var(--card-bg) 70%, var(--bg)); }
 @media (max-width: 760px) {
-  .page-body.creatorPage .creatorPostMedia { max-height: 55dvh; border-radius: 10px; }
+  .page-body.creatorPage .creatorPostMedia { height: min(55dvh, 460px); max-height: min(55dvh, 460px); border-radius: 10px; }
 }
