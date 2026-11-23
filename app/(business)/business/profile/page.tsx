@@ -84,25 +84,28 @@ export default function BusinessProfilePage() {
   const [form, setForm] = useState<FormState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
+    let active = true;
     fetch("/api/business/me", { cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) {
-          router.push("/business/login");
-          return null;
-        }
-        return res.json();
+      .then(async (res) => {
+        if (res.status === 401) { router.replace("/business/login"); return null; }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Business settings could not be loaded.");
+        return data;
       })
       .then((data) => {
-        if (data?.business) {
-          setBusiness(data.business);
-          setForm(makeForm(data.business));
-        }
+        if (!active || !data) return;
+        if (!data.business) throw new Error("Business account details were not returned.");
+        setBusiness(data.business);
+        setForm(makeForm(data.business));
+        setLoadError("");
       })
-      .catch(() => router.push("/business/login"))
-      .finally(() => setLoading(false));
+      .catch((error) => { if (active) setLoadError(error instanceof Error ? error.message : "Business settings could not be loaded."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [router]);
 
   const completion = useMemo(() => {
@@ -138,34 +141,37 @@ export default function BusinessProfilePage() {
     }
 
     setSaving(true);
-    const res = await fetch("/api/business/me", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.name,
-        industry: form.industry,
-        website: form.website,
-        profile: {
-          description: form.description,
-          campaignGoals: form.campaignGoals,
-          campaignCategories: form.campaignCategories,
-          preferredPlatforms: form.preferredPlatforms,
-          targetInterests: form.targetInterests,
-          alertPreferences: form.alertPreferences,
-          location: { country: form.country, state: form.state, city: form.city },
-        },
-      }),
-    }).catch(() => null);
-
-    const data = await res?.json().catch(() => ({}));
-    setSaving(false);
-    if (!res?.ok) {
-      setNotice({ type: "error", text: data?.error || "Profile could not be saved." });
-      return;
+    setNotice(null);
+    try {
+      const res = await fetch("/api/business/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          industry: form.industry.trim(),
+          website: form.website.trim(),
+          profile: {
+            description: form.description.trim(),
+            campaignGoals: form.campaignGoals,
+            campaignCategories: form.campaignCategories,
+            preferredPlatforms: form.preferredPlatforms,
+            targetInterests: form.targetInterests,
+            alertPreferences: form.alertPreferences,
+            location: { country: form.country.trim(), state: form.state.trim(), city: form.city.trim() },
+          },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Profile could not be saved.");
+      if (!data.business) throw new Error("The server did not return the updated business profile.");
+      setBusiness(data.business);
+      setForm(makeForm(data.business));
+      setNotice({ type: "success", text: "Profile changes saved." });
+    } catch (error) {
+      setNotice({ type: "error", text: error instanceof Error ? error.message : "Profile could not be saved. Check your connection and try again." });
+    } finally {
+      setSaving(false);
     }
-    setBusiness(data.business);
-    setForm(makeForm(data.business));
-    setNotice({ type: "success", text: "Profile changes saved." });
   };
 
   const logout = async () => {
@@ -173,8 +179,12 @@ export default function BusinessProfilePage() {
     router.push("/business/login");
   };
 
-  if (loading || !business || !form) {
+  if (loading) {
     return <BusinessLoading title="Loading business profile" detail="Preparing account settings and preferences." />;
+  }
+
+  if (!business || !form) {
+    return <main className="profileShell"><BusinessSidebar name="Business"/><section className="profileMain"><div className="formNotice" role="alert">{loadError || "Business settings could not be loaded."}<button type="button" onClick={() => window.location.reload()}>Try again</button></div></section><BusinessBottomNav/><style jsx>{styles}</style></main>;
   }
 
   return (
@@ -205,10 +215,10 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
               <nav aria-label="Profile sections">
-                <a href="#bbbusiness-info">Business information</a>
+                <a href="#business-info">Business information</a>
                 <a href="#location">Location</a>
                 <a href="#preferences">Campaign preferences</a>
-                <a href="#aaalerts">Alerts</a>
+                <a href="#alerts">Alerts</a>
               </nav>
               <dl>
                 <div><dt>Balance</dt><dd>{Number(business.balance ?? 0).toLocaleString()} QLT</dd></div>
@@ -258,7 +268,7 @@ export default function BusinessProfilePage() {
 
               <div className="formActions">
                 <button type="button" className="ghostButton" onClick={logout}>Sign out</button>
-                <button type="submit" className="saveButton" disabled={saving}>{saving ? "Saving..." : "Save changes"}</button>
+                <button type="submit" className="saveButton" disabled={saving}>{saving ? "Saving..." : "Save all settings"}</button>
               </div>
             </form>
           </section>
