@@ -1,0 +1,6 @@
+.git
+.next
+node_modules
+android/
+dev-test.log
+register-check-response.json
