@@ -224,7 +224,8 @@ export default function ContributorMessages() {
       setCallError("");
       changeVoiceCall({ callId, conversationId: selected, status: "checking" });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      if (callStateRef.current?.callId !== callId) { stream.getTracks().forEach((track) => track.stop()); return; }
+      const currentCall = callStateRef.current as VoiceCall | null;
+      if (currentCall?.callId !== callId) { stream.getTracks().forEach((track) => track.stop()); return; }
       localStreamRef.current = stream; acceptedCallRef.current = callId;
       const peer = createPeerConnection(selected, callId, stream);
       const invite = await sendCallSignal(selected, callId, "invite");
@@ -232,7 +233,7 @@ export default function ContributorMessages() {
       changeVoiceCall({ callId, conversationId: selected, status: invite.recipientOnline ? "ringing" : "calling" });
       const offer = await peer.createOffer(); await peer.setLocalDescription(offer);
       await sendCallSignal(selected, callId, "offer", peer.localDescription?.toJSON());
-      callTimeoutRef.current = window.setTimeout(() => { if (callStateRef.current?.callId === callId && ["calling", "ringing"].includes(callStateRef.current.status)) { setCallError("No answer yet. You can try calling again."); void endVoiceCall(); } }, 45_000);
+      callTimeoutRef.current = window.setTimeout(() => { const activeCall = callStateRef.current as VoiceCall | null; if (activeCall?.callId === callId && (activeCall.status === "calling" || activeCall.status === "ringing")) { setCallError("No answer yet. You can try calling again."); void endVoiceCall(); } }, 45_000);
     } catch (error) { setCallError(error instanceof Error ? error.message : "Could not start the voice call."); if (inviteSent) await sendCallSignal(selected, callId, "end").catch(() => {}); teardownVoiceCall(); }
   }, [changeVoiceCall, createPeerConnection, endVoiceCall, other, selected, sendCallSignal, teardownVoiceCall]);
   const toggleVoiceNoteRecording = async () => {
