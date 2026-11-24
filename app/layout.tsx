@@ -3,7 +3,31 @@ import Script from "next/script";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 
+const DEFAULT_METADATA_BASE = new URL("https://www.qeixova.com");
+
+function getMetadataBase() {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/^['"]|['"]$/g, "").trim();
+  if (!configured) return DEFAULT_METADATA_BASE;
+
+  const isLocalHost = /^(localhost|127\.0\.0\.1)(:\d+)?(?:\/|$)/i.test(configured);
+  const candidate = /^https?:\/\//i.test(configured)
+    ? configured
+    : `${process.env.NODE_ENV === "development" && isLocalHost ? "http" : "https"}://${configured}`;
+
+  try {
+    const url = new URL(candidate);
+    if ((url.protocol === "http:" || url.protocol === "https:") && url.hostname && !url.username && !url.password) {
+      return new URL(url.origin);
+    }
+  } catch {
+    // A malformed optional URL must not prevent the app layout from rendering.
+  }
+
+  return DEFAULT_METADATA_BASE;
+}
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: "Qeixova — Community-Powered Digital Growth",
   description: "Launch campaigns with verified growth partners, grow real visibility, and earn through meaningful digital participation.",
   icons: {

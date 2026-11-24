@@ -4436,3 +4436,164 @@ body .profileSocial .profilePostActions > button.isLiked:active { color:#e11d48 
 .premiumVerifiedBadge .premiumVerifiedCheck{fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .page-body.creatorPage .creatorMobileAvatar { overflow: hidden; padding: 0; }
 .page-body.creatorPage .creatorMobileAvatar img { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; border-radius: inherit; object-fit: cover; }
+
+/* A calmer, classic two-pane chat surface with compact, readable message groups. */
+.page-body.messagesPage .messagesWorkspace { border:1px solid color-mix(in srgb,var(--border) 80%,#cbd4ce); border-radius:18px; background:var(--bg); box-shadow:0 18px 55px rgba(30,45,38,.08); }
+.page-body.messagesPage .messageInbox { background:color-mix(in srgb,var(--card-bg) 92%,#f5f7f5); }
+.page-body.messagesPage .inboxHeader { padding:18px 20px 14px; }
+.page-body.messagesPage .inboxHeader h2 { font-size:23px; letter-spacing:-.04em; }
+.page-body.messagesPage .inboxSearch { height:43px; border:1px solid color-mix(in srgb,var(--border) 75%,transparent); background:var(--bg); }
+.page-body.messagesPage .inboxTabs { gap:6px; padding:7px 14px 12px; }
+.page-body.messagesPage .inboxTabs button { min-height:34px; padding:0 12px; border:1px solid transparent; border-radius:999px; }
+.page-body.messagesPage .inboxTabs button.active { border-color:#c9dfce; background:#eaf5ec; color:#247447; }
+.page-body.messagesPage .conversationList { padding:8px; }
+.page-body.messagesPage .conversationItem { min-height:74px; padding:9px 11px; border-radius:13px; }
+.page-body.messagesPage .conversationItem.selected { background:#eaf5ec; }
+.page-body.messagesPage .conversationItem:hover:not(.selected) { background:color-mix(in srgb,var(--card-bg) 70%,#eff4f0); }
+.page-body.messagesPage .conversationCopy { gap:4px; }
+.page-body.messagesPage .conversationCopy small { overflow:hidden; color:var(--muted); text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .messageThread { background:var(--bg); }
+.page-body.messagesPage .threadHeader { position:relative; z-index:2; min-height:72px; padding:11px 22px; box-shadow:0 2px 10px rgba(32,48,39,.035); }
+.page-body.messagesPage .threadHeader>div>strong { font-size:14px; }
+.page-body.messagesPage .threadHeader>div>small { font-size:10px; }
+.page-body.messagesPage .threadMessages { gap:8px; padding:24px clamp(16px,4vw,54px); background-color:#f6f4ef; background-image:radial-gradient(circle at 1px 1px,rgba(76,101,82,.045) 1px,transparent 0); background-size:24px 24px; }
+.page-body.messagesPage .messageDate { margin:18px 0 10px; padding:6px 12px; border:1px solid rgba(50,70,54,.08); border-radius:999px; background:rgba(255,255,255,.92); box-shadow:0 2px 8px rgba(30,45,38,.05); font-size:10px; font-weight:700; }
+.page-body.messagesPage .messageBubble { position:relative; max-width:min(76%,560px); padding:10px 14px; border:1px solid rgba(40,60,44,.075); border-radius:16px 16px 16px 5px; background:#fff; box-shadow:0 2px 7px rgba(30,45,38,.045); color:#202722; font-size:13px; line-height:1.5; }
+.page-body.messagesPage .messageRow.mine .messageBubble { border-color:color-mix(in srgb,var(--chat-accent) 22%,#fff); border-radius:16px 16px 5px 16px; background:color-mix(in srgb,var(--chat-accent) 12%,#fff); color:#202722; }
+.page-body.messagesPage .messageBubble time { margin-top:7px; color:#7b8780; font-size:9px; }
+.page-body.messagesPage .messageRow.mine .messageBubble time { color:#718078; }
+.page-body.messagesPage .messageActions { max-height:0; margin:0; overflow:hidden; opacity:0; pointer-events:none; transition:max-height .16s ease,opacity .16s ease,margin .16s ease; }
+.page-body.messagesPage .messageBubble:hover .messageActions,.page-body.messagesPage .messageBubble:focus-within .messageActions { max-height:24px; margin-top:3px; opacity:1; pointer-events:auto; }
+.page-body.messagesPage .messageReactionWrap { max-height:0; margin:0; overflow:visible; opacity:0; transition:opacity .16s ease; }
+.page-body.messagesPage .messageBubble:hover .messageReactionWrap,.page-body.messagesPage .messageBubble:focus-within .messageReactionWrap { max-height:24px; opacity:1; }
+.page-body.messagesPage .voiceNotePlayer { display:flex; align-items:center; gap:11px; width:min(330px,70vw); min-height:48px; }
+.page-body.messagesPage .voiceNotePlayer>audio { display:none; }
+.page-body.messagesPage .voiceNotePlay { display:grid; flex:0 0 34px; place-items:center; width:34px; height:34px; padding:0 0 0 2px; border:0; border-radius:50%; background:var(--chat-accent); color:#fff; font-size:13px; cursor:pointer; }
+.page-body.messagesPage .voiceNoteWave { position:relative; display:flex; flex:1; align-items:center; min-width:60px; height:36px; cursor:pointer; }
+.page-body.messagesPage .voiceNoteWave>div { display:flex; align-items:center; justify-content:space-between; gap:2px; width:100%; height:30px; overflow:hidden; }
+.page-body.messagesPage .voiceNoteWave i { display:block; flex:1 1 2px; min-width:2px; max-height:26px; border-radius:3px; background:linear-gradient(to right,var(--chat-accent) 0 var(--voice-progress),#aebbb2 var(--voice-progress) 100%); }
+.page-body.messagesPage .voiceNoteWave input { position:absolute; z-index:1; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+.page-body.messagesPage .voiceNoteWave:focus-within { outline:2px solid color-mix(in srgb,var(--chat-accent) 50%,transparent); outline-offset:2px; border-radius:5px; }
+.page-body.messagesPage .voiceNoteDuration { flex:0 0 58px; color:#68766d; font-size:9px; font-variant-numeric:tabular-nums; text-align:right; }
+.page-body.messagesPage .messageComposer { gap:8px; margin:12px 18px 16px; padding:9px 12px; border:1px solid #e3e9e4; border-radius:18px; background:var(--bg); box-shadow:0 5px 18px rgba(32,48,39,.055); }
+.page-body.messagesPage .messageComposer textarea { min-height:40px; max-height:104px; padding:9px 3px; font-size:13px; }
+.page-body.messagesPage .messageComposer .voiceNoteButton,.page-body.messagesPage .messageComposer .attachMessageButton,.page-body.messagesPage .messageComposer .emojiToggle { flex:0 0 36px; width:36px; height:36px; border-radius:50%; background:transparent; color:#56655b; }
+.page-body.messagesPage .messageComposer .sendMessageButton { flex:0 0 38px; width:38px; height:38px; border-radius:50%; background:#23894e; }
+.page-body.messagesPage .messageComposer button:hover:not(:disabled) { background:#edf5ef; color:#247447; }
+.page-body.messagesPage .messageComposer .sendMessageButton:hover:not(:disabled) { background:#1e7744; color:#fff; }
+@media (hover:none) {
+  .page-body.messagesPage .messageActions { max-height:24px; margin-top:3px; opacity:.82; pointer-events:auto; }
+  .page-body.messagesPage .messageReactionWrap { max-height:24px; opacity:.72; }
+}
+@media (max-width:760px) {
+  .page-body.messagesPage .messagesWorkspace { border:0; border-radius:0; box-shadow:none; }
+  .page-body.messagesPage .inboxHeader { padding:12px 16px 9px; }
+  .page-body.messagesPage .messageThread .threadHeader { min-height:64px; padding:8px 10px; }
+  .page-body.messagesPage .threadMessages { gap:7px; padding:16px 13px; }
+  .page-body.messagesPage .messageBubble { max-width:84%; padding:9px 12px; font-size:13px; }
+  .page-body.messagesPage .messageComposer { margin:8px 10px max(10px,env(safe-area-inset-bottom)); padding:7px 8px; }
+  .page-body.messagesPage .messageComposer .voiceNoteButton,.page-body.messagesPage .messageComposer .attachMessageButton,.page-body.messagesPage .messageComposer .emojiToggle { flex-basis:32px; width:32px; height:32px; }
+  .page-body.messagesPage .messageComposer .sendMessageButton { flex-basis:36px; width:36px; height:36px; }
+  .page-body.messagesPage .voiceNotePlayer { width:min(290px,70vw); gap:8px; }
+}
+.page-body.messagesPage .messageBodyLink { color:#1b7650; overflow-wrap:anywhere; text-decoration:underline; text-decoration-color:rgba(27,118,80,.35); text-underline-offset:2px; }
+.page-body.messagesPage .messageRow.mine .messageBodyLink { color:#176c49; }
+.page-body.messagesPage .sharedPostLinkPreview { display:block; width:min(100%,360px); margin-top:9px; overflow:hidden; border:1px solid rgba(39,69,46,.12); border-radius:12px; background:#fff; color:#222b24; text-decoration:none; white-space:normal; box-shadow:0 2px 8px rgba(25,43,31,.06); }
+.page-body.messagesPage .sharedPostLinkPreview:hover { border-color:#a9cbb0; box-shadow:0 5px 16px rgba(25,43,31,.11); }
+.page-body.messagesPage .sharedPostLinkPreview>img { display:block; width:100%; max-height:220px; aspect-ratio:1.9/1; object-fit:cover; background:#edf2ee; }
+.page-body.messagesPage .sharedPostLinkCopy { display:grid; gap:5px; padding:10px 12px 11px; }
+.page-body.messagesPage .sharedPostLinkCopy small { color:#718078; font-size:9px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.page-body.messagesPage .sharedPostLinkCopy strong { color:#1f2922; font-size:12px; }
+.page-body.messagesPage .sharedPostLinkCopy>span { display:-webkit-box; overflow:hidden; color:#526158; font-size:11px; line-height:1.45; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
+.page-body.messagesPage .sharedPostLinkCopy em { overflow:hidden; color:#357650; font-size:10px; font-style:normal; text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .messageBubble:has(.voiceNotePlayer) { width:fit-content !important; max-width:min(84vw,270px) !important; padding:3px 7px 15px !important; }
+.page-body.messagesPage .voiceNotePlayer { width:min(210px,60vw) !important; min-height:23px; gap:5px; }
+.page-body.messagesPage .voiceNotePlay { flex-basis:22px; width:22px; height:22px; font-size:9px; }
+.page-body.messagesPage .voiceNoteWave { min-width:36px; height:18px; }
+.page-body.messagesPage .voiceNoteWave>div { height:16px; }
+.page-body.messagesPage .voiceNoteWave i { max-height:13px; }
+.page-body.messagesPage .voiceNoteDuration { flex-basis:34px; font-size:7px; }
+.page-body.messagesPage .messageBubble:has(.voiceNotePlayer) time { position:absolute; right:7px; bottom:3px; margin:0; font-size:7px; line-height:9px; }
+.page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionWrap { position:absolute; bottom:0; left:3px; max-height:14px; margin:0; opacity:.82; }
+.page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionWrap .addMessageReaction { height:12px; line-height:12px; }
+@media (max-width:760px) {
+  .page-body.messagesPage .messageBubble:has(.voiceNotePlayer) { max-width:min(84vw,250px) !important; }
+  .page-body.messagesPage .voiceNotePlayer { width:min(198px,60vw) !important; }
+}
+
+/* Compact conversation styling: keep short messages close to their content. */
+.page-body.messagesPage .threadMessages { gap:6px; padding:16px clamp(14px,3vw,34px); }
+.page-body.messagesPage .messageBubble { max-width:min(72%,480px); padding:8px 11px; border-radius:14px 14px 14px 5px; font-size:12.5px; line-height:1.42; }
+.page-body.messagesPage .messageRow.mine .messageBubble { border-radius:14px 14px 5px 14px; }
+.page-body.messagesPage .messageBubble:not(:has(.voiceNotePlayer)) { padding:7px 10px; border-radius:13px 13px 13px 4px; box-shadow:0 1px 4px rgba(30,45,38,.04); font-size:12px; line-height:1.4; }
+.page-body.messagesPage .messageRow.mine .messageBubble:not(:has(.voiceNotePlayer)) { border-radius:13px 13px 4px 13px; }
+.page-body.messagesPage .messageRow:has(.messageReactionList) { margin-bottom:10px; }
+.page-body.messagesPage .messageReactionList { position:absolute; z-index:3; bottom:-12px; left:7px; display:flex; flex-wrap:wrap; gap:3px; max-width:min(90vw,330px); margin:0; padding:2px 3px; border:1px solid rgba(40,60,44,.08); border-radius:999px; background:#fff; box-shadow:0 2px 7px rgba(30,45,38,.1); }
+.page-body.messagesPage .messageRow.mine .messageReactionList { right:7px; left:auto; }
+.page-body.messagesPage .messageReactionList button { min-width:25px; padding:2px 6px; border:0; border-radius:999px; background:transparent; font-size:11px; line-height:1.25; }
+.page-body.messagesPage .messageQuickActions { display:flex; flex:0 0 100%; gap:4px; margin-top:4px; padding-top:5px; border-top:1px solid rgba(40,60,44,.09); }
+.page-body.messagesPage .messageReactionPicker .messageQuickActions button { display:block; flex:1 1 auto; width:auto; height:27px; border-radius:7px; color:#39463c; font-size:10px; line-height:1; }
+.page-body.messagesPage .messageReactionPicker .messageQuickActions button.danger { color:#b43f3a; }.page-body.messagesPage .messageBubble time { margin-top:4px; font-size:8px; }
+.page-body.messagesPage .messageActions { gap:6px; }
+.page-body.messagesPage .messageActions button { padding:1px 3px; font-size:8px; }
+.page-body.messagesPage .messageReactionWrap .addMessageReaction { width:22px; height:17px; font-size:12px; }
+.page-body.messagesPage .messageReactionWrap { position:absolute; z-index:8; top:auto; right:4px; bottom:calc(100% + 6px); display:flex; width:max-content; max-width:min(92vw,340px); max-height:none; margin:0; overflow:visible; opacity:1; pointer-events:none; }
+.page-body.messagesPage .messageReactionWrap.isBelow { top:calc(100% + 6px); bottom:auto; }
+.page-body.messagesPage .messageReactionWrap.isLeft { left:4px; right:auto; }
+.page-body.messagesPage .messageReactionPicker { position:relative; inset:auto; display:flex; flex-wrap:wrap; align-items:center; gap:2px; width:max-content; width:min(326px,92vw); max-width:min(92vw,340px); padding:5px 7px; border:1px solid rgba(37,57,43,.1); border-radius:999px; background:#fff; box-shadow:0 7px 22px rgba(25,42,30,.17); pointer-events:auto; }
+.page-body.messagesPage .messageReactionPicker button { display:grid; flex:0 0 30px; place-items:center; width:30px; height:30px; padding:0; border:0; border-radius:50%; background:transparent; font-size:19px; cursor:pointer; transition:transform .12s ease,background .12s ease; }
+.page-body.messagesPage .messageReactionPicker button:hover { transform:scale(1.16); background:#f1f5f1; }
+.page-body.messagesPage .messageReactionPicker .moreReactionsButton { border:1px solid #e3e9e4; color:#526157; font-size:20px; font-weight:500; }
+.page-body.messagesPage .messageReactionPicker.isExpanded { display:grid; grid-template-columns:repeat(8,30px); max-width:min(276px,92vw); border-radius:18px; }
+.page-body.messagesPage .messageReactionPicker.isExpanded .moreReactionsButton { grid-column:span 2; width:auto; border-radius:999px; }
+.page-body.messagesPage .messageReactionPicker.isExpanded .messageQuickActions { grid-column:1/-1; }
+.page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionWrap { top:auto; right:4px; bottom:calc(100% + 6px); left:auto; width:max-content; max-width:min(92vw,340px); max-height:none; margin:0; opacity:1; pointer-events:none; }
+.page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionWrap.isBelow { top:calc(100% + 6px); bottom:auto; }
+.page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionWrap.isLeft { left:4px; right:auto; }
+.page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionPicker { position:relative; inset:auto; }
+.page-body.messagesPage .voiceNotePlayer { width:min(270px,68vw); min-height:40px; gap:8px; }
+.page-body.messagesPage .voiceNotePlay { flex-basis:31px; width:31px; height:31px; }
+.page-body.messagesPage .voiceNoteWave { height:30px; }
+.page-body.messagesPage .voiceNoteWave>div { height:26px; }
+.page-body.messagesPage .voiceNoteDuration { flex-basis:48px; font-size:8px; }
+.page-body.messagesPage .messageComposer { gap:5px; margin:8px 12px 12px; padding:6px 8px; border-radius:999px; }
+.page-body.messagesPage .messageComposer textarea { min-height:34px; max-height:76px; padding:7px 2px; font-size:12px; }
+.page-body.messagesPage .messageComposer { display:block; }
+.page-body.messagesPage .messageComposer .replyComposer { width:100%; margin:0 0 7px; order:initial; }
+.page-body.messagesPage .messageComposer .composerControls { display:flex; align-items:center; gap:5px; width:100%; min-width:0; margin:0; }
+.page-body.messagesPage .messageComposer .composerControls textarea { width:auto; min-width:0; flex:1 1 auto; }
+.page-body.messagesPage .messageComposer .replyComposer { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 30px; grid-template-rows:auto auto; align-items:center; gap:2px 8px; width:100%; min-width:0; margin:0 0 8px; padding:8px 9px 8px 11px; border:1px solid color-mix(in srgb,var(--chat-accent) 20%,#e3e9e4); border-left:3px solid var(--chat-accent); border-radius:11px; background:color-mix(in srgb,var(--chat-accent) 5%,#fff); }
+.page-body.messagesPage .messageComposer .replyComposer>span { grid-column:1; grid-row:1; overflow:hidden; color:#718078; font-size:10px; line-height:1.25; text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .messageComposer .replyComposer>strong { grid-column:1; grid-row:2; min-width:0; overflow:hidden; color:#344239; font-size:11px; font-weight:600; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .messageComposer .replyComposer>button { grid-column:2; grid-row:1 / span 2; display:grid; place-items:center; width:28px; height:28px; padding:0; border:0; border-radius:9px; background:color-mix(in srgb,var(--chat-accent) 12%,#fff); color:#326a47; font-size:17px; line-height:1; cursor:pointer; }
+.page-body.messagesPage .messageComposer .replyComposer>button:hover { background:color-mix(in srgb,var(--chat-accent) 20%,#fff); }
+@media (max-width:760px) {
+  .page-body.messagesPage .threadMessages { gap:5px; padding:12px 11px; }
+  .page-body.messagesPage .messageBubble { max-width:80%; padding:7px 10px; font-size:12px; }
+  .page-body.messagesPage .messageBubble:not(:has(.voiceNotePlayer)) { padding:6px 9px; font-size:11.5px; }
+  .page-body.messagesPage .messageRow.mine .messageBubble { max-width:80%; }
+  .page-body.messagesPage .messageBubble time { margin-top:3px; }
+  .page-body.messagesPage .voiceNotePlayer { width:min(250px,68vw); gap:7px; }
+  .page-body.messagesPage .messageComposer { margin:6px 9px max(8px,env(safe-area-inset-bottom)); padding:5px 7px; }
+}
+.page-body.messagesPage .voiceCallScreen { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; overflow:auto; padding:24px; background:radial-gradient(ellipse at 50% 34%,#e8f4eb 0,#f5f8f5 45%,#edf2ee 100%); color:#1e2a22; }
+.page-body.messagesPage .voiceCallScreen>audio { display:none; }
+.page-body.messagesPage .voiceCallCard { display:grid; justify-items:center; width:min(100%,360px); padding:30px 24px 24px; border:1px solid rgba(40,72,48,.08); border-radius:26px; background:rgba(255,255,255,.88); box-shadow:0 22px 70px rgba(29,57,37,.13); text-align:center; }
+.page-body.messagesPage .callAvatarWrap { position:relative; display:grid; place-items:center; width:104px; height:104px; margin:0 0 20px; overflow:visible; border-radius:50%; background:#d8eddf; color:#28764a; font-size:30px; font-weight:750; }
+.page-body.messagesPage .callAvatarWrap::before,.page-body.messagesPage .callAvatarWrap::after { position:absolute; inset:-8px; border:1px solid #73b48955; border-radius:50%; content:""; opacity:0; }
+.page-body.messagesPage .callStatus-ringing .callAvatarWrap::before,.page-body.messagesPage .callStatus-incoming .callAvatarWrap::before { animation:callRingPulse 1.8s ease-out infinite; }
+.page-body.messagesPage .callStatus-ringing .callAvatarWrap::after,.page-body.messagesPage .callStatus-incoming .callAvatarWrap::after { animation:callRingPulse 1.8s .9s ease-out infinite; }
+.page-body.messagesPage .callAvatarWrap img { width:100%; height:100%; border:3px solid #fff; border-radius:50%; object-fit:cover; }
+.page-body.messagesPage .voiceCallCard>strong { max-width:100%; overflow:hidden; font-size:20px; text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .callStatusLabel { margin-top:10px; color:#318650; font-size:14px; font-weight:750; }
+.page-body.messagesPage .voiceCallCard p { max-width:260px; min-height:34px; margin:8px 0 25px; color:#718077; font-size:12px; line-height:1.5; }
+.page-body.messagesPage .callControls { display:flex; align-items:center; justify-content:center; gap:22px; }
+.page-body.messagesPage .callControls button { display:grid; place-items:center; width:58px; height:58px; border:0; border-radius:50%; color:#fff; font-size:23px; cursor:pointer; box-shadow:0 5px 16px rgba(0,0,0,.12); }
+.page-body.messagesPage .callControls .answerCallButton { background:#249253; }
+.page-body.messagesPage .callControls .declineCallButton { background:#d94e51; transform:rotate(135deg); }
+.page-body.messagesPage .callStatus-incoming .callControls .declineCallButton { transform:none; }
+.page-body.messagesPage .callActionCaption { margin-top:9px; color:#718077; font-size:10px; }
+@keyframes callRingPulse { 0% { transform:scale(.92); opacity:.7; } 100% { transform:scale(1.34); opacity:0; } }
+@media (prefers-reduced-motion:reduce) {
+  .page-body.messagesPage .callStatus-ringing .callAvatarWrap::before,.page-body.messagesPage .callStatus-ringing .callAvatarWrap::after,.page-body.messagesPage .callStatus-incoming .callAvatarWrap::before,.page-body.messagesPage .callStatus-incoming .callAvatarWrap::after { animation:none; }
+}

@@ -64,11 +64,13 @@ export async function GET(request: NextRequest) {
       const isRequestRecipient = Number(access[0].initiated_by) !== session.userId && access[0].request_status === "pending";
       if (!isRequestRecipient) await sql`UPDATE contributor_messages SET read_at = NOW() WHERE conversation_id = ${conversationId} AND sender_id <> ${session.userId} AND read_at IS NULL`;
       const messages = await sql`SELECT m.id, m.sender_id, m.body, (m.attachment_url IS NOT NULL) AS has_attachment, m.attachment_type, m.attachment_name, m.created_at, m.edited_at, m.read_at,
+        m.reply_to_id, COALESCE(NULLIF(BTRIM(replied.body), ''), replied.attachment_name, 'Attachment') AS reply_body, replied.sender_id AS reply_sender_id,
         COALESCE((SELECT json_agg(json_build_object('emoji', grouped.emoji, 'count', grouped.reaction_count, 'reacted', grouped.reacted)) FROM (
           SELECT r.emoji, COUNT(*)::int AS reaction_count, BOOL_OR(r.user_id = ${session.userId}) AS reacted
           FROM contributor_message_reactions r WHERE r.message_id = m.id GROUP BY r.emoji
         ) grouped), '[]'::json) AS reactions
-        FROM contributor_messages m WHERE m.conversation_id = ${conversationId} ORDER BY m.created_at DESC LIMIT 100`;
+        FROM contributor_messages m LEFT JOIN contributor_messages replied ON replied.id = m.reply_to_id
+        WHERE m.conversation_id = ${conversationId} ORDER BY m.created_at DESC LIMIT 100`;
       return NextResponse.json({
         conversation: { ...access[0], blocked: undefined, id: Number(access[0].id), other_id: Number(access[0].other_id), initiated_by: Number(access[0].initiated_by) },
         messages: messages.reverse().map((message) => ({ ...message, id: Number(message.id), sender_id: Number(message.sender_id), attachment_url: message.has_attachment ? `/api/contributor/messages?attachmentId=${Number(message.id)}` : null, has_attachment: undefined })),
@@ -132,17 +134,24 @@ export async function POST(request: NextRequest) {
       const blocked = await sql`SELECT 1 FROM contributor_user_blocks WHERE (blocker_id = ${access[0].participant_low} AND blocked_id = ${access[0].participant_high}) OR (blocker_id = ${access[0].participant_high} AND blocked_id = ${access[0].participant_low}) LIMIT 1`;
       if (blocked.length) return NextResponse.json({ error: "This conversation is unavailable." }, { status: 403 });
       const recipientId = Number(access[0].participant_low) === session.userId ? Number(access[0].participant_high) : Number(access[0].participant_low);
+      let recipientOnline: boolean | undefined;
+      if (signalType === "invite") {
+        const presence = await sql`SELECT EXISTS (
+          SELECT 1 FROM contributor_presence WHERE user_id = ${recipientId} AND last_seen_at > NOW() - INTERVAL '30 seconds'
+        ) AS online`;
+        recipientOnline = Boolean(presence[0]?.online);
+      }
       const signalPayload = payload.signalPayload == null ? null : JSON.stringify(payload.signalPayload);
       if (signalPayload && signalPayload.length > 12000) return NextResponse.json({ error: "Voice call signal is too large." }, { status: 400 });
       await sql`INSERT INTO contributor_call_signals (conversation_id, call_id, sender_id, recipient_id, signal_type, payload)
         VALUES (${conversationId}, ${callId}, ${session.userId}, ${recipientId}, ${signalType}, ${signalPayload}::jsonb)`;
       if (signalType === "invite") await sql`DELETE FROM contributor_call_signals WHERE created_at < NOW() - INTERVAL '1 day'`;
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, ...(recipientOnline === undefined ? {} : { recipientOnline }) });
     }
     if (payload.action === "react") {
       const messageId = Number(payload.messageId);
       const emoji = typeof payload.emoji === "string" ? payload.emoji : "";
-      const allowedEmojis = ["❤️", "😂", "😮", "👏", "🔥", "👍", "🥹", "🎉"];
+      const allowedEmojis = ["❤️", "😂", "😮", "👏", "🔥", "👍", "🥹", "🎉", "😀", "😄", "😊", "😍", "😘", "😎", "🤔", "😭", "🙌", "🙏", "💯", "✨", "🤝", "☕", "🌈", "🚀", "🐈", "🌻", "💚", "💙", "💜", "🧡", "🥳", "😢", "🤗", "💪", "💐", "🎂", "🎊", "✅", "👀"];
       if (!Number.isSafeInteger(messageId) || messageId <= 0 || !allowedEmojis.includes(emoji)) return NextResponse.json({ error: "Choose a supported reaction." }, { status: 400 });
       const target = await sql`SELECT m.conversation_id, c.participant_low, c.participant_high FROM contributor_messages m JOIN contributor_conversations c ON c.id = m.conversation_id
         WHERE m.id = ${messageId} AND ${session.userId} IN (c.participant_low, c.participant_high) AND c.request_status = 'accepted' LIMIT 1`;
@@ -216,8 +225,9 @@ export async function POST(request: NextRequest) {
       }
       const body = typeof payload.body === "string" ? payload.body.trim() : "";
       if (!body || body.length > 2000) return NextResponse.json({ error: "Edited messages must contain 1 to 2,000 characters." }, { status: 400 });
-      const updated = await sql`UPDATE contributor_messages SET body = ${body}, edited_at = NOW() WHERE id = ${messageId} AND sender_id = ${session.userId} RETURNING id, sender_id, body, attachment_url, attachment_type, attachment_name, created_at, edited_at, read_at`;
-      return NextResponse.json({ ok: true, message: { ...updated[0], id: Number(updated[0].id), sender_id: Number(updated[0].sender_id), attachment_url: updated[0].attachment_url ? `/api/contributor/messages?attachmentId=${Number(updated[0].id)}` : null } });
+      const updated = await sql`UPDATE contributor_messages SET body = ${body}, edited_at = NOW() WHERE id = ${messageId} AND sender_id = ${session.userId} RETURNING id, sender_id, body, attachment_url, attachment_type, attachment_name, created_at, edited_at, read_at, reply_to_id`;
+      const reply = updated[0].reply_to_id ? await sql`SELECT COALESCE(NULLIF(BTRIM(body), ''), attachment_name, 'Attachment') AS body, sender_id FROM contributor_messages WHERE id = ${updated[0].reply_to_id} LIMIT 1` : [];
+      return NextResponse.json({ ok: true, message: { ...updated[0], id: Number(updated[0].id), sender_id: Number(updated[0].sender_id), attachment_url: updated[0].attachment_url ? `/api/contributor/messages?attachmentId=${Number(updated[0].id)}` : null, reply_body: reply[0]?.body ?? null, reply_sender_id: reply[0]?.sender_id ?? null } });
     }
     if (payload.action === "send") {
       const conversationId = Number(payload.conversationId);
@@ -225,6 +235,7 @@ export async function POST(request: NextRequest) {
       const attachmentUrl = payload.attachmentUrl ?? null;
       const attachmentType = payload.attachmentType ?? null;
       const attachmentName = typeof payload.attachmentName === "string" ? payload.attachmentName.trim().slice(0, 120) : null;
+      const replyToId = payload.replyToId == null ? null : Number(payload.replyToId);
       if (!Number.isSafeInteger(conversationId) || conversationId <= 0) return NextResponse.json({ error: "Conversation not found." }, { status: 400 });
       if ((!body && !attachmentUrl) || body.length > 2000) return NextResponse.json({ error: "Write a message or attach a file. Messages can contain up to 2,000 characters." }, { status: 400 });
       if (attachmentUrl !== null) {
@@ -236,6 +247,11 @@ export async function POST(request: NextRequest) {
       const access = await sql`SELECT id, request_status, initiated_by, participant_low, participant_high FROM contributor_conversations WHERE id = ${conversationId} AND ${session.userId} IN (participant_low, participant_high) LIMIT 1`;
       if (!access.length) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
       const conversation = access[0];
+      if (replyToId !== null) {
+        if (!Number.isSafeInteger(replyToId) || replyToId <= 0) return NextResponse.json({ error: "That reply is no longer available." }, { status: 400 });
+        const replyTarget = await sql`SELECT id FROM contributor_messages WHERE id = ${replyToId} AND conversation_id = ${conversationId} LIMIT 1`;
+        if (!replyTarget.length) return NextResponse.json({ error: "That reply is no longer available in this chat." }, { status: 404 });
+      }
       if (conversation.request_status === "declined") return NextResponse.json({ error: "This message request is closed." }, { status: 403 });
       const blocked = await sql`SELECT 1 FROM contributor_user_blocks WHERE (blocker_id = ${conversation.participant_low} AND blocked_id = ${conversation.participant_high}) OR (blocker_id = ${conversation.participant_high} AND blocked_id = ${conversation.participant_low}) LIMIT 1`;
       if (blocked.length) return NextResponse.json({ error: "This conversation is unavailable." }, { status: 403 });
@@ -244,8 +260,9 @@ export async function POST(request: NextRequest) {
         const sent = await sql`SELECT 1 FROM contributor_messages WHERE conversation_id = ${conversationId} LIMIT 1`;
         if (sent.length) return NextResponse.json({ error: "Your message request has been sent. Wait for them to accept before sending another message." }, { status: 403 });
       }
-      const rows = await sql`INSERT INTO contributor_messages (conversation_id, sender_id, body, attachment_url, attachment_type, attachment_name) VALUES (${conversationId}, ${session.userId}, ${body || " "}, ${attachmentUrl}, ${attachmentType}, ${attachmentName}) RETURNING id, sender_id, body, attachment_url, attachment_type, attachment_name, created_at, edited_at, read_at`;
-      return NextResponse.json({ ok: true, message: { ...rows[0], id: Number(rows[0].id), sender_id: Number(rows[0].sender_id), attachment_url: rows[0].attachment_url ? `/api/contributor/messages?attachmentId=${Number(rows[0].id)}` : null } }, { status: 201 });
+      const rows = await sql`INSERT INTO contributor_messages (conversation_id, sender_id, body, attachment_url, attachment_type, attachment_name, reply_to_id) VALUES (${conversationId}, ${session.userId}, ${body || " "}, ${attachmentUrl}, ${attachmentType}, ${attachmentName}, ${replyToId}) RETURNING id, sender_id, body, attachment_url, attachment_type, attachment_name, created_at, edited_at, read_at, reply_to_id`;
+      const reply = replyToId === null ? null : await sql`SELECT body, sender_id FROM contributor_messages WHERE id = ${replyToId} LIMIT 1`;
+      return NextResponse.json({ ok: true, message: { ...rows[0], id: Number(rows[0].id), sender_id: Number(rows[0].sender_id), attachment_url: rows[0].attachment_url ? `/api/contributor/messages?attachmentId=${Number(rows[0].id)}` : null, reply_body: reply?.[0]?.body ?? null, reply_sender_id: reply?.[0]?.sender_id ?? null } }, { status: 201 });
     }
     return NextResponse.json({ error: "Unsupported message action." }, { status: 400 });
   } catch (error) {

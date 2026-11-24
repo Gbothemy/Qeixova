@@ -224,7 +224,7 @@ export default function ProfilePage() {
   };
 
   const shareProfilePost = async (postId: number) => {
-    const url = `${window.location.origin}/creator?post=${postId}`;
+    const url = `${window.location.origin}/post/${postId}`;
     try {
       if (navigator.share) await navigator.share({ title: "Qeixova post", url });
       else { await navigator.clipboard.writeText(url); setTimelineNotice("Post link copied."); }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPublicCreatorPost } from "@/lib/publicCreatorPost";
+import { getPublicCreatorPost, getPublicPostPreviewImageUrl } from "@/lib/publicCreatorPost";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -11,12 +11,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const post = await getPublicCreatorPost(getPostId(id)).catch(() => null);
   if (!post) return { title: "Post not found | Qeixova" };
-  const description = `${post.authorName} on Qeixova: ${post.body}`.slice(0, 300);
+  const description = (post.body.trim() || `${post.authorName} shared a post on Qeixova.`).replace(/\s+/g, " ").slice(0, 300);
+  const canonicalPath = `/post/${post.id}`;
+  const previewImage = getPublicPostPreviewImageUrl(post);
   return {
     title: `${post.authorName} on Qeixova`,
     description,
-    openGraph: { type: "article", title: `${post.authorName} on Qeixova`, description, siteName: "Qeixova", images: ["/qeixova-logo.png"] },
-    twitter: { card: "summary", title: `${post.authorName} on Qeixova`, description, images: ["/qeixova-logo.png"] },
+    alternates: { canonical: canonicalPath },
+    openGraph: { type: "article", url: canonicalPath, title: `${post.authorName} on Qeixova`, description, siteName: "Qeixova", images: [{ url: previewImage, alt: `Post by ${post.authorName}` }] },
+    twitter: { card: "summary_large_image", title: `${post.authorName} on Qeixova`, description, images: [previewImage] },
   };
 }
 

@@ -27,3 +27,13 @@ export const getPublicCreatorPost = cache(async (id: number) => {
     authorBio: String(post.author_bio || ""),
   };
 });
+
+export function getPublicPostPreviewImageUrl(post: { id: number; mediaUrl: string | null; mediaType: string | null; authorAvatarUrl: string | null }) {
+  const mediaImage = post.mediaType === "image" ? post.mediaUrl : null;
+  const source = mediaImage || post.authorAvatarUrl;
+  if (source && /^data:image\/(?:jpeg|png|webp);base64,/i.test(source)) return `/api/public/posts/${post.id}/image`;
+  if (source) {
+    try { if (new URL(source).protocol === "https:") return source; } catch {}
+  }
+  return "/qeixova-logo.png";
+}

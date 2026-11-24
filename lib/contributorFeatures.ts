@@ -197,6 +197,7 @@ export function ensureMessagingSchema() {
   await sql`ALTER TABLE contributor_messages ADD COLUMN IF NOT EXISTS attachment_type TEXT`;
   await sql`ALTER TABLE contributor_messages ADD COLUMN IF NOT EXISTS attachment_name TEXT`;
   await sql`ALTER TABLE contributor_messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE contributor_messages ADD COLUMN IF NOT EXISTS reply_to_id BIGINT REFERENCES contributor_messages(id) ON DELETE SET NULL`;
   await sql`CREATE INDEX IF NOT EXISTS contributor_messages_conversation_idx ON contributor_messages(conversation_id, created_at)`;
   await sql`CREATE TABLE IF NOT EXISTS contributor_message_reactions (
     message_id BIGINT NOT NULL REFERENCES contributor_messages(id) ON DELETE CASCADE,
@@ -216,6 +217,10 @@ export function ensureMessagingSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
   await sql`CREATE INDEX IF NOT EXISTS contributor_call_signals_recipient_idx ON contributor_call_signals(recipient_id, conversation_id, id)`;
+  await sql`CREATE TABLE IF NOT EXISTS contributor_presence (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
   })().catch((error) => { messagingSchemaReady = null; throw error; });
   return messagingSchemaReady;
 }
