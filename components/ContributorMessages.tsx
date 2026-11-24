@@ -121,10 +121,10 @@ export default function ContributorMessages() {
     if (!call || call.status !== "incoming") return;
     try {
       setCallError("");
+      changeVoiceCall({ ...call, status: "connecting" });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStreamRef.current = stream; acceptedCallRef.current = call.callId;
       createPeerConnection(call.conversationId, call.callId, stream);
-      changeVoiceCall({ ...call, status: "connecting" });
       await processIncomingOffer(call.conversationId, call.callId);
     } catch (error) { setCallError(error instanceof Error ? error.message : "Microphone access is unavailable."); await sendCallSignal(call.conversationId, call.callId, "decline").catch(() => {}); teardownVoiceCall(); }
   }, [changeVoiceCall, createPeerConnection, processIncomingOffer, sendCallSignal, teardownVoiceCall]);
@@ -272,7 +272,13 @@ export default function ContributorMessages() {
           if (peerConnectionRef.current?.remoteDescription) void peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
           else pendingIceRef.current.push(candidate);
         } else if (event.signal_type === "decline" || event.signal_type === "end") {
-          if (callStateRef.current?.callId === callId) teardownVoiceCall();
+          const currentCall = callStateRef.current;
+          if (currentCall?.callId === callId) {
+            if (event.signal_type === "decline") setCallError("Your call was declined.");
+            else if (currentCall.status === "incoming") setCallError("Missed voice call.");
+            else if (currentCall.status === "calling") setCallError("The call ended before it connected.");
+            teardownVoiceCall();
+          }
         }
       }
     };

@@ -3935,6 +3935,35 @@ input[type="number"] {
 .page-body.messagesPage .messageReactionPicker { position:absolute; z-index:20; bottom:25px; left:0; display:grid; grid-template-columns:repeat(8,32px); gap:2px; padding:6px; border:1px solid var(--border); border-radius:12px; background:var(--bg); box-shadow:0 8px 24px #14251b25; }
 .page-body.messagesPage .messageReactionPicker button { width:30px; height:30px; border:0; border-radius:7px; background:transparent; font-size:17px; cursor:pointer; }
 .page-body.messagesPage .messageReactionPicker button:hover { background:var(--card-bg); }
+
+/* Keep liked posts visibly red through the feed's generic hover styles. */
+body .creatorPostActions > button.liked,
+body .creatorPostActions > button.liked:hover,
+body .creatorPostActions > button.liked:active,
+body .bcPostActions > button.liked,
+body .bcPostActions > button.liked:hover,
+body .bcPostActions > button.liked:active,
+body .profileSocial .profilePostActions > button.isLiked,
+body .profileSocial .profilePostActions > button.isLiked:hover,
+body .profileSocial .profilePostActions > button.isLiked:active { color:#e11d48 !important; }
+
+/* Tighter, calmer mobile chat chrome and compact audio bubbles. */
+.page-body.messagesPage .threadHeader > div > small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .messageBubble:has(.messageVoiceNote) { width:fit-content; max-width:min(300px,80vw); padding:8px 11px; }
+.page-body.messagesPage .messageVoiceNote { width:min(224px,66vw); height:38px; margin-top:2px; border-radius:999px; }
+.page-body.messagesPage .messageReactionWrap { margin-top:0; }
+.page-body.messagesPage .messageReactionWrap .addMessageReaction { height:18px; }
+@media (max-width:560px) {
+  .page-body.messagesPage .threadHeader { gap:6px; min-height:62px; padding:8px 9px; }
+  .page-body.messagesPage .threadHeader > div { gap:3px; }
+  .page-body.messagesPage .threadHeader > div > strong { font-size:12px; }
+  .page-body.messagesPage .threadHeader .voiceCallButton { flex-basis:32px; width:32px; height:32px; }
+  .page-body.messagesPage .threadSearchToggle { flex:0 0 32px; width:32px; min-height:32px; }
+  .page-body.messagesPage .threadDetailsToggle { min-height:32px; padding:0 8px; font-size:10px; }
+  .page-body.messagesPage .threadMore { flex:0 0 28px; width:28px; }
+  .page-body.messagesPage .threadMessages { gap:9px; padding:12px 11px; }
+  .page-body.messagesPage .messageRow.mine .messageBubble { max-width:min(84%,440px); }
+}
 .page-body.messagesPage .voiceNoteButton { display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border:0; border-radius:50%; background:var(--bg); color:var(--text); font-size:16px; cursor:pointer; }
 .page-body.messagesPage .voiceNoteButton.recording { background:#ffe9e8; color:#bd3438; animation:voicePulse 1s ease-in-out infinite alternate; }
 .page-body.messagesPage .voiceNoteButton:disabled { opacity:.45; cursor:not-allowed; }
