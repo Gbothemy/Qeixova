@@ -205,7 +205,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
     if (action === "toggle_like") {
-      if (Number(post[0].user_id) === session.userId) return NextResponse.json({ error: "You cannot like your own post." }, { status: 400 });
       const existing = await sql`SELECT 1 FROM creator_post_likes WHERE post_id = ${postId} AND user_id = ${session.userId} LIMIT 1`;
       if (existing.length) await sql`DELETE FROM creator_post_likes WHERE post_id = ${postId} AND user_id = ${session.userId}`;
       else {

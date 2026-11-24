@@ -143,15 +143,18 @@ export default function CreatorStudio() {
   }, [posts]);
 
   const action = async (payload: Record<string, unknown>, key: string) => {
+    const likePostId = payload.action === "toggle_like" ? Number(payload.postId) : null;
+    const previousLike = likePostId == null ? null : posts.find((post) => post.id === likePostId);
+    if (previousLike) setPosts((current) => current.map((post) => post.id === likePostId ? { ...post, liked: !previousLike.liked, like_count: Math.max(0, post.like_count + (previousLike.liked ? -1 : 1)) } : post));
     setBusy(key); setError(""); setNotice("");
     const response = await fetch("/api/contributor/creator", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).catch(() => null);
     const data = response ? await readJson(response) : {};
     setBusy(null);
-    if (!response?.ok) { setError(data.error || "That action could not be completed. Please try again."); return false; }
+    if (!response?.ok) { if (previousLike) setPosts((current) => current.map((post) => post.id === likePostId ? previousLike : post)); setError(data.error || "That action could not be completed. Please try again."); return false; }
     if (payload.action === "publish") {
       await load();
     } else if (payload.action === "toggle_like") {
-      setPosts((current) => current.map((post) => post.id === Number(payload.postId) ? { ...post, liked: Boolean(data.liked), like_count: Math.max(0, post.like_count + (data.liked ? 1 : -1)) } : post));
+      setPosts((current) => current.map((post) => post.id === Number(payload.postId) ? { ...post, liked: Boolean(data.liked), like_count: Math.max(0, (previousLike?.like_count ?? post.like_count) + (data.liked ? 1 : 0) - (previousLike?.liked ? 1 : 0)) } : post));
     } else if (payload.action === "toggle_repost") {
       setPosts((current) => current.map((post) => post.id === Number(payload.postId) ? { ...post, reposted: Boolean(data.active), repost_count: Math.max(0, post.repost_count + (data.active ? 1 : -1)) } : post));
     } else if (payload.action === "toggle_bookmark") {

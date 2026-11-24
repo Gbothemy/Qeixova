@@ -187,18 +187,21 @@ export default function ProfilePage() {
     if (!wasOpen && !commentsByPost[postId]) void loadPostComments(postId);
   };
 
-  const sendPostAction = async (action: "comment" | "toggle_repost" | "toggle_bookmark", postId: number, body?: string) => {
+  const sendPostAction = async (action: "comment" | "toggle_like" | "toggle_repost" | "toggle_bookmark", postId: number, body?: string) => {
+    const previousLike = action === "toggle_like" ? profile?.creator_posts.find(post => post.id === postId) : undefined;
+    if (previousLike) setProfile(current => current ? { ...current, creator_posts: current.creator_posts.map(post => post.id === postId ? { ...post, liked: !previousLike.liked, like_count: Math.max(0, previousLike.like_count + (previousLike.liked ? -1 : 1)) } : post) } : current);
     setPostBusy(`${action}:${postId}`);
     setTimelineNotice("");
     const response = await fetch("/api/contributor/creator", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, postId, ...(body ? { body } : {}) }) }).catch(() => null);
     const data = response ? await response.json().catch(() => ({})) : {};
     setPostBusy(null);
-    if (!response?.ok) { setTimelineNotice(data.error || "That action could not be completed. Please try again."); return false; }
+    if (!response?.ok) { if (previousLike) setProfile(current => current ? { ...current, creator_posts: current.creator_posts.map(post => post.id === postId ? previousLike : post) } : current); setTimelineNotice(data.error || "That action could not be completed. Please try again."); return false; }
     setProfile(current => {
       if (!current) return current;
       const targetPost = current.creator_posts.find(post => post.id === postId);
       const updated = { ...current, creator_posts: current.creator_posts.map(post => {
         if (post.id !== postId) return post;
+        if (action === "toggle_like") return { ...post, liked: Boolean(data.liked), like_count: Math.max(0, (previousLike?.like_count ?? post.like_count) + (data.liked ? 1 : 0) - (previousLike?.liked ? 1 : 0)) };
         if (action === "toggle_repost") return { ...post, reposted: Boolean(data.active), repost_count: Math.max(0, post.repost_count + (data.active ? 1 : -1)) };
         if (action === "toggle_bookmark") return { ...post, bookmarked: Boolean(data.active) };
         return { ...post, comment_count: post.comment_count + 1 };
@@ -286,7 +289,7 @@ export default function ProfilePage() {
               <div className="profilePostActions" aria-label="Post actions">
                 <button type="button" aria-label={`Reply to post, ${post.comment_count} replies`} aria-expanded={openComments.has(post.id)} onClick={() => togglePostComments(post.id)}><ProfileActionIcon name="reply" /><span>{post.comment_count.toLocaleString()}</span></button>
                 <button type="button" aria-label={post.reposted ? "Undo repost" : "Repost"} aria-pressed={post.reposted} disabled={postBusy === `toggle_repost:${post.id}`} className={post.reposted ? "isReposted" : ""} onClick={() => void sendPostAction("toggle_repost", post.id)}><ProfileActionIcon name="repost" /><span>{post.repost_count.toLocaleString()}</span></button>
-                <span className="profilePostLikes" title="Likes on your post"><ProfileActionIcon name="like" active={post.liked} /><span>{post.like_count.toLocaleString()}</span></span>
+                <button type="button" aria-label={post.liked ? "Unlike your post" : "Like your post"} aria-pressed={post.liked} disabled={postBusy === `toggle_like:${post.id}`} className={post.liked ? "isLiked" : ""} onClick={() => void sendPostAction("toggle_like", post.id)}><ProfileActionIcon name="like" active={post.liked} /><span>{post.like_count.toLocaleString()}</span></button>
                 <span className="profilePostViews" title="Post views"><ProfileActionIcon name="views" /><span>{post.view_count.toLocaleString()}</span></span>
                 <button type="button" aria-label={post.bookmarked ? "Remove bookmark" : "Bookmark post"} aria-pressed={post.bookmarked} disabled={postBusy === `toggle_bookmark:${post.id}`} className={post.bookmarked ? "isBookmarked" : ""} onClick={() => void sendPostAction("toggle_bookmark", post.id)}><ProfileActionIcon name="bookmark" active={post.bookmarked} /></button>
                 <button type="button" aria-label="Share post" onClick={() => void shareProfilePost(post.id)}><ProfileActionIcon name="share" /></button>

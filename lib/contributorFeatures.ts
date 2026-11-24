@@ -193,7 +193,29 @@ export function ensureMessagingSchema() {
       read_at TIMESTAMPTZ
     )
   `;
+  await sql`ALTER TABLE contributor_messages ADD COLUMN IF NOT EXISTS attachment_url TEXT`;
+  await sql`ALTER TABLE contributor_messages ADD COLUMN IF NOT EXISTS attachment_type TEXT`;
+  await sql`ALTER TABLE contributor_messages ADD COLUMN IF NOT EXISTS attachment_name TEXT`;
+  await sql`ALTER TABLE contributor_messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ`;
   await sql`CREATE INDEX IF NOT EXISTS contributor_messages_conversation_idx ON contributor_messages(conversation_id, created_at)`;
+  await sql`CREATE TABLE IF NOT EXISTS contributor_message_reactions (
+    message_id BIGINT NOT NULL REFERENCES contributor_messages(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    emoji TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (message_id, user_id, emoji)
+  )`;
+  await sql`CREATE TABLE IF NOT EXISTS contributor_call_signals (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT NOT NULL REFERENCES contributor_conversations(id) ON DELETE CASCADE,
+    call_id TEXT NOT NULL,
+    sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    recipient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    signal_type TEXT NOT NULL CHECK (signal_type IN ('invite', 'offer', 'answer', 'ice', 'decline', 'end')),
+    payload JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  await sql`CREATE INDEX IF NOT EXISTS contributor_call_signals_recipient_idx ON contributor_call_signals(recipient_id, conversation_id, id)`;
   })().catch((error) => { messagingSchemaReady = null; throw error; });
   return messagingSchemaReady;
 }

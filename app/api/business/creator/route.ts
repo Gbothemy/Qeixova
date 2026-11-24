@@ -98,9 +98,7 @@ export async function POST(request: NextRequest) {
       if (!Number.isSafeInteger(postId) || postId <= 0) return NextResponse.json({ error: "Post not found." }, { status: 400 });
       const post = await sql`SELECT id, user_id, business_id FROM creator_posts WHERE id = ${postId} LIMIT 1`;
       if (!post.length) return NextResponse.json({ error: "Post not found." }, { status: 404 });
-      const ownPost = Number(post[0].business_id) === session.businessId;
       if (action === "toggle_like" || action === "toggle_repost" || action === "toggle_bookmark") {
-        if (ownPost && action === "toggle_like") return NextResponse.json({ error: "You cannot like your own post." }, { status: 400 });
         const table = action === "toggle_like" ? "like" : action === "toggle_repost" ? "repost" : "bookmark";
         let existing: unknown[];
         if (table === "like") existing = await sql`SELECT 1 FROM creator_post_likes WHERE post_id = ${postId} AND business_id = ${session.businessId} LIMIT 1`;

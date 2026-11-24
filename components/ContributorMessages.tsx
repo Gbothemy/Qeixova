@@ -8,7 +8,8 @@ import PremiumBadge from "@/components/PremiumBadge";
 
 type Conversation = { id: number; other_id: number; other_name: string; other_avatar_url: string | null; other_is_premium?: boolean; last_message: string | null; last_message_at: string | null; unread_count: number; request_status: "pending" | "accepted"; initiated_by: number };
 type Person = { id: number; full_name: string; avatar_url: string | null; is_premium?: boolean };
-type Message = { id: number; sender_id: number; body: string; created_at: string; read_at: string | null };
+type Message = { id: number; sender_id: number; body: string; attachment_url?: string | null; attachment_type?: "image" | "pdf" | "audio" | null; attachment_name?: string | null; reactions?: { emoji: string; count: number; reacted: boolean }[]; created_at: string; edited_at?: string | null; read_at: string | null };
+type VoiceCall = { callId: string; conversationId: number; status: "incoming" | "calling" | "connecting" | "active" };
 
 async function readJson(response: Response) { return response.json().catch(() => ({})); }
 function initials(name: string) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "Q"; }
@@ -19,6 +20,9 @@ function shortTime(value: string | null) {
   return date.toDateString() === now.toDateString() ? date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 function fullTime(value: string) { return new Date(value).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
+const QUICK_REACTIONS = ["❤️", "😂", "😮", "👏", "🔥", "👍", "🥹", "🎉"];
+const CHAT_THEMES = ["blue", "mint", "violet", "rose", "sunset"] as const;
+type ChatTheme = (typeof CHAT_THEMES)[number];
 
 export default function ContributorMessages() {
   const { user, loading: authLoading } = useAuth();
@@ -28,21 +32,154 @@ export default function ContributorMessages() {
   const [people, setPeople] = useState<Person[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [other, setOther] = useState<{ id: number; name: string; avatarUrl: string | null; isPremium: boolean; requestStatus: "pending" | "accepted"; initiatedBy: number } | null>(null);
+  const [other, setOther] = useState<{ id: number; name: string; avatarUrl: string | null; isPremium: boolean; requestStatus: "pending" | "accepted"; initiatedBy: number; bio: string | null; location: string | null; occupation: string | null; website: string | null; startedAt: string | null } | null>(null);
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
   const [showPeople, setShowPeople] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showThreadMenu, setShowThreadMenu] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [chatTheme, setChatTheme] = useState<ChatTheme>("blue");
+  const [showMessageSearch, setShowMessageSearch] = useState(false);
+  const [messageSearch, setMessageSearch] = useState("");
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [attachment, setAttachment] = useState<{ dataUrl: string; name: string; type: "image" | "pdf" | "audio" } | null>(null);
+  const [recordingVoiceNote, setRecordingVoiceNote] = useState(false);
+  const [reactionMenuMessageId, setReactionMenuMessageId] = useState<number | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingChunksRef = useRef<BlobPart[]>([]);
+  const recordingTimerRef = useRef<number | null>(null);
+  const discardRecordingRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [threadLoading, setThreadLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [messageActionBusy, setMessageActionBusy] = useState<number | null>(null);
+  const [voiceCall, setVoiceCall] = useState<VoiceCall | null>(null);
+  const [callError, setCallError] = useState("");
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const callStateRef = useRef<VoiceCall | null>(null);
+  const acceptedCallRef = useRef<string | null>(null);
+  const pendingOfferRef = useRef<{ callId: string; sdp: RTCSessionDescriptionInit } | null>(null);
+  const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
+  const lastSignalIdRef = useRef(0);
+  const callTimeoutRef = useRef<number | null>(null);
   const [error, setError] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const stickToLatestRef = useRef(true);
   const handledDeepLink = useRef(false);
   const selectedRef = useRef<number | null>(null);
   selectedRef.current = selected;
+
+  const changeVoiceCall = useCallback((value: VoiceCall | null) => { callStateRef.current = value; setVoiceCall(value); }, []);
+  const sendCallSignal = useCallback(async (conversationId: number, callId: string, signalType: string, signalPayload?: unknown) => {
+    const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "call_signal", conversationId, callId, signalType, signalPayload }) }).catch(() => null);
+    const data = response ? await readJson(response) : {};
+    if (!response?.ok) throw new Error(data.error || "The voice call could not connect.");
+  }, []);
+  const teardownVoiceCall = useCallback(() => {
+    peerConnectionRef.current?.close(); peerConnectionRef.current = null;
+    localStreamRef.current?.getTracks().forEach((track) => track.stop()); localStreamRef.current = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+    acceptedCallRef.current = null; pendingOfferRef.current = null; pendingIceRef.current = [];
+    if (callTimeoutRef.current !== null) window.clearTimeout(callTimeoutRef.current);
+    changeVoiceCall(null);
+  }, [changeVoiceCall]);
+  const endVoiceCall = useCallback(async (signalType: "end" | "decline" = "end") => {
+    const call = callStateRef.current;
+    if (call) await sendCallSignal(call.conversationId, call.callId, signalType).catch(() => {});
+    teardownVoiceCall();
+  }, [sendCallSignal, teardownVoiceCall]);
+  const createPeerConnection = useCallback((conversationId: number, callId: string, stream: MediaStream) => {
+    const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+    peerConnectionRef.current = peer;
+    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+    peer.onicecandidate = (event) => { if (event.candidate) void sendCallSignal(conversationId, callId, "ice", event.candidate.toJSON()).catch((error) => setCallError(error instanceof Error ? error.message : "Voice connection failed.")); };
+    peer.ontrack = (event) => { if (remoteAudioRef.current) { remoteAudioRef.current.srcObject = event.streams[0]; void remoteAudioRef.current.play().catch(() => {}); } changeVoiceCall({ callId, conversationId, status: "active" }); };
+    peer.onconnectionstatechange = () => { if (peer.connectionState === "failed") setCallError("Voice connection failed. Check your network and try again."); };
+    return peer;
+  }, [changeVoiceCall, sendCallSignal]);
+  const processIncomingOffer = useCallback(async (conversationId: number, callId: string) => {
+    const pending = pendingOfferRef.current;
+    const peer = peerConnectionRef.current;
+    if (!pending || pending.callId !== callId || acceptedCallRef.current !== callId || !peer || peer.remoteDescription) return;
+    try {
+      await peer.setRemoteDescription(new RTCSessionDescription(pending.sdp));
+      for (const candidate of pendingIceRef.current.splice(0)) await peer.addIceCandidate(new RTCIceCandidate(candidate));
+      const answer = await peer.createAnswer(); await peer.setLocalDescription(answer);
+      await sendCallSignal(conversationId, callId, "answer", peer.localDescription?.toJSON());
+      pendingOfferRef.current = null;
+      changeVoiceCall({ callId, conversationId, status: "connecting" });
+    } catch (error) { setCallError(error instanceof Error ? error.message : "Could not answer the voice call."); await sendCallSignal(conversationId, callId, "end").catch(() => {}); teardownVoiceCall(); }
+  }, [changeVoiceCall, sendCallSignal, teardownVoiceCall]);
+  const acceptVoiceCall = useCallback(async () => {
+    const call = callStateRef.current;
+    if (!call || call.status !== "incoming") return;
+    try {
+      setCallError("");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      localStreamRef.current = stream; acceptedCallRef.current = call.callId;
+      createPeerConnection(call.conversationId, call.callId, stream);
+      changeVoiceCall({ ...call, status: "connecting" });
+      await processIncomingOffer(call.conversationId, call.callId);
+    } catch (error) { setCallError(error instanceof Error ? error.message : "Microphone access is unavailable."); await sendCallSignal(call.conversationId, call.callId, "decline").catch(() => {}); teardownVoiceCall(); }
+  }, [changeVoiceCall, createPeerConnection, processIncomingOffer, sendCallSignal, teardownVoiceCall]);
+  const startVoiceCall = useCallback(async () => {
+    if (!selected || !other || other.requestStatus !== "accepted" || callStateRef.current) return;
+    const callId = crypto.randomUUID();
+    let inviteSent = false;
+    try {
+      setCallError("");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      localStreamRef.current = stream; acceptedCallRef.current = callId;
+      const peer = createPeerConnection(selected, callId, stream);
+      changeVoiceCall({ callId, conversationId: selected, status: "calling" });
+      await sendCallSignal(selected, callId, "invite");
+      inviteSent = true;
+      const offer = await peer.createOffer(); await peer.setLocalDescription(offer);
+      await sendCallSignal(selected, callId, "offer", peer.localDescription?.toJSON());
+      callTimeoutRef.current = window.setTimeout(() => { if (callStateRef.current?.callId === callId && callStateRef.current.status === "calling") { setCallError("No answer yet. You can try calling again."); void endVoiceCall(); } }, 45_000);
+    } catch (error) { setCallError(error instanceof Error ? error.message : "Could not start the voice call."); if (inviteSent) await sendCallSignal(selected, callId, "end").catch(() => {}); teardownVoiceCall(); }
+  }, [changeVoiceCall, createPeerConnection, endVoiceCall, other, selected, sendCallSignal, teardownVoiceCall]);
+  const toggleVoiceNoteRecording = async () => {
+    if (recorderRef.current?.state === "recording") { recorderRef.current.stop(); return; }
+    try {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") throw new Error("Voice recording is not supported by this browser.");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordingStreamRef.current = stream; recordingChunksRef.current = [];
+      discardRecordingRef.current = false;
+      const preferredMime = typeof MediaRecorder.isTypeSupported === "function" ? ["audio/webm;codecs=opus", "audio/mp4", "audio/ogg;codecs=opus"].find((mime) => MediaRecorder.isTypeSupported(mime)) : undefined;
+      const recorder = new MediaRecorder(stream, preferredMime ? { mimeType: preferredMime } : undefined);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => { if (event.data.size) recordingChunksRef.current.push(event.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(recordingChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        stream.getTracks().forEach((track) => track.stop()); recordingStreamRef.current = null; recorderRef.current = null;
+        if (recordingTimerRef.current !== null) window.clearTimeout(recordingTimerRef.current);
+        if (discardRecordingRef.current) { discardRecordingRef.current = false; return; }
+        setRecordingVoiceNote(false);
+        if (blob.size > 2 * 1024 * 1024) { setError("That voice note is over 2 MB. Record a shorter note."); return; }
+        const reader = new FileReader();
+        reader.onload = () => { if (typeof reader.result === "string") { const mime = blob.type.includes("mp4") ? "audio/mp4" : blob.type.includes("ogg") ? "audio/ogg" : "audio/webm"; const ext = mime === "audio/mp4" ? "m4a" : mime === "audio/ogg" ? "ogg" : "webm"; setAttachment({ dataUrl: `data:${mime};base64,${reader.result.split(",")[1]}`, name: `voice-note-${Date.now()}.${ext}`, type: "audio" }); setError(""); } };
+        reader.onerror = () => setError("That voice note could not be prepared.");
+        reader.readAsDataURL(blob);
+      };
+      recorder.start(); setRecordingVoiceNote(true); setError("");
+      recordingTimerRef.current = window.setTimeout(() => { if (recorder.state === "recording") recorder.stop(); }, 60_000);
+    } catch (error) { recordingStreamRef.current?.getTracks().forEach((track) => track.stop()); recordingStreamRef.current = null; recorderRef.current = null; setRecordingVoiceNote(false); setError(error instanceof Error ? error.message : "Microphone access is unavailable."); }
+  };
+  const addMessageReaction = async (messageId: number, emoji: string) => {
+    const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "react", messageId, emoji }) }).catch(() => null);
+    const data = response ? await readJson(response) : {};
+    if (!response?.ok) { setError(data.error || "That reaction could not be saved."); return; }
+    setMessages((current) => current.map((message) => message.id === messageId ? { ...message, reactions: data.reactions || [] } : message));
+    setReactionMenuMessageId(null);
+  };
+  const selectChatTheme = (theme: ChatTheme) => { setChatTheme(theme); if (selected) { try { window.localStorage.setItem(`qeixova-chat-theme:${selected}`, theme); } catch {} } };
 
   const loadInbox = useCallback(async () => {
     const response = await fetch("/api/contributor/messages", { cache: "no-store" }).catch(() => null);
@@ -61,7 +198,7 @@ export default function ContributorMessages() {
     const data = response ? await readJson(response) : {};
     if (!response?.ok) { setError(data.error || "This conversation could not be loaded."); setThreadLoading(false); return; }
     setMessages(Array.isArray(data.messages) ? data.messages : []);
-    setOther(data.conversation ? { id: Number(data.conversation.other_id), name: data.conversation.other_name, avatarUrl: data.conversation.other_avatar_url ?? null, isPremium: Boolean(data.conversation.other_is_premium), requestStatus: data.conversation.request_status, initiatedBy: Number(data.conversation.initiated_by) } : null);
+    setOther(data.conversation ? { id: Number(data.conversation.other_id), name: data.conversation.other_name, avatarUrl: data.conversation.other_avatar_url ?? null, isPremium: Boolean(data.conversation.other_is_premium), requestStatus: data.conversation.request_status, initiatedBy: Number(data.conversation.initiated_by), bio: data.conversation.other_bio ?? null, location: data.conversation.other_location ?? null, occupation: data.conversation.other_occupation ?? null, website: data.conversation.other_website ?? null, startedAt: data.conversation.conversation_created_at ?? null } : null);
     setThreadLoading(false);
     setConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, unread_count: 0 } : conversation));
   }, []);
@@ -98,6 +235,61 @@ export default function ContributorMessages() {
     }, 6000);
     return () => window.clearInterval(timer);
   }, [user, loadInbox, loadThread]);
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const pollSignals = async () => {
+      const response = await fetch(`/api/contributor/messages?callEvents=1&after=${lastSignalIdRef.current}`, { cache: "no-store" }).catch(() => null);
+      const data = response ? await readJson(response) : {};
+      if (!active || !response?.ok || !Array.isArray(data.events)) return;
+      for (const event of data.events) {
+        if (!active) break;
+        lastSignalIdRef.current = Math.max(lastSignalIdRef.current, Number(event.id) || 0);
+        const callId = String(event.call_id || "");
+        const conversationId = Number(event.conversation_id);
+        if (!callId || !Number.isSafeInteger(conversationId) || conversationId <= 0) continue;
+        if (event.signal_type === "invite") {
+          const recent = Date.now() - new Date(event.created_at).getTime() < 120_000;
+          if (recent && !callStateRef.current) { setSelected(conversationId); changeVoiceCall({ callId, conversationId, status: "incoming" }); }
+          else if (recent && callStateRef.current?.callId !== callId) void sendCallSignal(conversationId, callId, "decline").catch(() => {});
+        } else if (event.signal_type === "offer") {
+          if (event.payload?.sdp) {
+            pendingOfferRef.current = { callId, sdp: event.payload.sdp };
+            if (acceptedCallRef.current === callId) await processIncomingOffer(conversationId, callId);
+          }
+        } else if (event.signal_type === "answer") {
+          const peer = peerConnectionRef.current;
+          if (event.payload?.sdp && peer && callStateRef.current?.callId === callId && !peer.remoteDescription) {
+            try {
+              await peer.setRemoteDescription(new RTCSessionDescription(event.payload.sdp));
+              for (const candidate of pendingIceRef.current.splice(0)) await peer.addIceCandidate(new RTCIceCandidate(candidate));
+              changeVoiceCall({ callId, conversationId, status: "connecting" });
+            } catch (error) { setCallError(error instanceof Error ? error.message : "Could not connect the voice call."); teardownVoiceCall(); }
+          }
+        } else if (event.signal_type === "ice") {
+          if (!event.payload || callStateRef.current?.callId !== callId) continue;
+          const candidate = event.payload as RTCIceCandidateInit;
+          if (peerConnectionRef.current?.remoteDescription) void peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+          else pendingIceRef.current.push(candidate);
+        } else if (event.signal_type === "decline" || event.signal_type === "end") {
+          if (callStateRef.current?.callId === callId) teardownVoiceCall();
+        }
+      }
+    };
+    void pollSignals();
+    const timer = window.setInterval(() => void pollSignals(), 1400);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [changeVoiceCall, processIncomingOffer, sendCallSignal, teardownVoiceCall, user]);
+  useEffect(() => { setShowDetails(false); setShowMessageSearch(false); setMessageSearch(""); setEditingMessageId(null); setAttachment(null); setRecordingVoiceNote(false); if (attachmentInputRef.current) attachmentInputRef.current.value = ""; if (recorderRef.current?.state === "recording") { discardRecordingRef.current = true; recorderRef.current.stop(); } }, [selected]);
+  useEffect(() => () => {
+    const call = callStateRef.current;
+    if (call) void sendCallSignal(call.conversationId, call.callId, "end").catch(() => {});
+    peerConnectionRef.current?.close(); localStreamRef.current?.getTracks().forEach((track) => track.stop()); recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+    if (recorderRef.current?.state === "recording") { discardRecordingRef.current = true; recorderRef.current.stop(); }
+    if (recordingTimerRef.current !== null) window.clearTimeout(recordingTimerRef.current);
+    if (callTimeoutRef.current !== null) window.clearTimeout(callTimeoutRef.current);
+  }, [sendCallSignal]);
+  useEffect(() => { if (!selected) return; try { const saved = window.localStorage.getItem(`qeixova-chat-theme:${selected}`); setChatTheme(CHAT_THEMES.includes(saved as ChatTheme) ? saved as ChatTheme : "blue"); } catch { setChatTheme("blue"); } }, [selected]);
   useEffect(() => { if (selected) stickToLatestRef.current = true; if (stickToLatestRef.current) endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages, selected]);
 
   const filteredPeople = useMemo(() => {
@@ -112,15 +304,47 @@ export default function ContributorMessages() {
   const sendMessage = async (event: FormEvent) => {
     event.preventDefault();
     const body = draft.trim();
-    if (!selected || !body || sending) return;
+    if (!selected || (!body && !attachment) || sending) return;
     setSending(true); setError("");
-    const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", conversationId: selected, body }) }).catch(() => null);
+    const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", conversationId: selected, body, ...(attachment ? { attachmentUrl: attachment.dataUrl, attachmentType: attachment.type, attachmentName: attachment.name } : {}) }) }).catch(() => null);
     const data = response ? await readJson(response) : {};
     setSending(false);
     if (!response?.ok) { setError(data.error || "Your message could not be sent. Try again."); return; }
     setDraft("");
+    setAttachment(null);
+    if (attachmentInputRef.current) attachmentInputRef.current.value = "";
     setMessages((current) => [...current, data.message]);
     void loadInbox();
+  };
+
+  const chooseAttachment = (file?: File) => {
+    if (!file) return;
+    const type = file.type.startsWith("image/") && ["image/jpeg", "image/png", "image/webp"].includes(file.type) ? "image" : file.type === "application/pdf" ? "pdf" : null;
+    if (!type || file.size > 2 * 1024 * 1024) { if (attachmentInputRef.current) attachmentInputRef.current.value = ""; setError("Attach a JPG, PNG, WebP image or PDF smaller than 2 MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => { if (typeof reader.result === "string") { setAttachment({ dataUrl: reader.result, name: file.name, type }); setError(""); } };
+    reader.onerror = () => setError("That attachment could not be read. Try another file.");
+    reader.readAsDataURL(file);
+  };
+
+  const updateMessage = async (messageId: number, action: "edit" | "delete", body?: string) => {
+    if (messageActionBusy !== null) return;
+    const oldMessage = messages.find((message) => message.id === messageId);
+    if (!oldMessage) return;
+    setMessageActionBusy(messageId);
+    if (action === "delete") setMessages((current) => current.filter((message) => message.id !== messageId));
+    const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, messageId, body }) }).catch(() => null);
+    const data = response ? await readJson(response) : {};
+    if (!response?.ok) {
+      if (action === "delete") setMessages((current) => [...current, oldMessage].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+      setMessageActionBusy(null);
+      setError(data.error || "This message could not be updated.");
+      return;
+    }
+    if (action === "edit" && data.message) setMessages((current) => current.map((message) => message.id === messageId ? data.message : message));
+    void loadInbox();
+    setEditingMessageId(null);
+    setMessageActionBusy(null);
   };
 
   const respondToRequest = async (action: "accept" | "ignore" | "block") => {
@@ -136,6 +360,7 @@ export default function ContributorMessages() {
 
   const blockCurrentConversation = async () => {
     if (!selected) return;
+    if (callStateRef.current) await endVoiceCall();
     const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "block", conversationId: selected }) }).catch(() => null);
     const data = response ? await readJson(response) : {};
     if (!response?.ok) { setError(data.error || "This contributor could not be blocked."); return; }
@@ -145,13 +370,14 @@ export default function ContributorMessages() {
 
   if (authLoading || loading) return <ContributorLoading label="Loading messages" detail="Opening your contributor inbox." />;
 
-  const activeConversation = conversations.find((conversation) => conversation.id === selected);
-  const activeRequest = requests.find((conversation) => conversation.id === selected);
   const isIncomingRequest = other?.requestStatus === "pending" && other.initiatedBy !== user?.id;
   const isOutgoingRequest = other?.requestStatus === "pending" && other.initiatedBy === user?.id;
   const visibleConversations = inboxView === "requests" ? requests : conversations;
   const filteredConversations = visibleConversations.filter((conversation) => !search.trim() || conversation.other_name.toLowerCase().includes(search.trim().toLowerCase()) || (conversation.last_message || "").toLowerCase().includes(search.trim().toLowerCase()));
   const suggestedPeople = inboxView === "chats" ? filteredPeople.slice(0, 8) : [];
+  const messageQuery = messageSearch.trim().toLowerCase();
+  const visibleMessages = messageQuery ? messages.filter((message) => `${message.body} ${message.attachment_name || ""}`.toLowerCase().includes(messageQuery)) : messages;
+  const messageMatchCount = visibleMessages.length;
 
   return (
     <main className="page-body messagesPage">
@@ -163,26 +389,29 @@ export default function ContributorMessages() {
           <label className="inboxSearch"><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search" aria-label="Search chats" /></label>
           <div className="inboxTabs" role="tablist" aria-label="Message inbox"><button type="button" role="tab" aria-selected={inboxView === "chats"} className={inboxView === "chats" ? "active" : ""} onClick={() => setInboxView("chats")}>Chats</button><button type="button" role="tab" aria-selected={inboxView === "requests"} className={inboxView === "requests" ? "active" : ""} onClick={() => setInboxView("requests")}>Requests{requests.length ? <b>{requests.length}</b> : null}</button></div>
           {showPeople ? <div className="peoplePicker"><label htmlFor="people-search">People you both follow</label><input id="people-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a mutual follow…" autoComplete="off" />
-            <div className="peopleResults">{filteredPeople.map((person) => <div className="peopleResult" key={person.id}><Link className="messageAvatar messageAvatarLink" href={`/profile/${person.id}`} aria-label={`Open ${person.full_name}'s profile`}>{person.avatar_url ? <img src={person.avatar_url} alt="" /> : initials(person.full_name)}</Link><button type="button" onClick={() => void startConversation(person)}><span><strong>{person.full_name}{person.is_premium ? <PremiumBadge /> : null}</strong><small>Contributor</small></span><b>›</b></button></div>)}{filteredPeople.length === 0 ? <p>{people.length ? "No more contributors found." : "No verified contributors to show yet."}</p> : null}</div>
+            <div className="peopleResults">{filteredPeople.map((person) => <div className="peopleResult" key={person.id}><Link className="messageAvatar messageAvatarLink" href={`/profile/${person.id}`} aria-label={`Open ${person.full_name}'s profile`}>{person.avatar_url ? <img src={person.avatar_url} alt="" /> : initials(person.full_name)}</Link><button type="button" disabled={Boolean(voiceCall)} onClick={() => void startConversation(person)}><span><strong>{person.full_name}{person.is_premium ? <PremiumBadge /> : null}</strong><small>Contributor</small></span><b>›</b></button></div>)}{filteredPeople.length === 0 ? <p>{people.length ? "No more contributors found." : "No verified contributors to show yet."}</p> : null}</div>
           </div> : null}
           <div className="conversationList">{filteredConversations.map((conversation) => <div key={conversation.id} className={`conversationItem${selected === conversation.id ? " selected" : ""}`}>
-            <Link className="messageAvatar messageAvatarLink" href={`/profile/${conversation.other_id}`} aria-label={`Open ${conversation.other_name}'s profile`}>{conversation.other_avatar_url ? <img src={conversation.other_avatar_url} alt="" /> : initials(conversation.other_name)}</Link><button type="button" className="conversationSelect" onClick={() => { setShowPeople(false); setSelected(conversation.id); }}><span className="conversationCopy"><strong>{conversation.other_name}{conversation.other_is_premium ? <PremiumBadge /> : null}</strong><small>{conversation.last_message || "Say hello to start chatting"}</small></span><span className="conversationMeta"><time>{shortTime(conversation.last_message_at)}</time>{Number(conversation.unread_count) > 0 ? <b>{conversation.unread_count}</b> : null}</span></button>
+            <Link className="messageAvatar messageAvatarLink" href={`/profile/${conversation.other_id}`} aria-label={`Open ${conversation.other_name}'s profile`}>{conversation.other_avatar_url ? <img src={conversation.other_avatar_url} alt="" /> : initials(conversation.other_name)}</Link><button type="button" className="conversationSelect" disabled={Boolean(voiceCall)} onClick={() => { setShowPeople(false); setSelected(conversation.id); }}><span className="conversationCopy"><strong>{conversation.other_name}{conversation.other_is_premium ? <PremiumBadge /> : null}</strong><small>{conversation.last_message || "Say hello to start chatting"}</small></span><span className="conversationMeta"><time>{shortTime(conversation.last_message_at)}</time>{Number(conversation.unread_count) > 0 ? <b>{conversation.unread_count}</b> : null}</span></button>
           </div>)}{filteredConversations.length === 0 && !showPeople ? <div className="inboxEmpty"><span>✉</span><strong>{inboxView === "requests" ? "No message requests" : "No conversations yet"}</strong><p>{inboxView === "requests" ? "Requests from contributors you do not follow back will appear here." : "Follow each other to start a chat, or message someone from one of their posts."}</p>{inboxView === "chats" ? <button type="button" onClick={() => setShowPeople(true)}>Find mutual follows</button> : null}</div> : null}
             {suggestedPeople.length ? <section className="suggestedChats"><h3>Suggested</h3>{suggestedPeople.map((person) => <div className="suggestedChat" key={person.id}><Link className="messageAvatar messageAvatarLink" href={`/profile/${person.id}`} aria-label={`Open ${person.full_name}'s profile`}>{person.avatar_url ? <img src={person.avatar_url} alt="" /> : initials(person.full_name)}</Link><span><strong>{person.full_name}{person.is_premium ? <PremiumBadge /> : null}</strong><small>You follow each other</small></span><button type="button" onClick={() => void startConversation(person)}>Chat</button></div>)}</section> : null}
           </div>
           <div className="inboxPrivacy"><span>◎</span> Private chats are for contributors only</div>
         </aside>
 
-        <section className={`messageThread${selected ? " isActive" : ""}`} aria-label="Conversation">
+        <section className={`messageThread theme-${chatTheme}${selected ? " isActive" : ""}`} aria-label="Conversation">
           {selected && other ? <>
-            <header className="threadHeader"><button type="button" className="threadBack" onClick={() => setSelected(null)} aria-label="Back to inbox">‹</button><Link className="messageAvatar messageAvatarLink" href={`/profile/${other.id}`} aria-label={`Open ${other.name}'s profile`}>{other.avatarUrl ? <img src={other.avatarUrl} alt="" /> : initials(other.name)}</Link><div><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong><small><svg className="threadLock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> Standard chat · not end-to-end encrypted</small></div><button type="button" className="threadMore" aria-label="Conversation options" aria-expanded={showThreadMenu} onClick={() => setShowThreadMenu((value) => !value)}>•••</button>{showThreadMenu ? <div className="threadOptions"><button type="button" onClick={() => void blockCurrentConversation()}>Block contributor</button></div> : null}</header>
-            <div className="threadMessages" onScroll={(event) => { const element = event.currentTarget; stickToLatestRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }}>{threadLoading ? <div className="threadLoading">Loading conversation…</div> : messages.length ? messages.map((message, index) => {
+            <header className="threadHeader"><button type="button" className="threadBack" disabled={Boolean(voiceCall)} onClick={() => setSelected(null)} aria-label="Back to inbox">‹</button><Link className="messageAvatar messageAvatarLink" href={`/profile/${other.id}`} aria-label={`Open ${other.name}'s profile`}>{other.avatarUrl ? <img src={other.avatarUrl} alt="" /> : initials(other.name)}</Link><div><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong><small><svg className="threadLock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> Standard chat · not end-to-end encrypted</small></div>{other.requestStatus === "accepted" ? <button type="button" className="voiceCallButton" disabled={Boolean(voiceCall)} onClick={() => void startVoiceCall()} aria-label="Start voice call">☎</button> : null}<button type="button" className="threadSearchToggle" aria-label={showMessageSearch ? "Close message search" : "Search messages"} aria-pressed={showMessageSearch} onClick={() => { setShowMessageSearch((value) => !value); setMessageSearch(""); }}>⌕</button><button type="button" className="threadDetailsToggle" aria-expanded={showDetails} onClick={() => setShowDetails((value) => !value)}>Details</button><button type="button" className="threadMore" aria-label="Conversation options" aria-expanded={showThreadMenu} onClick={() => setShowThreadMenu((value) => !value)}>•••</button>{showThreadMenu ? <div className="threadOptions"><button type="button" onClick={() => void blockCurrentConversation()}>Block contributor</button></div> : null}</header>
+            {showMessageSearch ? <div className="threadSearch"><input autoFocus value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Search recent messages…" aria-label="Search messages in this chat"/><span>{messageSearch.trim() ? `${messageMatchCount} matches` : "Search latest 100 messages"}</span></div> : null}
+            {showDetails ? <aside className="conversationDetails"><Link className="conversationDetailsAvatar" href={`/profile/${other.id}`}>{other.avatarUrl ? <img src={other.avatarUrl} alt=""/> : initials(other.name)}</Link><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong>{other.occupation ? <span>{other.occupation}</span> : null}{other.bio ? <p>{other.bio}</p> : null}<div>{other.location ? <span>⌖ {other.location}</span> : null}{other.website ? <a href={/^https?:\/\//i.test(other.website) ? other.website : `https://${other.website}`} target="_blank" rel="noreferrer">↗ {other.website}</a> : null}<Link href={`/profile/${other.id}`}>View profile</Link></div><small>Chat started {other.startedAt ? new Date(other.startedAt).toLocaleDateString([], { month: "long", year: "numeric" }) : "recently"} · Standard chat</small><div className="chatThemePicker"><span>Chat theme</span>{CHAT_THEMES.map((theme) => <button type="button" key={theme} className={`themeSwatch ${theme}${chatTheme === theme ? " selected" : ""}`} aria-label={`${theme} chat theme`} aria-pressed={chatTheme === theme} onClick={() => selectChatTheme(theme)}/>)}</div></aside> : null}
+            {voiceCall ? <div className="voiceCallPanel" role="status"><audio ref={remoteAudioRef} autoPlay aria-label="Voice call audio"/><span>{voiceCall.status === "incoming" ? `Incoming voice call from ${other.name}` : voiceCall.status === "calling" ? `Calling ${other.name}…` : voiceCall.status === "connecting" ? "Connecting voice call…" : `Voice call with ${other.name}`}</span>{voiceCall.status === "incoming" ? <><button type="button" className="answerCallButton" onClick={() => void acceptVoiceCall()}>Answer</button><button type="button" className="declineCallButton" onClick={() => void endVoiceCall("decline")}>Decline</button></> : <button type="button" className="declineCallButton" onClick={() => void endVoiceCall()}>End call</button>}</div> : callError ? <div className="voiceCallError" role="alert">{callError}<button type="button" onClick={() => setCallError("")} aria-label="Dismiss">×</button></div> : null}
+            <div className="threadMessages" onScroll={(event) => { const element = event.currentTarget; stickToLatestRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }}>{threadLoading ? <div className="threadLoading">Loading conversation…</div> : visibleMessages.length ? visibleMessages.map((message, index) => {
               const mine = Number(message.sender_id) === user?.id;
               const thisDay = new Date(message.created_at).toDateString();
               const previousDay = index > 0 ? new Date(messages[index - 1].created_at).toDateString() : "";
-              return <div className="messageGroup" key={message.id}>{thisDay !== previousDay ? <div className="messageDate">{new Date(message.created_at).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}</div> : null}<div className={`messageRow${mine ? " mine" : ""}`}><div className="messageBubble">{message.body}<time>{fullTime(message.created_at)}{mine && message.read_at ? " · Read" : ""}</time></div></div></div>;
-            }) : <div className="threadStart"><span>✦</span><strong>Start the conversation</strong><p>Send {other.name.split(" ")[0]}{other.isPremium ? <PremiumBadge /> : null} a friendly hello.</p></div>}<div ref={endRef} /></div>
-            {isIncomingRequest ? <div className="requestPanel"><strong>Message request</strong><p>{other.name}{other.isPremium ? <PremiumBadge /> : null} reached out from a post. Accept to continue chatting. They won’t know you read it until you accept.</p><div><button type="button" className="acceptRequest" onClick={() => void respondToRequest("accept")}>Accept</button><button type="button" onClick={() => void respondToRequest("ignore")}>Ignore</button><button type="button" className="blockRequest" onClick={() => void respondToRequest("block")}>Block</button></div></div> : isOutgoingRequest && messages.length > 0 ? <div className="requestPending">Message request sent · You can send more messages after they accept.</div> : <form className="messageComposer" onSubmit={sendMessage}><button type="button" className="emojiToggle" aria-label="Add emoji" aria-expanded={showEmoji} onClick={() => setShowEmoji((value) => !value)}>☺</button>{showEmoji ? <div className="emojiPicker">{["😀", "😊", "😂", "❤️", "👍", "🎉", "🙏", "✨"].map((emoji) => <button type="button" key={emoji} aria-label={`Add ${emoji}`} onClick={() => { setDraft((value) => `${value}${emoji}`); setShowEmoji(false); }}>{emoji}</button>)}</div> : null}<textarea value={draft} maxLength={2000} onChange={(event) => setDraft(event.target.value)} placeholder={isOutgoingRequest ? "Write your message request…" : "Unencrypted message"} aria-label="Write a message" /><button type="submit" className="sendMessageButton" disabled={sending || !draft.trim()} aria-label="Send message">{sending ? "…" : "↑"}</button></form>}
+              return <div className="messageGroup" key={message.id}>{thisDay !== previousDay ? <div className="messageDate">{new Date(message.created_at).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}</div> : null}<div className={`messageRow${mine ? " mine" : ""}`}><div className="messageBubble">{editingMessageId === message.id ? <div className="editMessageForm"><textarea value={editDraft} maxLength={2000} onChange={(event) => setEditDraft(event.target.value)}/><div><button type="button" onClick={() => setEditingMessageId(null)}>Cancel</button><button type="button" disabled={!editDraft.trim() || messageActionBusy === message.id} onClick={() => void updateMessage(message.id, "edit", editDraft)}>Save</button></div></div> : <>{message.body.trim() ? <p>{message.body}</p> : null}{message.attachment_url ? message.attachment_type === "image" ? <a className="messageAttachmentImage" href={message.attachment_url} target="_blank" rel="noreferrer"><img src={message.attachment_url} alt={message.attachment_name || "Message attachment"}/></a> : message.attachment_type === "audio" ? <audio className="messageVoiceNote" controls preload="metadata" src={message.attachment_url} aria-label="Voice note"/> : <a className="messageAttachmentFile" href={message.attachment_url} download={message.attachment_name || undefined} target="_blank" rel="noreferrer">📄 {message.attachment_name || "PDF attachment"}</a> : null}<time>{fullTime(message.created_at)}{message.edited_at ? " · Edited" : ""}{mine && message.read_at ? " · Read" : ""}</time>{mine ? <div className="messageActions">{message.body.trim() ? <button type="button" disabled={messageActionBusy === message.id} onClick={() => { setEditingMessageId(message.id); setEditDraft(message.body.trim()); }}>Edit</button> : null}<button type="button" disabled={messageActionBusy === message.id} onClick={() => void updateMessage(message.id, "delete")}>{messageActionBusy === message.id ? "…" : "Delete"}</button></div> : null}{message.reactions?.length ? <div className="messageReactionList">{message.reactions.map((reaction) => <button type="button" key={reaction.emoji} className={reaction.reacted ? "reacted" : ""} aria-pressed={reaction.reacted} aria-label={`${reaction.emoji} reaction, ${reaction.count}`} onClick={() => void addMessageReaction(message.id, reaction.emoji)}>{reaction.emoji} {reaction.count}</button>)}</div> : null}<div className="messageReactionWrap"><button type="button" className="addMessageReaction" aria-label="React to message" aria-expanded={reactionMenuMessageId === message.id} onClick={() => setReactionMenuMessageId((current) => current === message.id ? null : message.id)}>☺</button>{reactionMenuMessageId === message.id ? <div className="messageReactionPicker">{QUICK_REACTIONS.map((emoji) => <button type="button" key={emoji} aria-label={`React ${emoji}`} onClick={() => void addMessageReaction(message.id, emoji)}>{emoji}</button>)}</div> : null}</div></>}</div></div></div>;
+            }) : messageQuery ? <div className="threadStart"><strong>No messages match “{messageSearch}”</strong></div> : messages.length === 0 ? <div className="threadStart"><span>✦</span><strong>Start the conversation</strong><p>Send {other.name.split(" ")[0]}{other.isPremium ? <PremiumBadge /> : null} a friendly hello.</p></div> : null}<div ref={endRef} /></div>
+            {isIncomingRequest ? <div className="requestPanel"><strong>Message request</strong><p>{other.name}{other.isPremium ? <PremiumBadge /> : null} reached out from a post. Accept to continue chatting. They won’t know you read it until you accept.</p><div><button type="button" className="acceptRequest" onClick={() => void respondToRequest("accept")}>Accept</button><button type="button" onClick={() => void respondToRequest("ignore")}>Ignore</button><button type="button" className="blockRequest" onClick={() => void respondToRequest("block")}>Block</button></div></div> : isOutgoingRequest && messages.length > 0 ? <div className="requestPending">Message request sent · You can send more messages after they accept.</div> : <form className="messageComposer" onSubmit={sendMessage}><input ref={attachmentInputRef} className="messageAttachmentInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(event) => chooseAttachment(event.target.files?.[0])} aria-label="Choose an image or PDF"/><button type="button" className={`voiceNoteButton${recordingVoiceNote ? " recording" : ""}`} disabled={Boolean(attachment)} onClick={() => void toggleVoiceNoteRecording()} aria-label={recordingVoiceNote ? "Stop voice note recording" : "Record a voice note"}>{recordingVoiceNote ? "■" : "🎙"}</button><button type="button" className="attachMessageButton" disabled={recordingVoiceNote} onClick={() => attachmentInputRef.current?.click()} aria-label="Attach an image or PDF">＋</button><button type="button" className="emojiToggle" aria-label="Add emoji" aria-expanded={showEmoji} onClick={() => setShowEmoji((value) => !value)}>☺</button>{showEmoji ? <div className="emojiPicker">{["😀", "😄", "😊", "😂", "🥹", "😍", "😘", "😎", "🤔", "😮", "😭", "🙌", "👏", "❤️", "🧡", "💛", "💚", "💙", "💜", "🔥", "👍", "👎", "🙏", "✨", "🎉", "💯", "🤝", "☕", "🌈", "🚀", "🐈", "🌻"].map((emoji) => <button type="button" key={emoji} aria-label={`Add ${emoji}`} onClick={() => { setDraft((value) => `${value}${emoji}`); setShowEmoji(false); }}>{emoji}</button>)}</div> : null}<textarea value={draft} maxLength={2000} onChange={(event) => setDraft(event.target.value)} placeholder={recordingVoiceNote ? "Recording voice note… tap ■ to stop" : isOutgoingRequest ? "Write your message request…" : "Unencrypted message"} aria-label="Write a message" />{attachment ? <span className="attachmentPending">📎 {attachment.name}<button type="button" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ""; }} aria-label="Remove attachment">×</button></span> : null}<button type="submit" className="sendMessageButton" disabled={sending || recordingVoiceNote || (!draft.trim() && !attachment)} aria-label="Send message">{sending ? "…" : "↑"}</button></form>}
           </> : <div className="threadWelcome"><div className="welcomeIcon">✉</div><h2>Your conversations, together.</h2><p>Choose a contributor from your inbox, follow each other to connect, or message someone from their post.</p><button type="button" onClick={() => setShowPeople(true)}>＋ Message mutual follows</button></div>}
         </section>
       </section>
@@ -201,3 +430,4 @@ export default function ContributorMessages() {
     </main>
   );
 }
+
