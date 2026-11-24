@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         WHERE m.id = ${attachmentId} AND ${session.userId} IN (c.participant_low, c.participant_high) AND c.request_status <> 'declined'
           AND NOT EXISTS (SELECT 1 FROM contributor_user_blocks b WHERE (b.blocker_id = c.participant_low AND b.blocked_id = c.participant_high) OR (b.blocker_id = c.participant_high AND b.blocked_id = c.participant_low)) LIMIT 1`;
       const fileUrl = rows[0]?.attachment_url;
-      const match = typeof fileUrl === "string" ? fileUrl.match(/^data:(image\/(?:jpeg|png|webp)|application\/pdf|audio\/(?:webm|mp4|ogg));base64,([A-Za-z0-9+/=]+)$/) : null;
+      const match = typeof fileUrl === "string" ? fileUrl.match(/^data:(image\/(?:jpeg|png|webp)|video\/(?:mp4|webm|quicktime)|application\/pdf|audio\/(?:webm|mp4|ogg));base64,([A-Za-z0-9+/=]+)$/) : null;
       if (!match) return NextResponse.json({ error: "Attachment not found." }, { status: 404 });
       const bytes = Buffer.from(match[2], "base64");
       const fileName = encodeURIComponent(String(rows[0].attachment_name || "attachment").replace(/[\r\n]/g, ""));
@@ -240,9 +240,10 @@ export async function POST(request: NextRequest) {
       if ((!body && !attachmentUrl) || body.length > 2000) return NextResponse.json({ error: "Write a message or attach a file. Messages can contain up to 2,000 characters." }, { status: 400 });
       if (attachmentUrl !== null) {
         const validImage = attachmentType === "image" && typeof attachmentUrl === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(attachmentUrl);
+        const validVideo = attachmentType === "video" && typeof attachmentUrl === "string" && /^data:video\/(mp4|webm|quicktime);base64,[A-Za-z0-9+/=]+$/.test(attachmentUrl);
         const validPdf = attachmentType === "pdf" && typeof attachmentUrl === "string" && /^data:application\/pdf;base64,[A-Za-z0-9+/=]+$/.test(attachmentUrl);
         const validAudio = attachmentType === "audio" && typeof attachmentUrl === "string" && /^data:audio\/(webm|mp4|ogg);base64,[A-Za-z0-9+/=]+$/.test(attachmentUrl);
-        if ((!validImage && !validPdf && !validAudio) || attachmentUrl.length > 2_800_000 || !attachmentName) return NextResponse.json({ error: "Attach an image or PDF under 2 MB, or record a voice note." }, { status: 400 });
+        if ((!validImage && !validVideo && !validPdf && !validAudio) || attachmentUrl.length > 2_800_000 || !attachmentName) return NextResponse.json({ error: "Attach an image, video, or PDF up to 2 MB, or record a voice note." }, { status: 400 });
       }
       const access = await sql`SELECT id, request_status, initiated_by, participant_low, participant_high FROM contributor_conversations WHERE id = ${conversationId} AND ${session.userId} IN (participant_low, participant_high) LIMIT 1`;
       if (!access.length) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });

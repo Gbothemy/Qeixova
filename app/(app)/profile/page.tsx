@@ -34,6 +34,30 @@ function PremiumBadge() {
   return <svg className="profilePremiumBadge" viewBox="0 0 24 24" role="img" aria-label="Premium verified"><path d="M12 1.8 14.8 3l3-.1 1.2 2.7 2.5 1.7-.6 2.9.6 2.9-2.5 1.7-1.2 2.7-3-.1-2.8 1.2-2.8-1.2-3 .1L5 14.8l-2.5-1.7.6-2.9-.6-2.9L5 5.6 6.2 2.9l3 .1L12 1.8Z"/><path d="m8.1 11.9 2.4 2.4 5.5-5.5" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
 
+async function compressProfilePhoto(file: File): Promise<string> {
+  const image = await createImageBitmap(file);
+  try {
+    const scale = Math.min(1, 512 / Math.max(image.width, image.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Photo compression is unavailable in this browser.");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error("The photo could not be compressed.")), "image/jpeg", 0.82));
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("The photo could not be read."));
+      reader.onerror = () => reject(new Error("The photo could not be read."));
+      reader.readAsDataURL(blob);
+    });
+  } finally {
+    image.close();
+  }
+}
+
 function timeAgo(d: string) {
   const diff = Date.now() - new Date(d).getTime();
   const days = Math.floor(diff / 86400000);
@@ -103,18 +127,17 @@ function EditProfileModal({ profile, onClose, onSaved }: { profile: Profile; onC
 
   const uploadAvatar = async (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith("image/") || file.size > 1_200_000) { setMsg({ type: "error", text: "Choose an image smaller than 1.2 MB." }); return; }
+    if (!file.type.startsWith("image/")) { setMsg({ type: "error", text: "Choose a photo file." }); return; }
     setAvatarBusy(true); setMsg(null);
-    const reader = new FileReader();
-    reader.onerror = () => { setAvatarBusy(false); setMsg({ type: "error", text: "The image could not be read." }); };
-    reader.onload = async () => {
-      const response = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_avatar", avatar: reader.result }) }).catch(() => null);
+    try {
+      const compressed = await compressProfilePhoto(file);
+      const response = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_avatar", avatar: compressed }) }).catch(() => null);
       const result = response ? await response.json().catch(() => ({})) : {};
       if (response?.ok) { onSaved({ avatar_url: result.avatar_url }); announceProfileAvatarUpdate(result.avatar_url ?? null); setMsg({ type: "success", text: "Profile photo updated." }); }
       else setMsg({ type: "error", text: result.error || "The profile photo could not be saved." });
-      setAvatarBusy(false);
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      setMsg({ type: "error", text: error instanceof Error ? error.message : "The image could not be compressed." });
+    } finally { setAvatarBusy(false); }
   };
 
   const save = async () => {
@@ -131,7 +154,7 @@ function EditProfileModal({ profile, onClose, onSaved }: { profile: Profile; onC
       {msg && <Alert msg={msg} />}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
         {profile.avatar_url ? <img src={profile.avatar_url} alt="Your profile photo" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover" }} /> : <div aria-hidden="true" style={{ display: "grid", placeItems: "center", width: 56, height: 56, borderRadius: "50%", background: "#d9eee0", color: "#206a3f", fontWeight: 800 }}>{profile.full_name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</div>}
-        <div><label htmlFor="profile-avatar-upload" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, padding: "0 13px", border: "1px solid #ccd8cf", borderRadius: 10, cursor: avatarBusy ? "wait" : "pointer", fontSize: 13, fontWeight: 700 }}>{avatarBusy ? "Uploading…" : profile.avatar_url ? "Change photo" : "Upload profile photo"}</label><input id="profile-avatar-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={avatarBusy || !profile.is_premium} onChange={event => { void uploadAvatar(event.target.files?.[0]); event.currentTarget.value = ""; }} style={{ position: "absolute", width: 1, height: 1, opacity: 0 }} aria-label="Upload profile photo" />{!profile.is_premium ? <p style={{ marginTop: 5, fontSize: 11, color: "#6c7c8b" }}>Premium access is required to upload a profile photo.</p> : <p style={{ marginTop: 5, fontSize: 11, color: "#6c7c8b" }}>JPG, PNG, WebP or GIF · up to 1.2 MB</p>}</div>
+        <div><label htmlFor="profile-avatar-upload" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, padding: "0 13px", border: "1px solid #ccd8cf", borderRadius: 10, cursor: avatarBusy ? "wait" : "pointer", fontSize: 13, fontWeight: 700 }}>{avatarBusy ? "Compressing…" : profile.avatar_url ? "Change photo" : "Upload profile photo"}</label><input id="profile-avatar-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={avatarBusy || !profile.is_premium} onChange={event => { void uploadAvatar(event.target.files?.[0]); event.currentTarget.value = ""; }} style={{ position: "absolute", width: 1, height: 1, opacity: 0 }} aria-label="Upload profile photo" />{!profile.is_premium ? <p style={{ marginTop: 5, fontSize: 11, color: "#6c7c8b" }}>Premium access is required to upload a profile photo.</p> : <p style={{ marginTop: 5, fontSize: 11, color: "#6c7c8b" }}>Photos are automatically resized and compressed before upload.</p>}</div>
       </div>
       <Field label="Full Name" value={name} onChange={setName} placeholder="Your full name" />
       <div style={{ marginBottom: 14 }}><label htmlFor="profile-bio" style={{ fontSize: 11, color: "var(--qeixova-color-44-44-44)", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>Bio · {bio.length}/280</label><textarea id="profile-bio" value={bio} maxLength={280} onChange={event => setBio(event.target.value)} placeholder="What would you like people to know about you?" style={{ width: "100%", minHeight: 82, marginTop: 6, padding: "13px 14px", borderRadius: 12, border: "1.5px solid var(--qeixova-color-cc-cc-cc)", font: "inherit", resize: "vertical" }} /></div>

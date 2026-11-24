@@ -3891,6 +3891,7 @@ input[type="number"] {
 .page-body.messagesPage .messageBubble p { margin:0; }
 .page-body.messagesPage .messageAttachmentImage { display:block; max-width:min(58vw,360px); margin-top:5px; }
 .page-body.messagesPage .messageAttachmentImage img { display:block; max-width:100%; max-height:300px; border-radius:10px; object-fit:contain; }
+.page-body.messagesPage .messageAttachmentVideo { display:block; width:min(100%,360px); max-height:300px; margin-top:5px; border-radius:10px; background:#111; object-fit:contain; }
 .page-body.messagesPage .messageAttachmentFile { display:inline-flex; align-items:center; margin-top:5px; padding:8px 10px; border:1px solid var(--border); border-radius:9px; color:inherit; font-size:11px; text-decoration:none; }
 .page-body.messagesPage .messageAttachmentInput { display:none; }
 .page-body.messagesPage .attachMessageButton { display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border:0; border-radius:50%; background:var(--bg); color:var(--text); font-size:22px; cursor:pointer; }
