@@ -4547,6 +4547,13 @@ body .profileSocial .profilePostActions > button.isLiked:active { color:#e11d48 
 .page-body.messagesPage .messageReactionPicker.isExpanded { display:grid; grid-template-columns:repeat(8,30px); max-width:min(276px,92vw); border-radius:18px; }
 .page-body.messagesPage .messageReactionPicker.isExpanded .moreReactionsButton { grid-column:span 2; width:auto; border-radius:999px; }
 .page-body.messagesPage .messageReactionPicker.isExpanded .messageQuickActions { grid-column:1/-1; }
+.page-body.messagesPage .messageReactionPicker:not(.isExpanded) { width:max-content; max-width:min(290px,92vw); gap:1px; padding:4px 6px; border-radius:14px; }
+.page-body.messagesPage .messageReactionPicker:not(.isExpanded)>button { flex-basis:27px; width:27px; height:27px; font-size:17px; }
+.page-body.messagesPage .messageReactionPicker:not(.isExpanded) .messageQuickActions { gap:3px; margin-top:2px; padding-top:3px; }
+.page-body.messagesPage .messageReactionPicker .messageQuickActions button { height:22px; min-width:0; padding:0 5px; font-size:9px; }
+.page-body.messagesPage .messageReactionPicker.isExpanded { box-sizing:border-box; grid-template-columns:repeat(7,27px); width:min(210px,92vw); max-width:min(210px,92vw); gap:1px; padding:6px; border-radius:15px; }
+.page-body.messagesPage .messageReactionPicker.isExpanded>button { width:27px; height:27px; font-size:17px; }
+.page-body.messagesPage .messageReactionPicker.isExpanded .messageQuickActions { gap:3px; margin-top:2px; padding-top:3px; }
 .page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionWrap { top:auto; right:4px; bottom:calc(100% + 6px); left:auto; width:max-content; max-width:min(92vw,340px); max-height:none; margin:0; opacity:1; pointer-events:none; }
 .page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionWrap.isBelow { top:calc(100% + 6px); bottom:auto; }
 .page-body.messagesPage .messageBubble:has(.voiceNotePlayer) .messageReactionWrap.isLeft { left:4px; right:auto; }

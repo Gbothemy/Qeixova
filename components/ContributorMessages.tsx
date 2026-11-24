@@ -263,12 +263,12 @@ export default function ContributorMessages() {
     } catch (error) { recordingStreamRef.current?.getTracks().forEach((track) => track.stop()); recordingStreamRef.current = null; recorderRef.current = null; setRecordingVoiceNote(false); setError(error instanceof Error ? error.message : "Microphone access is unavailable."); }
   };
   const addMessageReaction = async (messageId: number, emoji: string) => {
+    setReactionMenuMessageId(null);
+    setShowMoreReactions(false);
     const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "react", messageId, emoji }) }).catch(() => null);
     const data = response ? await readJson(response) : {};
     if (!response?.ok) { setError(data.error || "That reaction could not be saved."); return; }
     setMessages((current) => current.map((message) => message.id === messageId ? { ...message, reactions: data.reactions || [] } : message));
-    setReactionMenuMessageId(null);
-    setShowMoreReactions(false);
   };
   const openReactionPicker = (messageId: number, bubble?: HTMLElement | null) => {
     const position = reactionPickerPosition(bubble || null, false);
@@ -319,6 +319,16 @@ export default function ContributorMessages() {
     setInboxView(data.requestStatus === "pending" ? "chats" : "chats");
   }, [loadInbox]);
   useEffect(() => { if (user) void loadInbox(); }, [user, loadInbox]);
+  useEffect(() => {
+    if (reactionMenuMessageId === null) return;
+    const dismissOutsidePicker = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest(".messageReactionPicker")) return;
+      setReactionMenuMessageId(null);
+      setShowMoreReactions(false);
+    };
+    document.addEventListener("pointerdown", dismissOutsidePicker);
+    return () => document.removeEventListener("pointerdown", dismissOutsidePicker);
+  }, [reactionMenuMessageId]);
   useEffect(() => {
     if (!user || loading || handledDeepLink.current) return;
     const params = new URLSearchParams(window.location.search);
