@@ -4672,9 +4672,10 @@ body .profileSocial .profilePostActions > button.isLiked:active { color:#e11d48 
 /* Keep the conversation controls visually consistent and make the overflow menu unmistakable. */
 .page-body.messagesPage .threadHeader .threadBack svg,
 .page-body.messagesPage .threadHeader .voiceCallButton svg,
+.page-body.messagesPage .threadHeader .videoCallButton svg,
 .page-body.messagesPage .threadHeader .threadSearchToggle svg,
-.page-body.messagesPage .threadHeader .threadMore svg { display:block; flex:0 0 auto; width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-.page-body.messagesPage .threadHeader .voiceCallButton svg { width:17px; height:17px; }
+.page-body.messagesPage .threadHeader .threadMore svg { display:block; flex:0 0 auto; width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.page-body.messagesPage .threadHeader .voiceCallButton svg { width:18px; height:18px; }
 .page-body.messagesPage .threadHeader .threadMore svg { width:18px; height:18px; }
 .page-body.messagesPage .threadHeader .threadMore svg circle { fill:currentColor; stroke:none; }
 .page-body.messagesPage .threadHeader .threadBack,
@@ -4687,3 +4688,39 @@ body .profileSocial .profilePostActions > button.isLiked:active { color:#e11d48 
 .page-body.messagesPage .threadHeader .threadSearchToggle:focus-visible,
 .page-body.messagesPage .threadHeader .threadDetailsToggle:focus-visible,
 .page-body.messagesPage .threadHeader .threadMore:focus-visible { outline:2px solid #28935a; outline-offset:2px; }
+
+.page-body.messagesPage .threadHeader .videoCallButton { position:relative; display:grid; flex:0 0 32px; place-items:center; width:32px; height:32px; padding:0; border:1px solid #dce8df; border-radius:50%; background:#f0f8f2; color:#25864e; text-decoration:none; cursor:pointer; }
+.page-body.messagesPage .threadHeader .videoCallButton svg { display:block; width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.page-body.messagesPage .threadHeader .videoCallButton:disabled { opacity:.5; cursor:default; }
+.page-body.messagesPage .threadHeader .videoCallLocked span { position:absolute; right:-3px; bottom:-3px; display:grid; place-items:center; width:13px; height:13px; border:1px solid #fff; border-radius:50%; background:#f2c45b; color:#68470c; font-size:9px; line-height:1; }
+.page-body.messagesPage .threadHeader .videoCallButton:focus-visible { outline:2px solid #28935a; outline-offset:2px; }
+.page-body.messagesPage .threadHeader .threadMenuWrap { position:relative; display:block; flex:0 0 auto; margin-left:auto; }
+.page-body.messagesPage .threadHeader .threadMenuWrap .threadMore { margin-left:0; }
+.page-body.messagesPage .threadHeader .threadOptions { position:absolute; z-index:30; top:calc(100% + 9px); right:0; display:flex; flex-direction:column; width:218px; max-height:min(70vh,420px); overflow:auto; padding:6px; border:1px solid #e7e9e7; border-radius:12px; background:#fff; color:#303632; box-shadow:0 12px 34px rgba(20,35,28,.17); }
+.page-body.messagesPage .threadHeader .threadOptions>a,
+.page-body.messagesPage .threadHeader .threadOptions>button { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:39px; padding:0 11px; border:0; border-radius:7px; background:transparent; color:inherit; font:inherit; font-size:12px; text-align:left; text-decoration:none; white-space:nowrap; cursor:pointer; }
+.page-body.messagesPage .threadHeader .threadOptions>a:hover,
+.page-body.messagesPage .threadHeader .threadOptions>button:hover { background:#f3f6f3; }
+.page-body.messagesPage .threadHeader .threadOptions>a:focus-visible,
+.page-body.messagesPage .threadHeader .threadOptions>button:focus-visible { outline:2px solid #28935a; outline-offset:-2px; }
+.page-body.messagesPage .threadHeader .threadOptions .threadMenuDivider { height:1px; margin:5px 6px; background:#e8ebe8; }
+.page-body.messagesPage .threadHeader .threadOptions>button.threadMenuDanger { color:#ad3935; }
+.page-body.messagesPage .threadHeader .threadThemeOptions { display:grid; gap:1px; margin:0 0 4px 9px; padding:3px 0 3px 7px; border-left:2px solid #e7eee8; }
+.page-body.messagesPage .threadHeader .threadThemeOptions>button { display:flex; align-items:center; justify-content:space-between; min-height:31px; padding:0 9px; border:0; border-radius:6px; background:transparent; color:#556158; font:inherit; font-size:11px; text-align:left; cursor:pointer; }
+.page-body.messagesPage .threadHeader .threadThemeOptions>button:hover,
+.page-body.messagesPage .threadHeader .threadThemeOptions>button.selected { background:#eff7f1; color:#25864e; }
+.page-body.messagesPage .threadHeader .threadMenuWrap:focus-within .threadMore { outline-color:#28935a; }
+.page-body.messagesPage .voiceNoteSpeed { flex:0 0 27px; width:27px; height:22px; padding:0; border:0; border-radius:6px; background:rgba(120,140,126,.12); color:#54655a; font-size:9px; font-weight:750; line-height:1; cursor:pointer; }
+.page-body.messagesPage .messageRow.mine .voiceNoteSpeed { background:rgba(255,255,255,.18); color:#fff; }
+.page-body.messagesPage .voiceNoteSpeed:focus-visible { outline:2px solid color-mix(in srgb,var(--chat-accent) 55%,transparent); outline-offset:2px; }
+.page-body.messagesPage .voiceCallCard:has(.videoCallStage) { width:min(100%,560px); }
+.page-body.messagesPage .videoCallStage { position:relative; display:grid; place-items:center; width:min(100%,500px); height:min(56vh,420px); min-height:220px; margin:0 0 18px; overflow:hidden; border-radius:20px; background:#17211b; }
+.page-body.messagesPage .videoCallStage>video:first-child { width:100%; height:100%; object-fit:cover; }
+.page-body.messagesPage .videoCallStage>video:nth-child(2) { position:absolute; right:12px; bottom:12px; width:clamp(84px,24%,140px); aspect-ratio:3/4; border:2px solid rgba(255,255,255,.85); border-radius:12px; background:#35433b; object-fit:cover; box-shadow:0 5px 18px rgba(0,0,0,.3); }
+.page-body.messagesPage .videoCallStage>span { position:absolute; top:12px; left:12px; padding:5px 8px; border-radius:99px; background:rgba(0,0,0,.5); color:#fff; font-size:10px; }
+@media (max-width:560px) {
+  .page-body.messagesPage .threadHeader .videoCallButton { flex-basis:30px; width:30px; height:30px; }
+  .page-body.messagesPage .threadHeader .videoCallButton svg { width:15px; height:15px; }
+  .page-body.messagesPage .voiceNoteSpeed { flex-basis:24px; width:24px; height:19px; font-size:8px; }
+  .page-body.messagesPage .videoCallStage { height:54vh; min-height:200px; border-radius:16px; }
+}

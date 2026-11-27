@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
         OR (${filter} = 'read' AND read_at IS NOT NULL)
       )
       AND (${category} = 'all'
-        OR (${category} = 'social' AND type = 'growth_activity')
+        OR (${category} = 'social' AND type IN ('growth_activity', 'message', 'missed_call'))
         OR (${category} = 'missions' AND type IN ('task_available', 'task_reminder', 'submission_received', 'submission_approved', 'submission_rejected'))
         OR (${category} = 'earnings' AND type IN ('reward_credited', 'withdrawal_update'))
         OR (${category} = 'account' AND type IN ('account_update', 'announcement'))

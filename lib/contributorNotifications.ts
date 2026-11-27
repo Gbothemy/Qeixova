@@ -10,7 +10,9 @@ export type ContributorNotificationType =
   | "withdrawal_update"
   | "account_update"
   | "announcement"
-  | "task_reminder";
+  | "task_reminder"
+  | "message"
+  | "missed_call";
 
 type CreateContributorNotificationInput = {
   userId: number;

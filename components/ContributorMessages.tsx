@@ -10,7 +10,7 @@ import PremiumBadge from "@/components/PremiumBadge";
 type Conversation = { id: number; other_id: number; other_name: string; other_avatar_url: string | null; other_is_premium?: boolean; last_message: string | null; last_message_at: string | null; unread_count: number; request_status: "pending" | "accepted"; initiated_by: number };
 type Person = { id: number; full_name: string; avatar_url: string | null; is_premium?: boolean };
 type Message = { id: number; sender_id: number; body: string; attachment_url?: string | null; attachment_type?: "image" | "video" | "pdf" | "audio" | null; attachment_name?: string | null; reply_to_id?: number | null; reply_body?: string | null; reply_sender_id?: number | null; reply_attachment_type?: "image" | "video" | "pdf" | "audio" | null; reply_attachment_url?: string | null; reactions?: { emoji: string; count: number; reacted: boolean }[]; created_at: string; edited_at?: string | null; read_at: string | null };
-type VoiceCall = { callId: string; conversationId: number; status: "incoming" | "checking" | "calling" | "ringing" | "connecting" | "active" };
+type VoiceCall = { callId: string; conversationId: number; media: "audio" | "video"; status: "incoming" | "checking" | "calling" | "ringing" | "connecting" | "active" };
 
 async function readJson(response: Response) { return response.json().catch(() => ({})); }
 function initials(name: string) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "Q"; }
@@ -56,6 +56,7 @@ function VoiceNotePlayer({ src, avatarUrl, avatarLabel }: { src: string; avatarU
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const progress = duration > 0 ? currentTime / duration : 0;
   const bars = Array.from({ length: 34 }, (_, index) => 7 + ((index * 17 + index * index * 3) % 17));
   const togglePlayback = async () => {
@@ -69,11 +70,72 @@ function VoiceNotePlayer({ src, avatarUrl, avatarLabel }: { src: string; avatarU
     <button type="button" className="voiceNotePlay" onClick={() => void togglePlayback()} aria-label={playing ? "Pause voice note" : "Play voice note"}>{playing ? "Ⅱ" : "▶"}</button>
     <div className="voiceNoteWave" style={{ "--voice-progress": `${progress * 100}%` } as CSSProperties & { "--voice-progress": string }}>
       <div aria-hidden="true">{bars.map((height, index) => <i key={index} style={{ height: `${height}px` }} />)}</div>
-      <input type="range" min="0" max="1000" value={Math.round(progress * 1000)} aria-label="Seek voice note" aria-valuetext={`${audioTime(currentTime)} of ${audioTime(duration)}`} onChange={(event) => { const audio = audioRef.current; if (audio && duration > 0) { const time = (Number(event.target.value) / 1000) * duration; audio.currentTime = time; setCurrentTime(time); } }} />
+      <input type="range" min="0" max="1000" value={Math.round(progress * 1000)} title="Drag or tap the waveform to seek" aria-label="Seek voice note" aria-valuetext={`${audioTime(currentTime)} of ${audioTime(duration)}`} onChange={(event) => { const audio = audioRef.current; if (audio && duration > 0) { const time = (Number(event.target.value) / 1000) * duration; audio.currentTime = time; setCurrentTime(time); } }} />
     </div>
     <span className="voiceNoteDuration">{currentTime > 0 ? `${audioTime(currentTime)} / ${audioTime(duration)}` : audioTime(duration)}</span>
+    <button type="button" className="voiceNoteSpeed" aria-label={`Playback speed ${playbackRate} times. Change speed`} title="Change playback speed" onClick={() => { const speeds = [1, 1.25, 1.5, 2]; const next = speeds[(speeds.indexOf(playbackRate) + 1) % speeds.length]; setPlaybackRate(next); if (audioRef.current) audioRef.current.playbackRate = next; }}>{playbackRate}×</button>
     <span className="voiceNoteAvatar" aria-hidden="true">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(avatarLabel || "Q")}</span>
   </div>;
+}
+function PushNotificationsControl() {
+  const [state, setState] = useState<"loading" | "off" | "on" | "busy" | "unsupported">("loading");
+  const [note, setNote] = useState("");
+  useEffect(() => {
+    let active = true;
+    if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setState("unsupported");
+      return;
+    }
+    void (async () => {
+      const response = await fetch("/api/contributor/push-subscriptions", { cache: "no-store" }).catch(() => null);
+      const config = response?.ok ? await readJson(response) : {};
+      if (!active) return;
+      if (!config.configured) { setState("unsupported"); setNote("Push alerts need VAPID keys configured on the server."); return; }
+      const registration = await navigator.serviceWorker.getRegistration("/");
+      const subscription = await registration?.pushManager.getSubscription();
+      if (subscription) {
+        const saved = await fetch("/api/contributor/push-subscriptions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscription: subscription.toJSON() }) }).catch(() => null);
+        if (active) setState(saved?.ok ? "on" : "off");
+      } else setState("off");
+    })().catch(() => { if (active) { setState("off"); setNote("Push alerts could not be checked."); } });
+    return () => { active = false; };
+  }, []);
+  const toggle = async () => {
+    if (state === "busy" || state === "loading" || state === "unsupported") return;
+    setState("busy");
+    setNote("");
+    try {
+      const registration = await navigator.serviceWorker.getRegistration("/") || await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      const current = await registration.pushManager.getSubscription();
+      if (current) {
+        const removed = await fetch("/api/contributor/push-subscriptions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unsubscribe", endpoint: current.endpoint }) });
+        if (!removed.ok) throw new Error("This device could not be removed from alerts.");
+        await current.unsubscribe();
+        setState("off");
+        setNote("Message and missed-call alerts are off on this device.");
+        return;
+      }
+      if (Notification.permission === "denied") throw new Error("Notifications are blocked in this browser’s site settings.");
+      const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+      if (permission !== "granted") throw new Error("Allow notifications in your browser to receive message alerts.");
+      const configResponse = await fetch("/api/contributor/push-subscriptions", { cache: "no-store" });
+      const config = await readJson(configResponse);
+      if (!configResponse.ok || !config.publicKey) throw new Error(config.error || "Push alerts need VAPID keys configured on the server.");
+      const padding = "=".repeat((4 - (config.publicKey.length % 4)) % 4);
+      const decoded = atob((config.publicKey + padding).replace(/-/g, "+").replace(/_/g, "/"));
+      const applicationServerKey = Uint8Array.from(decoded, (character) => character.charCodeAt(0)).buffer;
+      const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+      const saved = await fetch("/api/contributor/push-subscriptions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscription: subscription.toJSON() }) });
+      const savedData = await readJson(saved);
+      if (!saved.ok) { await subscription.unsubscribe(); throw new Error(savedData.error || "This device could not be registered for alerts."); }
+      setState("on");
+      setNote("Message and missed-call alerts are on for this device.");
+    } catch (error) {
+      setState("off");
+      setNote(error instanceof Error ? error.message : "Push alerts could not be updated.");
+    }
+  };
+  return <div className="pushNotificationsControl"><button type="button" className="pushAlertsButton" disabled={state === "loading" || state === "busy" || state === "unsupported"} onClick={() => void toggle()} aria-label={state === "on" ? "Turn off message and missed-call alerts" : "Turn on message and missed-call alerts"}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>{state === "busy" ? "Saving…" : state === "on" ? "Alerts on" : state === "unsupported" ? "Alerts unavailable" : "Enable alerts"}</button>{note ? <small role="status">{note}</small> : null}</div>;
 }
 function MessageReplyQuote({ message, viewerId, otherName }: { message: Message; viewerId?: number; otherName?: string }) {
   const [duration, setDuration] = useState<number | null>(null);
@@ -143,6 +205,7 @@ export default function ContributorMessages() {
   const [showPeople, setShowPeople] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showThreadMenu, setShowThreadMenu] = useState(false);
+  const [showMenuThemes, setShowMenuThemes] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [chatTheme, setChatTheme] = useState<ChatTheme>("blue");
   const [showMessageSearch, setShowMessageSearch] = useState(false);
@@ -171,6 +234,9 @@ export default function ContributorMessages() {
   const [voiceCall, setVoiceCall] = useState<VoiceCall | null>(null);
   const [callError, setCallError] = useState("");
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const threadMenuRef = useRef<HTMLDivElement>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const callStateRef = useRef<VoiceCall | null>(null);
@@ -187,25 +253,40 @@ export default function ContributorMessages() {
   const handledDeepLink = useRef(false);
   const selectedRef = useRef<number | null>(null);
   selectedRef.current = selected;
+  useEffect(() => {
+    if (!voiceCall || voiceCall.media !== "video") return;
+    if (localVideoRef.current && localStreamRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+      void localVideoRef.current.play().catch(() => {});
+    }
+    const remote = peerConnectionRef.current?.getReceivers().map((receiver) => receiver.track).filter((track) => track.kind === "video" && track.readyState === "live") || [];
+    if (remoteVideoRef.current && remote.length) {
+      const remoteStream = new MediaStream(remote);
+      remoteVideoRef.current.srcObject = remoteStream;
+      void remoteVideoRef.current.play().catch(() => {});
+    }
+  }, [voiceCall]);
 
   const changeVoiceCall = useCallback((value: VoiceCall | null) => { callStateRef.current = value; setVoiceCall(value); }, []);
   const sendCallSignal = useCallback(async (conversationId: number, callId: string, signalType: string, signalPayload?: unknown) => {
     const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "call_signal", conversationId, callId, signalType, signalPayload }) }).catch(() => null);
     const data = response ? await readJson(response) : {};
-    if (!response?.ok) throw new Error(data.error || "The voice call could not connect.");
+    if (!response?.ok) throw new Error(data.error || "The call could not connect.");
     return data;
   }, []);
   const teardownVoiceCall = useCallback(() => {
     peerConnectionRef.current?.close(); peerConnectionRef.current = null;
     localStreamRef.current?.getTracks().forEach((track) => track.stop()); localStreamRef.current = null;
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
     acceptedCallRef.current = null; pendingOfferRef.current = null; pendingIceRef.current = [];
     if (callTimeoutRef.current !== null) window.clearTimeout(callTimeoutRef.current);
     changeVoiceCall(null);
   }, [changeVoiceCall]);
-  const endVoiceCall = useCallback(async (signalType: "end" | "decline" = "end") => {
+  const endVoiceCall = useCallback(async (signalType: "end" | "decline" = "end", signalPayload?: unknown) => {
     const call = callStateRef.current;
-    if (call && call.status !== "checking") await sendCallSignal(call.conversationId, call.callId, signalType).catch(() => {});
+    if (call && call.status !== "checking") await sendCallSignal(call.conversationId, call.callId, signalType, signalPayload).catch(() => {});
     teardownVoiceCall();
   }, [sendCallSignal, teardownVoiceCall]);
   const createPeerConnection = useCallback((conversationId: number, callId: string, stream: MediaStream) => {
@@ -213,8 +294,8 @@ export default function ContributorMessages() {
     peerConnectionRef.current = peer;
     stream.getTracks().forEach((track) => peer.addTrack(track, stream));
     peer.onicecandidate = (event) => { if (event.candidate) void sendCallSignal(conversationId, callId, "ice", event.candidate.toJSON()).catch((error) => setCallError(error instanceof Error ? error.message : "Voice connection failed.")); };
-    peer.ontrack = (event) => { if (remoteAudioRef.current) { remoteAudioRef.current.srcObject = event.streams[0]; void remoteAudioRef.current.play().catch(() => {}); } changeVoiceCall({ callId, conversationId, status: "active" }); };
-    peer.onconnectionstatechange = () => { if (peer.connectionState === "failed") setCallError("Voice connection failed. Check your network and try again."); };
+    peer.ontrack = (event) => { const stream = event.streams[0]; if (remoteAudioRef.current) { remoteAudioRef.current.srcObject = stream; void remoteAudioRef.current.play().catch(() => {}); } if (remoteVideoRef.current && callStateRef.current?.media === "video") remoteVideoRef.current.srcObject = stream; changeVoiceCall({ callId, conversationId, media: callStateRef.current?.media || "audio", status: "active" }); };
+    peer.onconnectionstatechange = () => { if (peer.connectionState === "failed") setCallError("Call connection failed. Check your network and try again."); };
     return peer;
   }, [changeVoiceCall, sendCallSignal]);
   const processIncomingOffer = useCallback(async (conversationId: number, callId: string) => {
@@ -227,7 +308,7 @@ export default function ContributorMessages() {
       const answer = await peer.createAnswer(); await peer.setLocalDescription(answer);
       await sendCallSignal(conversationId, callId, "answer", peer.localDescription?.toJSON());
       pendingOfferRef.current = null;
-      changeVoiceCall({ callId, conversationId, status: "connecting" });
+      changeVoiceCall({ callId, conversationId, media: callStateRef.current?.media || "audio", status: "connecting" });
     } catch (error) { setCallError(error instanceof Error ? error.message : "Could not answer the voice call."); await sendCallSignal(conversationId, callId, "end").catch(() => {}); teardownVoiceCall(); }
   }, [changeVoiceCall, sendCallSignal, teardownVoiceCall]);
   const acceptVoiceCall = useCallback(async () => {
@@ -236,32 +317,37 @@ export default function ContributorMessages() {
     try {
       setCallError("");
       changeVoiceCall({ ...call, status: "connecting" });
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: call.media === "video" });
       localStreamRef.current = stream; acceptedCallRef.current = call.callId;
+      if (localVideoRef.current && call.media === "video") { localVideoRef.current.srcObject = stream; void localVideoRef.current.play().catch(() => {}); }
       createPeerConnection(call.conversationId, call.callId, stream);
       await processIncomingOffer(call.conversationId, call.callId);
-    } catch (error) { setCallError(error instanceof Error ? error.message : "Microphone access is unavailable."); await sendCallSignal(call.conversationId, call.callId, "decline").catch(() => {}); teardownVoiceCall(); }
+    } catch (error) { setCallError(error instanceof Error ? error.message : call.media === "video" ? "Camera and microphone access is unavailable." : "Microphone access is unavailable."); await sendCallSignal(call.conversationId, call.callId, "decline").catch(() => {}); teardownVoiceCall(); }
   }, [changeVoiceCall, createPeerConnection, processIncomingOffer, sendCallSignal, teardownVoiceCall]);
-  const startVoiceCall = useCallback(async () => {
+  const startCall = useCallback(async (media: "audio" | "video") => {
     if (!selected || !other || other.requestStatus !== "accepted" || callStateRef.current) return;
+    if (media === "video" && !user?.isPremium) { window.location.assign("/premium"); return; }
     const callId = crypto.randomUUID();
     let inviteSent = false;
     try {
       setCallError("");
-      changeVoiceCall({ callId, conversationId: selected, status: "checking" });
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      changeVoiceCall({ callId, conversationId: selected, media, status: "checking" });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: media === "video" });
       const currentCall = callStateRef.current as VoiceCall | null;
       if (currentCall?.callId !== callId) { stream.getTracks().forEach((track) => track.stop()); return; }
       localStreamRef.current = stream; acceptedCallRef.current = callId;
+      if (localVideoRef.current && media === "video") { localVideoRef.current.srcObject = stream; void localVideoRef.current.play().catch(() => {}); }
       const peer = createPeerConnection(selected, callId, stream);
-      const invite = await sendCallSignal(selected, callId, "invite");
+      const invite = await sendCallSignal(selected, callId, "invite", { kind: media });
       inviteSent = true;
-      changeVoiceCall({ callId, conversationId: selected, status: invite.recipientOnline ? "ringing" : "calling" });
+      changeVoiceCall({ callId, conversationId: selected, media, status: invite.recipientOnline ? "ringing" : "calling" });
       const offer = await peer.createOffer(); await peer.setLocalDescription(offer);
       await sendCallSignal(selected, callId, "offer", peer.localDescription?.toJSON());
-      callTimeoutRef.current = window.setTimeout(() => { const activeCall = callStateRef.current as VoiceCall | null; if (activeCall?.callId === callId && (activeCall.status === "calling" || activeCall.status === "ringing")) { setCallError("No answer yet. You can try calling again."); void endVoiceCall(); } }, 45_000);
-    } catch (error) { setCallError(error instanceof Error ? error.message : "Could not start the voice call."); if (inviteSent) await sendCallSignal(selected, callId, "end").catch(() => {}); teardownVoiceCall(); }
-  }, [changeVoiceCall, createPeerConnection, endVoiceCall, other, selected, sendCallSignal, teardownVoiceCall]);
+      callTimeoutRef.current = window.setTimeout(() => { const activeCall = callStateRef.current as VoiceCall | null; if (activeCall?.callId === callId && (activeCall.status === "calling" || activeCall.status === "ringing")) { setCallError("No answer yet. You can try calling again."); void endVoiceCall("end", { reason: "missed" }); } }, 45_000);
+    } catch (error) { setCallError(error instanceof Error ? error.message : `Could not start the ${media} call.`); if (inviteSent) await sendCallSignal(selected, callId, "end").catch(() => {}); teardownVoiceCall(); }
+  }, [changeVoiceCall, createPeerConnection, endVoiceCall, other, selected, sendCallSignal, teardownVoiceCall, user?.isPremium]);
+  const startVoiceCall = useCallback(() => startCall("audio"), [startCall]);
+  const startVideoCall = useCallback(() => startCall("video"), [startCall]);
   const toggleVoiceNoteRecording = async () => {
     if (recorderRef.current?.state === "recording") { recorderRef.current.stop(); return; }
     try {
@@ -303,6 +389,19 @@ export default function ContributorMessages() {
   };
   const clearReactionPressTimer = () => { if (reactionPressTimerRef.current !== null) window.clearTimeout(reactionPressTimerRef.current); reactionPressTimerRef.current = null; };
   const selectChatTheme = (theme: ChatTheme) => { setChatTheme(theme); if (selected) { try { window.localStorage.setItem(`qeixova-chat-theme:${selected}`, theme); } catch {} } };
+
+  useEffect(() => {
+    if (!showThreadMenu) { setShowMenuThemes(false); return; }
+    const closeMenu = (event: PointerEvent) => {
+      if (event.target instanceof Node && !threadMenuRef.current?.contains(event.target)) setShowThreadMenu(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setShowThreadMenu(false); setShowMenuThemes(false); }
+    };
+    document.addEventListener("pointerdown", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => { document.removeEventListener("pointerdown", closeMenu); document.removeEventListener("keydown", closeOnEscape); };
+  }, [showThreadMenu]);
 
   const loadInbox = useCallback(async () => {
     const response = await fetch("/api/contributor/messages", { cache: "no-store" }).catch(() => null);
@@ -360,6 +459,12 @@ export default function ContributorMessages() {
   useEffect(() => {
     if (!user || loading || handledDeepLink.current) return;
     const params = new URLSearchParams(window.location.search);
+    const conversationId = Number(params.get("conversation"));
+    if (Number.isSafeInteger(conversationId) && conversationId > 0) {
+      handledDeepLink.current = true;
+      setSelected(conversationId);
+      return;
+    }
     const recipientId = Number(params.get("to"));
     if (!Number.isSafeInteger(recipientId) || recipientId <= 0) return;
     handledDeepLink.current = true;
@@ -392,8 +497,8 @@ export default function ContributorMessages() {
         const conversationId = Number(event.conversation_id);
         if (!callId || !Number.isSafeInteger(conversationId) || conversationId <= 0) continue;
         if (event.signal_type === "invite") {
-          const recent = Date.now() - new Date(event.created_at).getTime() < 120_000;
-          if (recent && !callStateRef.current) { setSelected(conversationId); changeVoiceCall({ callId, conversationId, status: "incoming" }); }
+          const recent = Date.now() - new Date(event.created_at).getTime() < 45_000;
+          if (recent && !callStateRef.current) { const media = event.payload?.kind === "video" ? "video" : "audio"; setSelected(conversationId); changeVoiceCall({ callId, conversationId, media, status: "incoming" }); }
           else if (recent && callStateRef.current?.callId !== callId) void sendCallSignal(conversationId, callId, "decline").catch(() => {});
         } else if (event.signal_type === "offer") {
           const description = readSessionDescription(event.payload, "offer");
@@ -408,7 +513,7 @@ export default function ContributorMessages() {
             try {
               await peer.setRemoteDescription(description);
               for (const candidate of pendingIceRef.current.splice(0)) await peer.addIceCandidate(new RTCIceCandidate(candidate));
-              changeVoiceCall({ callId, conversationId, status: "connecting" });
+              changeVoiceCall({ callId, conversationId, media: callStateRef.current?.media || "audio", status: "connecting" });
             } catch (error) { setCallError(error instanceof Error ? error.message : "Could not connect the voice call."); teardownVoiceCall(); }
           }
         } else if (event.signal_type === "ice") {
@@ -557,7 +662,7 @@ export default function ContributorMessages() {
   return (
     <main className="page-body messagesPage">
       <ContributorPresence />
-      <header className="messagesHeading"><div><span className="messagesEyebrow">CONTRIBUTOR COMMUNITY</span><h1>Messages</h1><p>Chat with mutual follows, or reply when someone messages you from a post.</p></div><button type="button" className="newMessageButton" onClick={() => setShowPeople((current) => !current)} aria-expanded={showPeople}>＋ New message</button></header>
+      <header className="messagesHeading"><div><span className="messagesEyebrow">CONTRIBUTOR COMMUNITY</span><h1>Messages</h1><p>Chat with mutual follows, or reply when someone messages you from a post.</p></div><div className="messageHeadingActions"><PushNotificationsControl/><button type="button" className="newMessageButton" onClick={() => setShowPeople((current) => !current)} aria-expanded={showPeople}>＋ New message</button></div></header>
       {error ? <div className="messagesAlert" role="alert">{error}<button type="button" onClick={() => setError("")} aria-label="Dismiss">×</button></div> : null}
       <section className="messagesWorkspace" aria-label="Contributor messages">
         <aside className={`messageInbox${selected ? " hasSelection" : ""}`}>
@@ -577,17 +682,17 @@ export default function ContributorMessages() {
 
         <section className={`messageThread theme-${chatTheme}${selected ? " isActive" : ""}`} aria-label="Conversation">
           {selected && other ? <>
-            <header className="threadHeader"><button type="button" className="threadBack" disabled={Boolean(voiceCall)} onClick={() => setSelected(null)} aria-label="Back to inbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><Link className="messageAvatar messageAvatarLink" href={`/profile/${other.id}`} aria-label={`Open ${other.name}'s profile`}>{other.avatarUrl ? <img src={other.avatarUrl} alt="" /> : initials(other.name)}</Link><div><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong><small><svg className="threadLock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> Standard chat · not end-to-end encrypted</small></div>{other.requestStatus === "accepted" ? <button type="button" className="voiceCallButton" disabled={Boolean(voiceCall)} onClick={() => void startVoiceCall()} aria-label="Start voice call"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.8 5 4.9a1.8 1.8 0 0 0-.9 2.1c1.5 6.2 6.2 10.9 12.4 12.4a1.8 1.8 0 0 0 2.1-.9l1.1-2.2a1.7 1.7 0 0 0-1-2.3l-2.8-1a1.7 1.7 0 0 0-1.8.5l-.8 1a13.5 13.5 0 0 1-3.4-3.4l1-.8a1.7 1.7 0 0 0 .5-1.8l-1-2.8a1.7 1.7 0 0 0-2.3-1Z"/></svg></button> : null}<button type="button" className="threadSearchToggle" aria-label={showMessageSearch ? "Close message search" : "Search messages"} aria-pressed={showMessageSearch} onClick={() => { setShowMessageSearch((value) => !value); setMessageSearch(""); }}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 4.5 4.5"/></svg></button><button type="button" className="threadDetailsToggle" aria-expanded={showDetails} onClick={() => setShowDetails((value) => !value)}>Details</button><button type="button" className="threadMore" aria-label="Conversation options" aria-expanded={showThreadMenu} onClick={() => setShowThreadMenu((value) => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>{showThreadMenu ? <div className="threadOptions"><button type="button" onClick={() => void blockCurrentConversation()}>Block contributor</button></div> : null}</header>
+            <header className="threadHeader"><button type="button" className="threadBack" disabled={Boolean(voiceCall)} onClick={() => setSelected(null)} aria-label="Back to inbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><Link className="messageAvatar messageAvatarLink" href={`/profile/${other.id}`} aria-label={`Open ${other.name}'s profile`}>{other.avatarUrl ? <img src={other.avatarUrl} alt="" /> : initials(other.name)}</Link><div><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong><small><svg className="threadLock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> Standard chat · not end-to-end encrypted</small></div>{other.requestStatus === "accepted" ? <><button type="button" className="voiceCallButton" disabled={Boolean(voiceCall)} onClick={() => void startVoiceCall()} aria-label="Start voice call"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16.4v3a1.7 1.7 0 0 1-1.9 1.7A18.8 18.8 0 0 1 3 5a1.7 1.7 0 0 1 1.7-2h3a1.7 1.7 0 0 1 1.7 1.5l.5 3.1a1.7 1.7 0 0 1-.5 1.5L7.5 11a15 15 0 0 0 5.5 5.5l1.9-1.9a1.7 1.7 0 0 1 1.5-.5l3.1.5a1.7 1.7 0 0 1 1.5 1.8Z"/></svg></button>{user?.isPremium ? <button type="button" className="videoCallButton" disabled={Boolean(voiceCall)} onClick={() => void startVideoCall()} aria-label="Start video call" title="Start video call"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg></button> : <Link className="videoCallButton videoCallLocked" href="/premium" aria-label="Upgrade to Premium for video calls" title="Video calling is a Premium feature"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><span aria-hidden="true">✦</span></Link>}</> : null}<button type="button" className="threadSearchToggle" aria-label={showMessageSearch ? "Close message search" : "Search messages"} aria-pressed={showMessageSearch} onClick={() => { setShowMessageSearch((value) => !value); setMessageSearch(""); }}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 4.5 4.5"/></svg></button><button type="button" className="threadDetailsToggle" aria-expanded={showDetails} onClick={() => setShowDetails((value) => !value)}>Details</button><div className="threadMenuWrap" ref={threadMenuRef}><button type="button" className="threadMore" aria-label="Conversation options" aria-expanded={showThreadMenu} aria-haspopup="menu" onClick={() => setShowThreadMenu((value) => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>{showThreadMenu ? <div className="threadOptions" role="menu" aria-label="Conversation options"><Link role="menuitem" href={`/profile/${other.id}`} onClick={() => setShowThreadMenu(false)}>View profile</Link><button type="button" role="menuitem" onClick={() => { setShowMessageSearch(true); setMessageSearch(""); setShowThreadMenu(false); }}>Search messages</button><button type="button" role="menuitem" aria-expanded={showMenuThemes} onClick={() => setShowMenuThemes((open) => !open)}>Chat theme <span aria-hidden="true">{showMenuThemes ? "⌄" : "›"}</span></button>{showMenuThemes ? <div className="threadThemeOptions" aria-label="Choose chat theme">{CHAT_THEMES.map((theme) => <button type="button" key={theme} className={chatTheme === theme ? "selected" : ""} aria-pressed={chatTheme === theme} onClick={() => { selectChatTheme(theme); setShowMenuThemes(false); setShowThreadMenu(false); }}>{theme.charAt(0).toUpperCase() + theme.slice(1)}{chatTheme === theme ? <span aria-hidden="true">✓</span> : null}</button>)}</div> : null}<div className="threadMenuDivider"/><button type="button" role="menuitem" className="threadMenuDanger" onClick={() => void blockCurrentConversation()}>Block contributor</button></div> : null}</div></header>
             {showMessageSearch ? <div className="threadSearch"><input autoFocus value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Search recent messages…" aria-label="Search messages in this chat"/><span>{messageSearch.trim() ? `${messageMatchCount} matches` : "Search latest 100 messages"}</span></div> : null}
             {showDetails ? <aside className="conversationDetails"><Link className="conversationDetailsAvatar" href={`/profile/${other.id}`}>{other.avatarUrl ? <img src={other.avatarUrl} alt=""/> : initials(other.name)}</Link><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong>{other.occupation ? <span>{other.occupation}</span> : null}{other.bio ? <p>{other.bio}</p> : null}<div>{other.location ? <span>⌖ {other.location}</span> : null}{other.website ? <a href={/^https?:\/\//i.test(other.website) ? other.website : `https://${other.website}`} target="_blank" rel="noreferrer">↗ {other.website}</a> : null}<Link href={`/profile/${other.id}`}>View profile</Link></div><small>Chat started {other.startedAt ? new Date(other.startedAt).toLocaleDateString([], { month: "long", year: "numeric" }) : "recently"} · Standard chat</small><div className="chatThemePicker"><span>Chat theme</span>{CHAT_THEMES.map((theme) => <button type="button" key={theme} className={`themeSwatch ${theme}${chatTheme === theme ? " selected" : ""}`} aria-label={`${theme} chat theme`} aria-pressed={chatTheme === theme} onClick={() => selectChatTheme(theme)}/>)}</div></aside> : null}
             {voiceCall ? <div className={`voiceCallScreen callStatus-${voiceCall.status}`} role="status" aria-live="assertive">
-              <audio ref={remoteAudioRef} autoPlay aria-label="Voice call audio"/>
+              <audio ref={remoteAudioRef} autoPlay aria-label="Call audio"/>
               <div className="voiceCallCard">
-                <div className="callAvatarWrap">{other?.avatarUrl ? <img src={other.avatarUrl} alt=""/> : <span>{initials(other?.name || "Contributor")}</span>}</div>
+                {voiceCall.media === "video" ? <div className="videoCallStage"><video ref={remoteVideoRef} autoPlay playsInline muted aria-label="Other caller video"/><video ref={localVideoRef} autoPlay playsInline muted aria-label="Your camera preview"/><span>{voiceCall.status === "incoming" ? "Incoming video" : "You"}</span></div> : <div className="callAvatarWrap">{other?.avatarUrl ? <img src={other.avatarUrl} alt=""/> : <span>{initials(other?.name || "Contributor")}</span>}</div>}
                 <strong>{other?.name || "Contributor"}</strong>
-                <span className="callStatusLabel">{voiceCall.status === "incoming" ? "Incoming call" : voiceCall.status === "checking" ? "Starting call" : voiceCall.status === "calling" ? "Calling" : voiceCall.status === "ringing" ? "Ringing" : voiceCall.status === "connecting" ? "Connecting" : "Connected"}</span>
-                <p>{voiceCall.status === "incoming" ? "They’re calling you" : voiceCall.status === "checking" ? "Checking your microphone and their availability…" : voiceCall.status === "calling" ? "They appear offline. Waiting for them to come online…" : voiceCall.status === "ringing" ? "They’re online. Their chat is ringing now." : voiceCall.status === "connecting" ? "Setting up your voice connection…" : "Your voice call is live."}</p>
-                <div className="callControls">{voiceCall.status === "incoming" ? <button type="button" className="answerCallButton" onClick={() => void acceptVoiceCall()} aria-label="Answer call">☎</button> : null}<button type="button" className="declineCallButton" onClick={() => void endVoiceCall(voiceCall.status === "incoming" ? "decline" : "end")} aria-label={voiceCall.status === "incoming" ? "Decline call" : "End call"}>{voiceCall.status === "incoming" ? "✕" : "☎"}</button></div>
+                <span className="callStatusLabel">{voiceCall.media === "video" ? (voiceCall.status === "incoming" ? "Incoming video call" : voiceCall.status === "checking" ? "Starting video call" : voiceCall.status === "calling" ? "Calling" : voiceCall.status === "ringing" ? "Ringing" : voiceCall.status === "connecting" ? "Connecting video" : "Video call connected") : (voiceCall.status === "incoming" ? "Incoming call" : voiceCall.status === "checking" ? "Starting call" : voiceCall.status === "calling" ? "Calling" : voiceCall.status === "ringing" ? "Ringing" : voiceCall.status === "connecting" ? "Connecting" : "Connected")}</span>
+                <p>{voiceCall.status === "incoming" ? "They’re calling you" : voiceCall.status === "checking" ? "Checking your camera and microphone…" : voiceCall.status === "calling" ? "They appear offline. Waiting for them to come online…" : voiceCall.status === "ringing" ? "They’re online. Their chat is ringing now." : voiceCall.status === "connecting" ? "Setting up your connection…" : "Your call is live."}</p>
+                <div className="callControls">{voiceCall.status === "incoming" ? <button type="button" className="answerCallButton" onClick={() => void acceptVoiceCall()} aria-label={voiceCall.media === "video" ? "Answer video call" : "Answer voice call"}>{voiceCall.media === "video" ? "▣" : "☎"}</button> : null}<button type="button" className="declineCallButton" onClick={() => void endVoiceCall(voiceCall.status === "incoming" ? "decline" : "end")} aria-label={voiceCall.status === "incoming" ? `Decline ${voiceCall.media} call` : `End ${voiceCall.media} call`}>{voiceCall.status === "incoming" ? "✕" : "☎"}</button></div>
                 <span className="callActionCaption">{voiceCall.status === "incoming" ? "Answer" : voiceCall.status === "active" ? "End call" : "Cancel call"}</span>
               </div>
             </div> : callError ? <div className="voiceCallError" role="alert">{callError}<button type="button" onClick={() => setCallError("")} aria-label="Dismiss">×</button></div> : null}
@@ -613,7 +718,8 @@ export default function ContributorMessages() {
         .messagesPage{width:100%;max-width:none;height:calc(100dvh - 24px);min-height:620px;margin:0;padding:0 0 16px;overflow:hidden;background:var(--bg)}.messagesHeading{display:none}.messagesWorkspace{grid-template-columns:minmax(330px,440px) minmax(0,1fr);width:min(100%,1240px);height:100%;min-height:0;margin:0 auto;border:0;border-radius:0;box-shadow:none}.messageInbox{border-right:1px solid var(--border)}.inboxHeader{min-height:66px;padding:12px 16px;border-bottom:0}.inboxHeader h2{font-size:22px;letter-spacing:-.03em}.inboxHeader>div>span{display:none}.inboxHeaderActions{display:flex;align-items:center;gap:8px}.inboxFilter{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}.newChatIcon{display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:var(--card-bg);color:var(--text);cursor:pointer}.newChatIcon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.inboxSearch{display:flex;align-items:center;gap:10px;height:44px;margin:6px 16px 10px;padding:0 14px;border-radius:999px;background:var(--card-bg);color:var(--muted)}.inboxSearch>span{font-size:24px;line-height:1}.inboxSearch input{width:100%;border:0;outline:0;background:transparent;color:var(--text);font:inherit;font-size:13px}.inboxTabs{padding:0 16px 9px;border-bottom:1px solid var(--border)}.inboxTabs button{padding:6px 11px;font-size:11px}.conversationList{padding:8px 8px 0}.conversationItem{min-height:80px;padding:10px;border:0;border-radius:14px}.conversationItem.selected,.conversationItem:hover{background:var(--card-bg)}.conversationItem .messageAvatar,.suggestedChat .messageAvatar{width:54px;height:54px;flex-basis:54px;font-size:13px}.conversationCopy{gap:6px}.conversationCopy strong,.suggestedChat strong{font-size:13px}.conversationCopy small,.suggestedChat small{font-size:12px}.conversationMeta time{font-size:10px}.suggestedChats{padding:8px 10px 12px}.suggestedChats h3{margin:5px 0 6px;font-size:13px}.suggestedChat{display:flex;align-items:center;gap:10px;min-height:84px;padding:9px 2px;border-bottom:1px solid var(--border)}.suggestedChat>span:nth-child(2){display:grid;min-width:0;flex:1;gap:5px}.suggestedChat strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.suggestedChat small{color:var(--muted)}.suggestedChat button{padding:8px 18px;border:0;border-radius:999px;background:var(--card-bg);color:var(--text);font-size:12px;font-weight:750;cursor:pointer}.inboxPrivacy{display:none}.messageThread{background:var(--bg)}.threadWelcome{align-content:center}.welcomeIcon{width:88px;height:88px;border-radius:50%;background:var(--card-bg);color:var(--text)}.welcomeIcon:before{content:"";width:43px;height:43px;background:currentColor;mask:url('/icon-chat.svg') center/contain no-repeat}.welcomeIcon{font-size:0}.threadWelcome h2{font-size:20px}.threadWelcome p{max-width:340px;font-size:14px}.threadWelcome button{padding:11px 18px;border-radius:999px;background:#111820;font-size:13px}.threadHeader{min-height:66px}.threadMessages{background:color-mix(in srgb,var(--card-bg) 45%,var(--bg))}.messageBubble{font-size:13px}.messageComposer{padding:12px;border-radius:16px}.messageComposer textarea{font-size:13px}.messagesFooterNote{display:none}
         @media(max-width:760px){.messagesPage{height:100dvh;min-height:0;padding:0}.messagesWorkspace{grid-template-columns:minmax(0,1fr);height:100%;min-height:0}.messageInbox{border-right:0}.messageInbox.hasSelection{display:none}.messageThread:not(.isActive){display:none}.inboxHeader{min-height:64px;padding:8px 12px}.inboxBack{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border:1px solid var(--border);border-radius:50%;background:var(--card-bg);color:var(--text);text-decoration:none}.inboxBack svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.inboxHeadingStart h2{font-size:21px}.inboxSearch{height:42px;margin:5px 13px 9px}.inboxTabs{padding-inline:12px}.conversationList{padding:6px 6px 0}.conversationItem{min-height:72px}.conversationItem .messageAvatar,.suggestedChat .messageAvatar{width:48px;height:48px;flex-basis:48px}.suggestedChat{min-height:72px}.messageThread.isActive{display:flex}.threadBack{display:grid;place-items:center}.threadMessages{padding:14px}.messageComposer{margin:0 10px 10px}.messagesFooterNote{display:none}}
         .threadHeader{position:relative;min-height:66px;padding:9px 18px}.threadHeader .messageAvatar{width:48px;height:48px;flex-basis:48px}.threadHeader>div{gap:2px}.threadHeader>div>strong{font-size:15px}.threadHeader>div>small{font-size:11px}.threadLock{display:inline!important;width:14px;height:14px;margin:0!important;fill:none;stroke:currentColor;stroke-width:1.5;vertical-align:-2px}.threadMore{display:grid;place-items:center;width:42px;height:42px;margin-left:auto;border:1px solid var(--border);border-radius:50%;background:var(--bg);font-size:16px;cursor:pointer}.threadOptions{position:absolute;z-index:10;top:56px;right:16px;padding:5px;border:1px solid var(--border);border-radius:10px;background:var(--bg);box-shadow:0 8px 24px rgba(20,35,45,.15)}.threadOptions button{padding:9px 12px;border:0;border-radius:6px;background:transparent;color:#a43c38;font:inherit;font-size:12px;white-space:nowrap;cursor:pointer}.threadOptions button:hover{background:#fff2f1}.threadMessages{gap:10px;padding:22px 18px}.messageGroup{display:contents}.messageDate{align-self:center;margin:28px 0 4px;color:var(--muted);font-size:11px;font-weight:650}.messageRow{width:100%}.messageBubble{max-width:min(78%,520px);padding:10px 15px;border:0;border-radius:20px 20px 20px 5px;background:var(--card-bg);font-size:14px;line-height:1.45}.messageRow.mine .messageBubble{border:0;border-radius:20px 20px 5px 20px;background:#1d9bf0;color:#fff}.messageRow.mine .messageBubble time{color:rgba(255,255,255,.75)}.messageComposer{position:relative;display:flex;align-items:center;gap:8px;margin:0 16px 14px;padding:7px 9px;border:0;border-radius:999px;background:var(--card-bg)}.messageComposer textarea{min-height:38px;max-height:88px;align-self:center;flex:1;padding:9px 2px;resize:none}.emojiToggle{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:0;border-radius:50%;background:var(--bg);color:var(--text);font-size:22px;cursor:pointer}.sendMessageButton{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:0;border-radius:50%;background:#1d9bf0;color:white;font-size:19px;cursor:pointer}.sendMessageButton:disabled{opacity:.4;cursor:not-allowed}.emojiPicker{position:absolute;z-index:10;right:48px;bottom:52px;display:grid;grid-template-columns:repeat(4,36px);gap:3px;padding:8px;border:1px solid var(--border);border-radius:12px;background:var(--bg);box-shadow:0 8px 24px rgba(20,35,45,.15)}.emojiPicker button{width:34px;height:34px;border:0;border-radius:7px;background:transparent;font-size:18px;cursor:pointer}.emojiPicker button:hover{background:var(--card-bg)}
-      `}</style>
+              .messageHeadingActions{display:flex;align-items:center;gap:8px;flex:0 0 auto}.pushNotificationsControl{position:relative;display:grid;justify-items:end;gap:3px}.pushAlertsButton{display:flex;align-items:center;gap:6px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:var(--card-bg);color:var(--text);font-size:10px;font-weight:750;white-space:nowrap;cursor:pointer}.pushAlertsButton svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.pushAlertsButton:disabled{opacity:.6;cursor:default}.pushNotificationsControl small{position:absolute;z-index:20;top:calc(100% + 5px);right:0;width:max-content;max-width:min(72vw,300px);padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--muted);font-size:9px;line-height:1.35;box-shadow:0 5px 15px rgba(20,35,45,.1)}
+        @media(max-width:760px){.messageHeadingActions{flex-direction:column;align-items:stretch;gap:6px}.pushAlertsButton{justify-content:center;padding:7px 9px;font-size:9px}.messageHeadingActions .newMessageButton{padding:8px 9px;font-size:9px}}`}</style>
     </main>
   );
 }
