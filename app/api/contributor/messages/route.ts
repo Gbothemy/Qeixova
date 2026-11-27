@@ -64,7 +64,9 @@ export async function GET(request: NextRequest) {
       const isRequestRecipient = Number(access[0].initiated_by) !== session.userId && access[0].request_status === "pending";
       if (!isRequestRecipient) await sql`UPDATE contributor_messages SET read_at = NOW() WHERE conversation_id = ${conversationId} AND sender_id <> ${session.userId} AND read_at IS NULL`;
       const messages = await sql`SELECT m.id, m.sender_id, m.body, (m.attachment_url IS NOT NULL) AS has_attachment, m.attachment_type, m.attachment_name, m.created_at, m.edited_at, m.read_at,
-        m.reply_to_id, COALESCE(NULLIF(BTRIM(replied.body), ''), replied.attachment_name, 'Attachment') AS reply_body, replied.sender_id AS reply_sender_id,
+        m.reply_to_id,
+        CASE WHEN replied.attachment_type = 'audio' THEN 'Voice message' WHEN replied.attachment_type = 'image' THEN 'Photo' WHEN replied.attachment_type = 'video' THEN 'Video' ELSE COALESCE(NULLIF(BTRIM(replied.body), ''), replied.attachment_name, 'Attachment') END AS reply_body,
+        replied.sender_id AS reply_sender_id, replied.attachment_type AS reply_attachment_type, replied.id AS reply_attachment_id,
         COALESCE((SELECT json_agg(json_build_object('emoji', grouped.emoji, 'count', grouped.reaction_count, 'reacted', grouped.reacted)) FROM (
           SELECT r.emoji, COUNT(*)::int AS reaction_count, BOOL_OR(r.user_id = ${session.userId}) AS reacted
           FROM contributor_message_reactions r WHERE r.message_id = m.id GROUP BY r.emoji
@@ -73,7 +75,7 @@ export async function GET(request: NextRequest) {
         WHERE m.conversation_id = ${conversationId} ORDER BY m.created_at DESC LIMIT 100`;
       return NextResponse.json({
         conversation: { ...access[0], blocked: undefined, id: Number(access[0].id), other_id: Number(access[0].other_id), initiated_by: Number(access[0].initiated_by) },
-        messages: messages.reverse().map((message) => ({ ...message, id: Number(message.id), sender_id: Number(message.sender_id), attachment_url: message.has_attachment ? `/api/contributor/messages?attachmentId=${Number(message.id)}` : null, has_attachment: undefined })),
+        messages: messages.reverse().map((message) => ({ ...message, id: Number(message.id), sender_id: Number(message.sender_id), attachment_url: message.has_attachment ? `/api/contributor/messages?attachmentId=${Number(message.id)}` : null, reply_attachment_url: message.reply_attachment_type === "audio" && message.reply_attachment_id ? `/api/contributor/messages?attachmentId=${Number(message.reply_attachment_id)}` : null, has_attachment: undefined, reply_attachment_id: undefined })),
       });
     }
 
@@ -262,8 +264,10 @@ export async function POST(request: NextRequest) {
         if (sent.length) return NextResponse.json({ error: "Your message request has been sent. Wait for them to accept before sending another message." }, { status: 403 });
       }
       const rows = await sql`INSERT INTO contributor_messages (conversation_id, sender_id, body, attachment_url, attachment_type, attachment_name, reply_to_id) VALUES (${conversationId}, ${session.userId}, ${body || " "}, ${attachmentUrl}, ${attachmentType}, ${attachmentName}, ${replyToId}) RETURNING id, sender_id, body, attachment_url, attachment_type, attachment_name, created_at, edited_at, read_at, reply_to_id`;
-      const reply = replyToId === null ? null : await sql`SELECT body, sender_id FROM contributor_messages WHERE id = ${replyToId} LIMIT 1`;
-      return NextResponse.json({ ok: true, message: { ...rows[0], id: Number(rows[0].id), sender_id: Number(rows[0].sender_id), attachment_url: rows[0].attachment_url ? `/api/contributor/messages?attachmentId=${Number(rows[0].id)}` : null, reply_body: reply?.[0]?.body ?? null, reply_sender_id: reply?.[0]?.sender_id ?? null } }, { status: 201 });
+      const reply = replyToId === null ? null : await sql`SELECT id, body, sender_id, attachment_type FROM contributor_messages WHERE id = ${replyToId} LIMIT 1`;
+      const replyRow = reply?.[0];
+      const replyBody = replyRow?.attachment_type === "audio" ? "Voice message" : replyRow?.attachment_type === "image" ? "Photo" : replyRow?.attachment_type === "video" ? "Video" : replyRow?.body ?? null;
+      return NextResponse.json({ ok: true, message: { ...rows[0], id: Number(rows[0].id), sender_id: Number(rows[0].sender_id), attachment_url: rows[0].attachment_url ? `/api/contributor/messages?attachmentId=${Number(rows[0].id)}` : null, reply_body: replyBody, reply_sender_id: replyRow?.sender_id ?? null, reply_attachment_type: replyRow?.attachment_type ?? null, reply_attachment_url: replyRow?.attachment_type === "audio" && replyRow.id ? `/api/contributor/messages?attachmentId=${Number(replyRow.id)}` : null } }, { status: 201 });
     }
     return NextResponse.json({ error: "Unsupported message action." }, { status: 400 });
   } catch (error) {

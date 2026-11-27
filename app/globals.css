@@ -4655,3 +4655,35 @@ body .profileSocial .profilePostActions > button.isLiked:active { color:#e11d48 
   .page-body.messagesPage .threadHeader .threadDetailsToggle { min-height:28px; padding:0 6px; font-size:8px; }
   .page-body.messagesPage .threadHeader .threadMore { flex-basis:28px; width:28px; height:28px; }
 }
+
+.page-body.messagesPage .messageReplyQuote { display:block; box-sizing:border-box; width:100%; min-width:0; margin:0 0 7px; padding:3px 8px; overflow:hidden; appearance:none; border:0; border-radius:7px; background:rgba(255,255,255,.78); color:#26332b; font:inherit; text-align:left; cursor:pointer; }
+.page-body.messagesPage .messageReplyQuote>audio { display:none; }
+.page-body.messagesPage .messageReplyQuoteContent { display:flex; flex-direction:column; align-items:stretch; gap:2px; min-width:0; margin:0; padding:3px 0 3px 8px; border-left:3px solid #d65343; }
+.page-body.messagesPage .messageReplyQuoteContent>strong { display:block; overflow:hidden; color:#c34435; font-size:10px; font-weight:700; line-height:1.25; text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .messageReplyQuoteContent>span { display:block; min-width:0; overflow:hidden; color:#536158; font-size:10px; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .messageRow.mine .messageReplyQuote { background:rgba(246,247,247,.96); }
+.page-body.messagesPage .messageRow.mine .messageReplyQuoteContent>span { color:#58636a; }
+.page-body.messagesPage .messageReplyQuoteAudio { display:flex; align-items:center; gap:6px; }
+.page-body.messagesPage .messageReplyQuoteAudio>svg { flex:0 0 16px; width:16px; height:16px; fill:none; stroke:#66746b; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.page-body.messagesPage .messageReplyQuoteAudio>span { overflow:hidden; color:#526057; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+.page-body.messagesPage .messageReplyQuoteAudio>time { flex:0 0 auto; margin:0 0 0 auto !important; color:#66746b !important; font-size:9px !important; font-variant-numeric:tabular-nums; }
+.page-body.messagesPage .messageReplyQuote:hover { background:#fff; }
+
+/* Keep the conversation controls visually consistent and make the overflow menu unmistakable. */
+.page-body.messagesPage .threadHeader .threadBack svg,
+.page-body.messagesPage .threadHeader .voiceCallButton svg,
+.page-body.messagesPage .threadHeader .threadSearchToggle svg,
+.page-body.messagesPage .threadHeader .threadMore svg { display:block; flex:0 0 auto; width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.page-body.messagesPage .threadHeader .voiceCallButton svg { width:17px; height:17px; }
+.page-body.messagesPage .threadHeader .threadMore svg { width:18px; height:18px; }
+.page-body.messagesPage .threadHeader .threadMore svg circle { fill:currentColor; stroke:none; }
+.page-body.messagesPage .threadHeader .threadBack,
+.page-body.messagesPage .threadHeader .voiceCallButton,
+.page-body.messagesPage .threadHeader .threadSearchToggle,
+.page-body.messagesPage .threadHeader .threadDetailsToggle,
+.page-body.messagesPage .threadHeader .threadMore { flex-shrink:0; }
+.page-body.messagesPage .threadHeader .threadBack:focus-visible,
+.page-body.messagesPage .threadHeader .voiceCallButton:focus-visible,
+.page-body.messagesPage .threadHeader .threadSearchToggle:focus-visible,
+.page-body.messagesPage .threadHeader .threadDetailsToggle:focus-visible,
+.page-body.messagesPage .threadHeader .threadMore:focus-visible { outline:2px solid #28935a; outline-offset:2px; }
