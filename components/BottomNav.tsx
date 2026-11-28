@@ -18,26 +18,31 @@ export default function BottomNav() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   useEffect(() => {
     let active = true;
+    let loading = false;
     const loadUnreadCounts = async () => {
-      const [messagesResponse, notificationsResponse] = await Promise.all([
-        fetch("/api/contributor/messages", { cache: "no-store" }).catch(() => null),
-        fetch("/api/contributor/notifications?filter=all&category=all&limit=1", { cache: "no-store" }).catch(() => null),
-      ]);
-      if (!active) return;
-      if (messagesResponse?.ok) {
-        const data = await messagesResponse.json().catch(() => ({}));
-        const chats = Array.isArray(data.conversations) ? data.conversations : [];
-        const requests = Array.isArray(data.requests) ? data.requests : [];
-        setUnreadMessages([...chats, ...requests].reduce((total, chat) => total + Number(chat.unread_count || 0), 0));
-      }
-      if (notificationsResponse?.ok) {
-        const data = await notificationsResponse.json().catch(() => ({}));
-        setUnreadNotifications(Number(data.unread || 0));
+      if (!active || loading || document.visibilityState !== "visible") return;
+      loading = true;
+      try {
+        const response = await fetch("/api/contributor/unread", { cache: "no-store" }).catch(() => null);
+        if (!active || !response?.ok) return;
+        const data = await response.json().catch(() => ({}));
+        setUnreadMessages(Number(data.unreadMessages || 0));
+        setUnreadNotifications(Number(data.unreadNotifications || 0));
+      } finally {
+        loading = false;
       }
     };
     void loadUnreadCounts();
-    const timer = window.setInterval(() => void loadUnreadCounts(), 6000);
-    return () => { active = false; window.clearInterval(timer); };
+    const timer = window.setInterval(() => void loadUnreadCounts(), 30000);
+    const refreshWhenVisible = () => { if (document.visibilityState === "visible") void loadUnreadCounts(); };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    window.addEventListener("focus", refreshWhenVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      window.removeEventListener("focus", refreshWhenVisible);
+    };
   }, []);
   return (
     <nav className="bottom-nav contributor-bottom-nav" aria-label="Growth Partner navigation">

@@ -4,13 +4,11 @@ import { CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useS
 import Link from "next/link";
 import { useAuth } from "@/lib/useAuth";
 import ContributorLoading from "@/components/ContributorLoading";
-import ContributorPresence from "@/components/ContributorPresence";
 import PremiumBadge from "@/components/PremiumBadge";
 
 type Conversation = { id: number; other_id: number; other_name: string; other_avatar_url: string | null; other_is_premium?: boolean; last_message: string | null; last_message_at: string | null; unread_count: number; request_status: "pending" | "accepted"; initiated_by: number };
 type Person = { id: number; full_name: string; avatar_url: string | null; is_premium?: boolean };
 type Message = { id: number; sender_id: number; body: string; attachment_url?: string | null; attachment_type?: "image" | "video" | "pdf" | "audio" | null; attachment_name?: string | null; reply_to_id?: number | null; reply_body?: string | null; reply_sender_id?: number | null; reply_attachment_type?: "image" | "video" | "pdf" | "audio" | null; reply_attachment_url?: string | null; reactions?: { emoji: string; count: number; reacted: boolean }[]; created_at: string; edited_at?: string | null; read_at: string | null };
-type VoiceCall = { callId: string; conversationId: number; media: "audio" | "video"; status: "incoming" | "checking" | "calling" | "ringing" | "connecting" | "active" };
 
 async function readJson(response: Response) { return response.json().catch(() => ({})); }
 function initials(name: string) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "Q"; }
@@ -231,20 +229,7 @@ export default function ContributorMessages() {
   const [threadLoading, setThreadLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [messageActionBusy, setMessageActionBusy] = useState<number | null>(null);
-  const [voiceCall, setVoiceCall] = useState<VoiceCall | null>(null);
-  const [callError, setCallError] = useState("");
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const threadMenuRef = useRef<HTMLDivElement>(null);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const callStateRef = useRef<VoiceCall | null>(null);
-  const acceptedCallRef = useRef<string | null>(null);
-  const pendingOfferRef = useRef<{ callId: string; description: RTCSessionDescriptionInit } | null>(null);
-  const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
-  const lastSignalIdRef = useRef(0);
-  const callTimeoutRef = useRef<number | null>(null);
   const [error, setError] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const stickToLatestRef = useRef(true);
@@ -253,101 +238,6 @@ export default function ContributorMessages() {
   const handledDeepLink = useRef(false);
   const selectedRef = useRef<number | null>(null);
   selectedRef.current = selected;
-  useEffect(() => {
-    if (!voiceCall || voiceCall.media !== "video") return;
-    if (localVideoRef.current && localStreamRef.current) {
-      localVideoRef.current.srcObject = localStreamRef.current;
-      void localVideoRef.current.play().catch(() => {});
-    }
-    const remote = peerConnectionRef.current?.getReceivers().map((receiver) => receiver.track).filter((track) => track.kind === "video" && track.readyState === "live") || [];
-    if (remoteVideoRef.current && remote.length) {
-      const remoteStream = new MediaStream(remote);
-      remoteVideoRef.current.srcObject = remoteStream;
-      void remoteVideoRef.current.play().catch(() => {});
-    }
-  }, [voiceCall]);
-
-  const changeVoiceCall = useCallback((value: VoiceCall | null) => { callStateRef.current = value; setVoiceCall(value); }, []);
-  const sendCallSignal = useCallback(async (conversationId: number, callId: string, signalType: string, signalPayload?: unknown) => {
-    const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "call_signal", conversationId, callId, signalType, signalPayload }) }).catch(() => null);
-    const data = response ? await readJson(response) : {};
-    if (!response?.ok) throw new Error(data.error || "The call could not connect.");
-    return data;
-  }, []);
-  const teardownVoiceCall = useCallback(() => {
-    peerConnectionRef.current?.close(); peerConnectionRef.current = null;
-    localStreamRef.current?.getTracks().forEach((track) => track.stop()); localStreamRef.current = null;
-    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-    if (localVideoRef.current) localVideoRef.current.srcObject = null;
-    acceptedCallRef.current = null; pendingOfferRef.current = null; pendingIceRef.current = [];
-    if (callTimeoutRef.current !== null) window.clearTimeout(callTimeoutRef.current);
-    changeVoiceCall(null);
-  }, [changeVoiceCall]);
-  const endVoiceCall = useCallback(async (signalType: "end" | "decline" = "end", signalPayload?: unknown) => {
-    const call = callStateRef.current;
-    if (call && call.status !== "checking") await sendCallSignal(call.conversationId, call.callId, signalType, signalPayload).catch(() => {});
-    teardownVoiceCall();
-  }, [sendCallSignal, teardownVoiceCall]);
-  const createPeerConnection = useCallback((conversationId: number, callId: string, stream: MediaStream) => {
-    const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-    peerConnectionRef.current = peer;
-    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
-    peer.onicecandidate = (event) => { if (event.candidate) void sendCallSignal(conversationId, callId, "ice", event.candidate.toJSON()).catch((error) => setCallError(error instanceof Error ? error.message : "Voice connection failed.")); };
-    peer.ontrack = (event) => { const stream = event.streams[0]; if (remoteAudioRef.current) { remoteAudioRef.current.srcObject = stream; void remoteAudioRef.current.play().catch(() => {}); } if (remoteVideoRef.current && callStateRef.current?.media === "video") remoteVideoRef.current.srcObject = stream; changeVoiceCall({ callId, conversationId, media: callStateRef.current?.media || "audio", status: "active" }); };
-    peer.onconnectionstatechange = () => { if (peer.connectionState === "failed") setCallError("Call connection failed. Check your network and try again."); };
-    return peer;
-  }, [changeVoiceCall, sendCallSignal]);
-  const processIncomingOffer = useCallback(async (conversationId: number, callId: string) => {
-    const pending = pendingOfferRef.current;
-    const peer = peerConnectionRef.current;
-    if (!pending || pending.callId !== callId || acceptedCallRef.current !== callId || !peer || peer.remoteDescription) return;
-    try {
-      await peer.setRemoteDescription(pending.description);
-      for (const candidate of pendingIceRef.current.splice(0)) await peer.addIceCandidate(new RTCIceCandidate(candidate));
-      const answer = await peer.createAnswer(); await peer.setLocalDescription(answer);
-      await sendCallSignal(conversationId, callId, "answer", peer.localDescription?.toJSON());
-      pendingOfferRef.current = null;
-      changeVoiceCall({ callId, conversationId, media: callStateRef.current?.media || "audio", status: "connecting" });
-    } catch (error) { setCallError(error instanceof Error ? error.message : "Could not answer the voice call."); await sendCallSignal(conversationId, callId, "end").catch(() => {}); teardownVoiceCall(); }
-  }, [changeVoiceCall, sendCallSignal, teardownVoiceCall]);
-  const acceptVoiceCall = useCallback(async () => {
-    const call = callStateRef.current;
-    if (!call || call.status !== "incoming") return;
-    try {
-      setCallError("");
-      changeVoiceCall({ ...call, status: "connecting" });
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: call.media === "video" });
-      localStreamRef.current = stream; acceptedCallRef.current = call.callId;
-      if (localVideoRef.current && call.media === "video") { localVideoRef.current.srcObject = stream; void localVideoRef.current.play().catch(() => {}); }
-      createPeerConnection(call.conversationId, call.callId, stream);
-      await processIncomingOffer(call.conversationId, call.callId);
-    } catch (error) { setCallError(error instanceof Error ? error.message : call.media === "video" ? "Camera and microphone access is unavailable." : "Microphone access is unavailable."); await sendCallSignal(call.conversationId, call.callId, "decline").catch(() => {}); teardownVoiceCall(); }
-  }, [changeVoiceCall, createPeerConnection, processIncomingOffer, sendCallSignal, teardownVoiceCall]);
-  const startCall = useCallback(async (media: "audio" | "video") => {
-    if (!selected || !other || other.requestStatus !== "accepted" || callStateRef.current) return;
-    if (media === "video" && !user?.isPremium) { window.location.assign("/premium"); return; }
-    const callId = crypto.randomUUID();
-    let inviteSent = false;
-    try {
-      setCallError("");
-      changeVoiceCall({ callId, conversationId: selected, media, status: "checking" });
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: media === "video" });
-      const currentCall = callStateRef.current as VoiceCall | null;
-      if (currentCall?.callId !== callId) { stream.getTracks().forEach((track) => track.stop()); return; }
-      localStreamRef.current = stream; acceptedCallRef.current = callId;
-      if (localVideoRef.current && media === "video") { localVideoRef.current.srcObject = stream; void localVideoRef.current.play().catch(() => {}); }
-      const peer = createPeerConnection(selected, callId, stream);
-      const invite = await sendCallSignal(selected, callId, "invite", { kind: media });
-      inviteSent = true;
-      changeVoiceCall({ callId, conversationId: selected, media, status: invite.recipientOnline ? "ringing" : "calling" });
-      const offer = await peer.createOffer(); await peer.setLocalDescription(offer);
-      await sendCallSignal(selected, callId, "offer", peer.localDescription?.toJSON());
-      callTimeoutRef.current = window.setTimeout(() => { const activeCall = callStateRef.current as VoiceCall | null; if (activeCall?.callId === callId && (activeCall.status === "calling" || activeCall.status === "ringing")) { setCallError("No answer yet. You can try calling again."); void endVoiceCall("end", { reason: "missed" }); } }, 45_000);
-    } catch (error) { setCallError(error instanceof Error ? error.message : `Could not start the ${media} call.`); if (inviteSent) await sendCallSignal(selected, callId, "end").catch(() => {}); teardownVoiceCall(); }
-  }, [changeVoiceCall, createPeerConnection, endVoiceCall, other, selected, sendCallSignal, teardownVoiceCall, user?.isPremium]);
-  const startVoiceCall = useCallback(() => startCall("audio"), [startCall]);
-  const startVideoCall = useCallback(() => startCall("video"), [startCall]);
   const toggleVoiceNoteRecording = async () => {
     if (recorderRef.current?.state === "recording") { recorderRef.current.stop(); return; }
     try {
@@ -478,73 +368,16 @@ export default function ContributorMessages() {
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (!user) return;
-      void loadInbox();
       if (selectedRef.current) void loadThread(selectedRef.current);
     }, 6000);
-    return () => window.clearInterval(timer);
+    const inboxTimer = window.setInterval(() => { if (user) void loadInbox(); }, 30000);
+    return () => { window.clearInterval(timer); window.clearInterval(inboxTimer); };
   }, [user, loadInbox, loadThread]);
-  useEffect(() => {
-    if (!user) return;
-    let active = true;
-    const pollSignals = async () => {
-      const response = await fetch(`/api/contributor/messages?callEvents=1&after=${lastSignalIdRef.current}`, { cache: "no-store" }).catch(() => null);
-      const data = response ? await readJson(response) : {};
-      if (!active || !response?.ok || !Array.isArray(data.events)) return;
-      for (const event of data.events) {
-        if (!active) break;
-        lastSignalIdRef.current = Math.max(lastSignalIdRef.current, Number(event.id) || 0);
-        const callId = String(event.call_id || "");
-        const conversationId = Number(event.conversation_id);
-        if (!callId || !Number.isSafeInteger(conversationId) || conversationId <= 0) continue;
-        if (event.signal_type === "invite") {
-          const recent = Date.now() - new Date(event.created_at).getTime() < 45_000;
-          if (recent && !callStateRef.current) { const media = event.payload?.kind === "video" ? "video" : "audio"; setSelected(conversationId); changeVoiceCall({ callId, conversationId, media, status: "incoming" }); }
-          else if (recent && callStateRef.current?.callId !== callId) void sendCallSignal(conversationId, callId, "decline").catch(() => {});
-        } else if (event.signal_type === "offer") {
-          const description = readSessionDescription(event.payload, "offer");
-          if (description) {
-            pendingOfferRef.current = { callId, description };
-            if (acceptedCallRef.current === callId) await processIncomingOffer(conversationId, callId);
-          }
-        } else if (event.signal_type === "answer") {
-          const peer = peerConnectionRef.current;
-          const description = readSessionDescription(event.payload, "answer");
-          if (description && peer && callStateRef.current?.callId === callId && !peer.remoteDescription) {
-            try {
-              await peer.setRemoteDescription(description);
-              for (const candidate of pendingIceRef.current.splice(0)) await peer.addIceCandidate(new RTCIceCandidate(candidate));
-              changeVoiceCall({ callId, conversationId, media: callStateRef.current?.media || "audio", status: "connecting" });
-            } catch (error) { setCallError(error instanceof Error ? error.message : "Could not connect the voice call."); teardownVoiceCall(); }
-          }
-        } else if (event.signal_type === "ice") {
-          if (!event.payload || callStateRef.current?.callId !== callId) continue;
-          const candidate = event.payload as RTCIceCandidateInit;
-          if (peerConnectionRef.current?.remoteDescription) void peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
-          else pendingIceRef.current.push(candidate);
-        } else if (event.signal_type === "decline" || event.signal_type === "end") {
-          const currentCall = callStateRef.current;
-          if (currentCall?.callId === callId) {
-            if (event.signal_type === "decline") setCallError("Your call was declined.");
-            else if (currentCall.status === "incoming") setCallError("Missed voice call.");
-            else if (currentCall.status === "calling") setCallError("The call ended before it connected.");
-            teardownVoiceCall();
-          }
-        }
-      }
-    };
-    void pollSignals();
-    const timer = window.setInterval(() => void pollSignals(), 1400);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [changeVoiceCall, processIncomingOffer, sendCallSignal, teardownVoiceCall, user]);
   useEffect(() => { stickToLatestRef.current = true; lastAutoScrollMessageIdRef.current = null; setShowDetails(false); setShowMessageSearch(false); setMessageSearch(""); setEditingMessageId(null); setReplyTarget(null); setAttachment(null); setRecordingVoiceNote(false); if (attachmentInputRef.current) attachmentInputRef.current.value = ""; if (recorderRef.current?.state === "recording") { discardRecordingRef.current = true; recorderRef.current.stop(); } }, [selected]);
   useEffect(() => () => {
-    const call = callStateRef.current;
-    if (call) void sendCallSignal(call.conversationId, call.callId, "end").catch(() => {});
-    peerConnectionRef.current?.close(); localStreamRef.current?.getTracks().forEach((track) => track.stop()); recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
     if (recorderRef.current?.state === "recording") { discardRecordingRef.current = true; recorderRef.current.stop(); }
     if (recordingTimerRef.current !== null) window.clearTimeout(recordingTimerRef.current);
-    if (callTimeoutRef.current !== null) window.clearTimeout(callTimeoutRef.current);
-  }, [sendCallSignal]);
+  }, []);
   useEffect(() => { if (!selected) return; try { const saved = window.localStorage.getItem(`qeixova-chat-theme:${selected}`); setChatTheme(CHAT_THEMES.includes(saved as ChatTheme) ? saved as ChatTheme : "blue"); } catch { setChatTheme("blue"); } }, [selected]);
   useEffect(() => {
     if (!selected || messagesConversationIdRef.current !== selected) return;
@@ -640,7 +473,6 @@ export default function ContributorMessages() {
 
   const blockCurrentConversation = async () => {
     if (!selected) return;
-    if (callStateRef.current) await endVoiceCall();
     const response = await fetch("/api/contributor/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "block", conversationId: selected }) }).catch(() => null);
     const data = response ? await readJson(response) : {};
     if (!response?.ok) { setError(data.error || "This contributor could not be blocked."); return; }
@@ -661,7 +493,6 @@ export default function ContributorMessages() {
 
   return (
     <main className="page-body messagesPage">
-      <ContributorPresence />
       <header className="messagesHeading"><div><span className="messagesEyebrow">CONTRIBUTOR COMMUNITY</span><h1>Messages</h1><p>Chat with mutual follows, or reply when someone messages you from a post.</p></div><div className="messageHeadingActions"><PushNotificationsControl/><button type="button" className="newMessageButton" onClick={() => setShowPeople((current) => !current)} aria-expanded={showPeople}>＋ New message</button></div></header>
       {error ? <div className="messagesAlert" role="alert">{error}<button type="button" onClick={() => setError("")} aria-label="Dismiss">×</button></div> : null}
       <section className="messagesWorkspace" aria-label="Contributor messages">
@@ -670,10 +501,10 @@ export default function ContributorMessages() {
           <label className="inboxSearch"><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search" aria-label="Search chats" /></label>
           <div className="inboxTabs" role="tablist" aria-label="Message inbox"><button type="button" role="tab" aria-selected={inboxView === "chats"} className={inboxView === "chats" ? "active" : ""} onClick={() => setInboxView("chats")}>Chats</button><button type="button" role="tab" aria-selected={inboxView === "requests"} className={inboxView === "requests" ? "active" : ""} onClick={() => setInboxView("requests")}>Requests{requests.length ? <b>{requests.length}</b> : null}</button></div>
           {showPeople ? <div className="peoplePicker"><label htmlFor="people-search">People you both follow</label><input id="people-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a mutual follow…" autoComplete="off" />
-            <div className="peopleResults">{filteredPeople.map((person) => <div className="peopleResult" key={person.id}><Link className="messageAvatar messageAvatarLink" href={`/profile/${person.id}`} aria-label={`Open ${person.full_name}'s profile`}>{person.avatar_url ? <img src={person.avatar_url} alt="" /> : initials(person.full_name)}</Link><button type="button" disabled={Boolean(voiceCall)} onClick={() => void startConversation(person)}><span><strong>{person.full_name}{person.is_premium ? <PremiumBadge /> : null}</strong><small>Contributor</small></span><b>›</b></button></div>)}{filteredPeople.length === 0 ? <p>{people.length ? "No more contributors found." : "No verified contributors to show yet."}</p> : null}</div>
+            <div className="peopleResults">{filteredPeople.map((person) => <div className="peopleResult" key={person.id}><Link className="messageAvatar messageAvatarLink" href={`/profile/${person.id}`} aria-label={`Open ${person.full_name}'s profile`}>{person.avatar_url ? <img src={person.avatar_url} alt="" /> : initials(person.full_name)}</Link><button type="button" onClick={() => void startConversation(person)}><span><strong>{person.full_name}{person.is_premium ? <PremiumBadge /> : null}</strong><small>Contributor</small></span><b>›</b></button></div>)}{filteredPeople.length === 0 ? <p>{people.length ? "No more contributors found." : "No verified contributors to show yet."}</p> : null}</div>
           </div> : null}
           <div className="conversationList">{filteredConversations.map((conversation) => <div key={conversation.id} className={`conversationItem${selected === conversation.id ? " selected" : ""}`}>
-            <Link className="messageAvatar messageAvatarLink" href={`/profile/${conversation.other_id}`} aria-label={`Open ${conversation.other_name}'s profile`}>{conversation.other_avatar_url ? <img src={conversation.other_avatar_url} alt="" /> : initials(conversation.other_name)}</Link><button type="button" className="conversationSelect" disabled={Boolean(voiceCall)} onClick={() => { setShowPeople(false); setSelected(conversation.id); }}><span className="conversationCopy"><strong>{conversation.other_name}{conversation.other_is_premium ? <PremiumBadge /> : null}</strong><small>{conversation.last_message || "Say hello to start chatting"}</small></span><span className="conversationMeta"><time>{shortTime(conversation.last_message_at)}</time>{Number(conversation.unread_count) > 0 ? <b>{conversation.unread_count}</b> : null}</span></button>
+            <Link className="messageAvatar messageAvatarLink" href={`/profile/${conversation.other_id}`} aria-label={`Open ${conversation.other_name}'s profile`}>{conversation.other_avatar_url ? <img src={conversation.other_avatar_url} alt="" /> : initials(conversation.other_name)}</Link><button type="button" className="conversationSelect" onClick={() => { setShowPeople(false); setSelected(conversation.id); }}><span className="conversationCopy"><strong>{conversation.other_name}{conversation.other_is_premium ? <PremiumBadge /> : null}</strong><small>{conversation.last_message || "Say hello to start chatting"}</small></span><span className="conversationMeta"><time>{shortTime(conversation.last_message_at)}</time>{Number(conversation.unread_count) > 0 ? <b>{conversation.unread_count}</b> : null}</span></button>
           </div>)}{filteredConversations.length === 0 && !showPeople ? <div className="inboxEmpty"><span>✉</span><strong>{inboxView === "requests" ? "No message requests" : "No conversations yet"}</strong><p>{inboxView === "requests" ? "Requests from contributors you do not follow back will appear here." : "Follow each other to start a chat, or message someone from one of their posts."}</p>{inboxView === "chats" ? <button type="button" onClick={() => setShowPeople(true)}>Find mutual follows</button> : null}</div> : null}
             {suggestedPeople.length ? <section className="suggestedChats"><h3>Suggested</h3>{suggestedPeople.map((person) => <div className="suggestedChat" key={person.id}><Link className="messageAvatar messageAvatarLink" href={`/profile/${person.id}`} aria-label={`Open ${person.full_name}'s profile`}>{person.avatar_url ? <img src={person.avatar_url} alt="" /> : initials(person.full_name)}</Link><span><strong>{person.full_name}{person.is_premium ? <PremiumBadge /> : null}</strong><small>You follow each other</small></span><button type="button" onClick={() => void startConversation(person)}>Chat</button></div>)}</section> : null}
           </div>
@@ -682,20 +513,9 @@ export default function ContributorMessages() {
 
         <section className={`messageThread theme-${chatTheme}${selected ? " isActive" : ""}`} aria-label="Conversation">
           {selected && other ? <>
-            <header className="threadHeader"><button type="button" className="threadBack" disabled={Boolean(voiceCall)} onClick={() => setSelected(null)} aria-label="Back to inbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><Link className="messageAvatar messageAvatarLink" href={`/profile/${other.id}`} aria-label={`Open ${other.name}'s profile`}>{other.avatarUrl ? <img src={other.avatarUrl} alt="" /> : initials(other.name)}</Link><div><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong><small><svg className="threadLock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> Standard chat · not end-to-end encrypted</small></div>{other.requestStatus === "accepted" ? <><button type="button" className="voiceCallButton" disabled={Boolean(voiceCall)} onClick={() => void startVoiceCall()} aria-label="Start voice call"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16.4v3a1.7 1.7 0 0 1-1.9 1.7A18.8 18.8 0 0 1 3 5a1.7 1.7 0 0 1 1.7-2h3a1.7 1.7 0 0 1 1.7 1.5l.5 3.1a1.7 1.7 0 0 1-.5 1.5L7.5 11a15 15 0 0 0 5.5 5.5l1.9-1.9a1.7 1.7 0 0 1 1.5-.5l3.1.5a1.7 1.7 0 0 1 1.5 1.8Z"/></svg></button>{user?.isPremium ? <button type="button" className="videoCallButton" disabled={Boolean(voiceCall)} onClick={() => void startVideoCall()} aria-label="Start video call" title="Start video call"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg></button> : <Link className="videoCallButton videoCallLocked" href="/premium" aria-label="Upgrade to Premium for video calls" title="Video calling is a Premium feature"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><span aria-hidden="true">✦</span></Link>}</> : null}<button type="button" className="threadSearchToggle" aria-label={showMessageSearch ? "Close message search" : "Search messages"} aria-pressed={showMessageSearch} onClick={() => { setShowMessageSearch((value) => !value); setMessageSearch(""); }}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 4.5 4.5"/></svg></button><button type="button" className="threadDetailsToggle" aria-expanded={showDetails} onClick={() => setShowDetails((value) => !value)}>Details</button><div className="threadMenuWrap" ref={threadMenuRef}><button type="button" className="threadMore" aria-label="Conversation options" aria-expanded={showThreadMenu} aria-haspopup="menu" onClick={() => setShowThreadMenu((value) => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>{showThreadMenu ? <div className="threadOptions" role="menu" aria-label="Conversation options"><Link role="menuitem" href={`/profile/${other.id}`} onClick={() => setShowThreadMenu(false)}>View profile</Link><button type="button" role="menuitem" onClick={() => { setShowMessageSearch(true); setMessageSearch(""); setShowThreadMenu(false); }}>Search messages</button><button type="button" role="menuitem" aria-expanded={showMenuThemes} onClick={() => setShowMenuThemes((open) => !open)}>Chat theme <span aria-hidden="true">{showMenuThemes ? "⌄" : "›"}</span></button>{showMenuThemes ? <div className="threadThemeOptions" aria-label="Choose chat theme">{CHAT_THEMES.map((theme) => <button type="button" key={theme} className={chatTheme === theme ? "selected" : ""} aria-pressed={chatTheme === theme} onClick={() => { selectChatTheme(theme); setShowMenuThemes(false); setShowThreadMenu(false); }}>{theme.charAt(0).toUpperCase() + theme.slice(1)}{chatTheme === theme ? <span aria-hidden="true">✓</span> : null}</button>)}</div> : null}<div className="threadMenuDivider"/><button type="button" role="menuitem" className="threadMenuDanger" onClick={() => void blockCurrentConversation()}>Block contributor</button></div> : null}</div></header>
+            <header className="threadHeader"><button type="button" className="threadBack" onClick={() => setSelected(null)} aria-label="Back to inbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><Link className="messageAvatar messageAvatarLink" href={`/profile/${other.id}`} aria-label={`Open ${other.name}'s profile`}>{other.avatarUrl ? <img src={other.avatarUrl} alt="" /> : initials(other.name)}</Link><div><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong><small><svg className="threadLock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> Standard chat · not end-to-end encrypted</small></div><button type="button" className="threadSearchToggle" aria-label={showMessageSearch ? "Close message search" : "Search messages"} aria-pressed={showMessageSearch} onClick={() => { setShowMessageSearch((value) => !value); setMessageSearch(""); }}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 4.5 4.5"/></svg></button><button type="button" className="threadDetailsToggle" aria-expanded={showDetails} onClick={() => setShowDetails((value) => !value)}>Details</button><div className="threadMenuWrap" ref={threadMenuRef}><button type="button" className="threadMore" aria-label="Conversation options" aria-expanded={showThreadMenu} aria-haspopup="menu" onClick={() => setShowThreadMenu((value) => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>{showThreadMenu ? <div className="threadOptions" role="menu" aria-label="Conversation options"><Link role="menuitem" href={`/profile/${other.id}`} onClick={() => setShowThreadMenu(false)}>View profile</Link><button type="button" role="menuitem" onClick={() => { setShowMessageSearch(true); setMessageSearch(""); setShowThreadMenu(false); }}>Search messages</button><button type="button" role="menuitem" aria-expanded={showMenuThemes} onClick={() => setShowMenuThemes((open) => !open)}>Chat theme <span aria-hidden="true">{showMenuThemes ? "⌄" : "›"}</span></button>{showMenuThemes ? <div className="threadThemeOptions" aria-label="Choose chat theme">{CHAT_THEMES.map((theme) => <button type="button" key={theme} className={chatTheme === theme ? "selected" : ""} aria-pressed={chatTheme === theme} onClick={() => { selectChatTheme(theme); setShowMenuThemes(false); setShowThreadMenu(false); }}>{theme.charAt(0).toUpperCase() + theme.slice(1)}{chatTheme === theme ? <span aria-hidden="true">✓</span> : null}</button>)}</div> : null}<div className="threadMenuDivider"/><button type="button" role="menuitem" className="threadMenuDanger" onClick={() => void blockCurrentConversation()}>Block contributor</button></div> : null}</div></header>
             {showMessageSearch ? <div className="threadSearch"><input autoFocus value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Search recent messages…" aria-label="Search messages in this chat"/><span>{messageSearch.trim() ? `${messageMatchCount} matches` : "Search latest 100 messages"}</span></div> : null}
             {showDetails ? <aside className="conversationDetails"><Link className="conversationDetailsAvatar" href={`/profile/${other.id}`}>{other.avatarUrl ? <img src={other.avatarUrl} alt=""/> : initials(other.name)}</Link><strong>{other.name}{other.isPremium ? <PremiumBadge /> : null}</strong>{other.occupation ? <span>{other.occupation}</span> : null}{other.bio ? <p>{other.bio}</p> : null}<div>{other.location ? <span>⌖ {other.location}</span> : null}{other.website ? <a href={/^https?:\/\//i.test(other.website) ? other.website : `https://${other.website}`} target="_blank" rel="noreferrer">↗ {other.website}</a> : null}<Link href={`/profile/${other.id}`}>View profile</Link></div><small>Chat started {other.startedAt ? new Date(other.startedAt).toLocaleDateString([], { month: "long", year: "numeric" }) : "recently"} · Standard chat</small><div className="chatThemePicker"><span>Chat theme</span>{CHAT_THEMES.map((theme) => <button type="button" key={theme} className={`themeSwatch ${theme}${chatTheme === theme ? " selected" : ""}`} aria-label={`${theme} chat theme`} aria-pressed={chatTheme === theme} onClick={() => selectChatTheme(theme)}/>)}</div></aside> : null}
-            {voiceCall ? <div className={`voiceCallScreen callStatus-${voiceCall.status}`} role="status" aria-live="assertive">
-              <audio ref={remoteAudioRef} autoPlay aria-label="Call audio"/>
-              <div className="voiceCallCard">
-                {voiceCall.media === "video" ? <div className="videoCallStage"><video ref={remoteVideoRef} autoPlay playsInline muted aria-label="Other caller video"/><video ref={localVideoRef} autoPlay playsInline muted aria-label="Your camera preview"/><span>{voiceCall.status === "incoming" ? "Incoming video" : "You"}</span></div> : <div className="callAvatarWrap">{other?.avatarUrl ? <img src={other.avatarUrl} alt=""/> : <span>{initials(other?.name || "Contributor")}</span>}</div>}
-                <strong>{other?.name || "Contributor"}</strong>
-                <span className="callStatusLabel">{voiceCall.media === "video" ? (voiceCall.status === "incoming" ? "Incoming video call" : voiceCall.status === "checking" ? "Starting video call" : voiceCall.status === "calling" ? "Calling" : voiceCall.status === "ringing" ? "Ringing" : voiceCall.status === "connecting" ? "Connecting video" : "Video call connected") : (voiceCall.status === "incoming" ? "Incoming call" : voiceCall.status === "checking" ? "Starting call" : voiceCall.status === "calling" ? "Calling" : voiceCall.status === "ringing" ? "Ringing" : voiceCall.status === "connecting" ? "Connecting" : "Connected")}</span>
-                <p>{voiceCall.status === "incoming" ? "They’re calling you" : voiceCall.status === "checking" ? "Checking your camera and microphone…" : voiceCall.status === "calling" ? "They appear offline. Waiting for them to come online…" : voiceCall.status === "ringing" ? "They’re online. Their chat is ringing now." : voiceCall.status === "connecting" ? "Setting up your connection…" : "Your call is live."}</p>
-                <div className="callControls">{voiceCall.status === "incoming" ? <button type="button" className="answerCallButton" onClick={() => void acceptVoiceCall()} aria-label={voiceCall.media === "video" ? "Answer video call" : "Answer voice call"}>{voiceCall.media === "video" ? "▣" : "☎"}</button> : null}<button type="button" className="declineCallButton" onClick={() => void endVoiceCall(voiceCall.status === "incoming" ? "decline" : "end")} aria-label={voiceCall.status === "incoming" ? `Decline ${voiceCall.media} call` : `End ${voiceCall.media} call`}>{voiceCall.status === "incoming" ? "✕" : "☎"}</button></div>
-                <span className="callActionCaption">{voiceCall.status === "incoming" ? "Answer" : voiceCall.status === "active" ? "End call" : "Cancel call"}</span>
-              </div>
-            </div> : callError ? <div className="voiceCallError" role="alert">{callError}<button type="button" onClick={() => setCallError("")} aria-label="Dismiss">×</button></div> : null}
             <div className="threadMessages" onScroll={(event) => { const element = event.currentTarget; stickToLatestRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }}>{threadLoading ? <div className="threadLoading">Loading conversation…</div> : visibleMessages.length ? visibleMessages.map((message, index) => {
               const mine = Number(message.sender_id) === user?.id;
               const thisDay = new Date(message.created_at).toDateString();

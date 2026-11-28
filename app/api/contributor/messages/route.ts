@@ -3,57 +3,14 @@ import { getSession } from "@/lib/auth";
 import { ensureCreatorSchema, ensureMessagingSchema } from "@/lib/contributorFeatures";
 import { sql } from "@/lib/db";
 import { ensurePremiumSubscriptionTable } from "@/lib/premium";
-import { createContributorNotification, ensureContributorNotificationsTable } from "@/lib/contributorNotifications";
 import { sendContributorPush } from "@/lib/webPush";
-
-async function notifyExpiredMissedCalls(userId: number) {
-  await ensureContributorNotificationsTable();
-  const expired = await sql`
-    SELECT invite.call_id, invite.conversation_id, invite.sender_id, invite.payload, caller.full_name AS caller_name
-    FROM contributor_call_signals invite
-    JOIN contributor_conversations c ON c.id = invite.conversation_id
-    JOIN users caller ON caller.id = invite.sender_id
-    WHERE invite.recipient_id = ${userId} AND invite.signal_type = 'invite'
-      AND invite.created_at < NOW() - INTERVAL '45 seconds'
-      AND invite.created_at > NOW() - INTERVAL '1 day'
-      AND c.request_status = 'accepted'
-      AND NOT EXISTS (
-        SELECT 1 FROM contributor_call_signals finish
-        WHERE finish.call_id = invite.call_id AND finish.conversation_id = invite.conversation_id
-          AND finish.signal_type IN ('answer', 'decline', 'end')
-      )
-      AND NOT EXISTS (
-        SELECT 1 FROM contributor_user_blocks b
-        WHERE (b.blocker_id = c.participant_low AND b.blocked_id = c.participant_high)
-          OR (b.blocker_id = c.participant_high AND b.blocked_id = c.participant_low)
-      )
-      AND NOT EXISTS (
-        SELECT 1 FROM contributor_notifications n
-        WHERE n.user_id = ${userId} AND n.dedupe_key = 'missed-call-' || invite.call_id::text
-      )
-    ORDER BY invite.created_at DESC LIMIT 20
-  `;
-  for (const call of expired) {
-    const callId = String(call.call_id);
-    const conversationId = Number(call.conversation_id);
-    const media = call.payload?.kind === "video" ? "video" : "voice";
-    const title = `Missed ${media} call`;
-    const message = `${String(call.caller_name || "A contributor")} called you, but you did not answer.`;
-    const href = `/messages?conversation=${conversationId}`;
-    const dedupeKey = `missed-call-${callId}`;
-    const created = await sql`
-      INSERT INTO contributor_notifications (user_id, type, title, message, href, metadata, dedupe_key)
-      VALUES (${userId}, 'missed_call', ${title}, ${message}, ${href}, ${JSON.stringify({ conversationId, callId })}::jsonb, ${dedupeKey})
-      ON CONFLICT (user_id, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
-      RETURNING id
-    `;
-    if (created.length) await sendContributorPush(userId, { title, body: message, url: href, tag: `call-${callId}`, kind: "missed_call" });
-  }
-}
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (request.nextUrl.searchParams.get("callEvents") === "1") {
+    return NextResponse.json({ error: "Calling is no longer available." }, { status: 410 });
+  }
   try {
     await Promise.all([ensureMessagingSchema(), ensureCreatorSchema(), ensurePremiumSubscriptionTable()]);
     const attachmentId = Number(request.nextUrl.searchParams.get("attachmentId"));
@@ -68,16 +25,6 @@ export async function GET(request: NextRequest) {
       const bytes = Buffer.from(match[2], "base64");
       const fileName = encodeURIComponent(String(rows[0].attachment_name || "attachment").replace(/[\r\n]/g, ""));
       return new NextResponse(bytes, { headers: { "Content-Type": match[1], "Content-Disposition": `${rows[0].attachment_type === "pdf" ? "attachment" : "inline"}; filename*=UTF-8''${fileName}`, "Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff" } });
-    }
-    if (request.nextUrl.searchParams.get("callEvents") === "1" && !request.nextUrl.searchParams.get("conversationId")) {
-      await notifyExpiredMissedCalls(session.userId);
-      const after = Math.max(0, Number(request.nextUrl.searchParams.get("after")) || 0);
-      const events = await sql`SELECT s.id, s.call_id, s.conversation_id, s.sender_id, s.signal_type, s.payload, s.created_at FROM contributor_call_signals s
-        JOIN contributor_conversations c ON c.id = s.conversation_id
-        WHERE s.recipient_id = ${session.userId} AND s.id > ${after} AND s.created_at > NOW() - INTERVAL '1 day' AND c.request_status = 'accepted'
-          AND NOT EXISTS (SELECT 1 FROM contributor_user_blocks b WHERE (b.blocker_id = c.participant_low AND b.blocked_id = c.participant_high) OR (b.blocker_id = c.participant_high AND b.blocked_id = c.participant_low))
-        ORDER BY s.id ASC LIMIT 100`;
-      return NextResponse.json({ events: events.map((event) => ({ ...event, id: Number(event.id), conversation_id: Number(event.conversation_id), sender_id: Number(event.sender_id) })) });
     }
     const conversationId = Number(request.nextUrl.searchParams.get("conversationId"));
     if (Number.isSafeInteger(conversationId) && conversationId > 0) {
@@ -101,15 +48,6 @@ export async function GET(request: NextRequest) {
         LIMIT 1
       `;
       if (!access.length || access[0].blocked || access[0].request_status === "declined") return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
-      if (request.nextUrl.searchParams.get("callEvents") === "1") {
-        if (access[0].request_status !== "accepted") return NextResponse.json({ error: "Voice calls are available in accepted chats only." }, { status: 403 });
-        await notifyExpiredMissedCalls(session.userId);
-        const after = Math.max(0, Number(request.nextUrl.searchParams.get("after")) || 0);
-        const events = await sql`SELECT id, call_id, conversation_id, sender_id, signal_type, payload, created_at FROM contributor_call_signals
-          WHERE conversation_id = ${conversationId} AND recipient_id = ${session.userId} AND id > ${after} AND created_at > NOW() - INTERVAL '1 day'
-          ORDER BY id ASC LIMIT 100`;
-        return NextResponse.json({ events: events.map((event) => ({ ...event, id: Number(event.id), conversation_id: Number(event.conversation_id), sender_id: Number(event.sender_id) })) });
-      }
       const isRequestRecipient = Number(access[0].initiated_by) !== session.userId && access[0].request_status === "pending";
       if (!isRequestRecipient) await sql`UPDATE contributor_messages SET read_at = NOW() WHERE conversation_id = ${conversationId} AND sender_id <> ${session.userId} AND read_at IS NULL`;
       const messages = await sql`SELECT m.id, m.sender_id, m.body, (m.attachment_url IS NOT NULL) AS has_attachment, m.attachment_type, m.attachment_name, m.created_at, m.edited_at, m.read_at,
@@ -172,58 +110,11 @@ export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const payload = await request.json().catch(() => ({}));
+  if (payload.action === "call_signal") {
+    return NextResponse.json({ error: "Calling is no longer available." }, { status: 410 });
+  }
   try {
     await Promise.all([ensureMessagingSchema(), ensureCreatorSchema(), ensurePremiumSubscriptionTable()]);
-    if (payload.action === "call_signal") {
-      const conversationId = Number(payload.conversationId);
-      const callId = typeof payload.callId === "string" ? payload.callId : "";
-      const signalType = typeof payload.signalType === "string" ? payload.signalType : "";
-      const validTypes = ["invite", "offer", "answer", "ice", "decline", "end"];
-      if (!Number.isSafeInteger(conversationId) || conversationId <= 0 || !/^[0-9a-f-]{36}$/i.test(callId) || !validTypes.includes(signalType)) return NextResponse.json({ error: "Invalid voice call signal." }, { status: 400 });
-      const isVideoInvite = signalType === "invite" && payload.signalPayload?.kind === "video";
-      const existingInvite = signalType === "invite" ? [] : await sql`SELECT sender_id, recipient_id, payload FROM contributor_call_signals WHERE conversation_id = ${conversationId} AND call_id = ${callId} AND signal_type = 'invite' ORDER BY id ASC LIMIT 1`;
-      const existingVideoInvite = existingInvite[0]?.payload?.kind === "video" ? existingInvite[0] : null;
-      const videoOwnerId = isVideoInvite ? session.userId : Number(existingVideoInvite?.sender_id || 0);
-      if (videoOwnerId) {
-        const premium = await sql`SELECT EXISTS(SELECT 1 FROM contributor_premium_subscriptions WHERE user_id = ${videoOwnerId} AND business_id IS NULL AND status = 'active' AND starts_at <= NOW() AND (is_permanent = TRUE OR ends_at > NOW())) AS active`;
-        if (!premium[0]?.active) return NextResponse.json({ error: "Video calling is a Premium feature. Upgrade to Premium to start a video call." }, { status: 403 });
-      }
-      const access = await sql`SELECT participant_low, participant_high, request_status FROM contributor_conversations WHERE id = ${conversationId} AND ${session.userId} IN (participant_low, participant_high) LIMIT 1`;
-      if (!access.length || access[0].request_status !== "accepted") return NextResponse.json({ error: "Voice calls are available in accepted chats only." }, { status: 403 });
-      const blocked = await sql`SELECT 1 FROM contributor_user_blocks WHERE (blocker_id = ${access[0].participant_low} AND blocked_id = ${access[0].participant_high}) OR (blocker_id = ${access[0].participant_high} AND blocked_id = ${access[0].participant_low}) LIMIT 1`;
-      if (blocked.length) return NextResponse.json({ error: "This conversation is unavailable." }, { status: 403 });
-      const recipientId = Number(access[0].participant_low) === session.userId ? Number(access[0].participant_high) : Number(access[0].participant_low);
-      let recipientOnline: boolean | undefined;
-      if (signalType === "invite") {
-        const presence = await sql`SELECT EXISTS (
-          SELECT 1 FROM contributor_presence WHERE user_id = ${recipientId} AND last_seen_at > NOW() - INTERVAL '30 seconds'
-        ) AS online`;
-        recipientOnline = Boolean(presence[0]?.online);
-      }
-      const signalPayload = payload.signalPayload == null ? null : JSON.stringify(payload.signalPayload);
-      if (signalPayload && signalPayload.length > 12000) return NextResponse.json({ error: "Voice call signal is too large." }, { status: 400 });
-      await sql`INSERT INTO contributor_call_signals (conversation_id, call_id, sender_id, recipient_id, signal_type, payload)
-        VALUES (${conversationId}, ${callId}, ${session.userId}, ${recipientId}, ${signalType}, ${signalPayload}::jsonb)`;
-      if (signalType === "invite") {
-        const media = payload.signalPayload?.kind === "video" ? "video" : "voice";
-        await sendContributorPush(recipientId, { title: `Incoming ${media} call`, body: `${session.fullName} is calling you.`, url: `/messages?conversation=${conversationId}`, tag: `call-${callId}`, kind: "incoming_call" });
-      }
-      if (signalType === "end" && payload.signalPayload?.reason === "missed" && existingInvite.length && Number(existingInvite[0].sender_id) === session.userId) {
-        const missedRecipientId = Number(existingInvite[0].recipient_id);
-        const media = existingInvite[0].payload?.kind === "video" ? "video" : "voice";
-        const title = `Missed ${media} call`;
-        const message = `${session.fullName} called you, but you did not answer.`;
-        const href = `/messages?conversation=${conversationId}`;
-        const dedupeKey = `missed-call-${callId}`;
-        const alreadyNotified = await sql`SELECT 1 FROM contributor_notifications WHERE user_id = ${missedRecipientId} AND dedupe_key = ${dedupeKey} LIMIT 1`.catch(() => []);
-        if (!alreadyNotified.length) {
-          await createContributorNotification({ userId: missedRecipientId, type: "missed_call", title, message, href, metadata: { conversationId, callId }, dedupeKey });
-          await sendContributorPush(missedRecipientId, { title, body: message, url: href, tag: `call-${callId}`, kind: "missed_call" });
-        }
-      }
-      if (signalType === "invite") await sql`DELETE FROM contributor_call_signals WHERE created_at < NOW() - INTERVAL '1 day'`;
-      return NextResponse.json({ ok: true, ...(recipientOnline === undefined ? {} : { recipientOnline }) });
-    }
     if (payload.action === "react") {
       const messageId = Number(payload.messageId);
       const emoji = typeof payload.emoji === "string" ? payload.emoji : "";

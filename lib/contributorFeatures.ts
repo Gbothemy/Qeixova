@@ -206,21 +206,6 @@ export function ensureMessagingSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (message_id, user_id, emoji)
   )`;
-  await sql`CREATE TABLE IF NOT EXISTS contributor_call_signals (
-    id BIGSERIAL PRIMARY KEY,
-    conversation_id BIGINT NOT NULL REFERENCES contributor_conversations(id) ON DELETE CASCADE,
-    call_id TEXT NOT NULL,
-    sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    recipient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    signal_type TEXT NOT NULL CHECK (signal_type IN ('invite', 'offer', 'answer', 'ice', 'decline', 'end')),
-    payload JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )`;
-  await sql`CREATE INDEX IF NOT EXISTS contributor_call_signals_recipient_idx ON contributor_call_signals(recipient_id, conversation_id, id)`;
-  await sql`CREATE TABLE IF NOT EXISTS contributor_presence (
-    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )`;
   })().catch((error) => { messagingSchemaReady = null; throw error; });
   return messagingSchemaReady;
 }
